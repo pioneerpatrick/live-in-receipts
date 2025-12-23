@@ -14,6 +14,137 @@ export type Database = {
   }
   public: {
     Tables: {
+      clients: {
+        Row: {
+          balance: number
+          commission: number | null
+          commission_balance: number | null
+          commission_received: number | null
+          completion_date: string | null
+          created_at: string
+          discount: number
+          id: string
+          name: string
+          next_payment_date: string | null
+          notes: string | null
+          number_of_plots: number
+          payment_period: string | null
+          phone: string | null
+          plot_number: string
+          project_name: string
+          sale_date: string | null
+          sales_agent: string | null
+          status: string | null
+          total_paid: number
+          total_price: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          commission?: number | null
+          commission_balance?: number | null
+          commission_received?: number | null
+          completion_date?: string | null
+          created_at?: string
+          discount?: number
+          id?: string
+          name: string
+          next_payment_date?: string | null
+          notes?: string | null
+          number_of_plots?: number
+          payment_period?: string | null
+          phone?: string | null
+          plot_number: string
+          project_name: string
+          sale_date?: string | null
+          sales_agent?: string | null
+          status?: string | null
+          total_paid?: number
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          commission?: number | null
+          commission_balance?: number | null
+          commission_received?: number | null
+          completion_date?: string | null
+          created_at?: string
+          discount?: number
+          id?: string
+          name?: string
+          next_payment_date?: string | null
+          notes?: string | null
+          number_of_plots?: number
+          payment_period?: string | null
+          phone?: string | null
+          plot_number?: string
+          project_name?: string
+          sale_date?: string | null
+          sales_agent?: string | null
+          status?: string | null
+          total_paid?: number
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          agent_name: string | null
+          amount: number
+          authorized_by: string | null
+          client_id: string
+          created_at: string
+          id: string
+          new_balance: number
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          previous_balance: number
+          receipt_number: string
+        }
+        Insert: {
+          agent_name?: string | null
+          amount: number
+          authorized_by?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          new_balance?: number
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          previous_balance?: number
+          receipt_number: string
+        }
+        Update: {
+          agent_name?: string | null
+          amount?: number
+          authorized_by?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          new_balance?: number
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          previous_balance?: number
+          receipt_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
