@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Client, ReceiptData } from '@/types/client';
-import { formatCurrency, generateReceiptNumber } from '@/lib/storage';
+import { formatCurrency, generateReceiptNumber } from '@/lib/supabaseStorage';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -30,11 +30,13 @@ interface PaymentFormProps {
 }
 
 const AGENTS = [
-  'John Mwangi',
-  'Mary Wanjiku',
-  'Peter Ochieng',
-  'Grace Njeri',
-  'David Kiprop',
+  'Directors',
+  'Tom',
+  'Happiness',
+  'Wilson',
+  'Kituku',
+  'Raymond',
+  'Sindani',
 ];
 
 const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: PaymentFormProps) => {
@@ -46,22 +48,22 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
     defaultValues: {
       amount: 0,
       paymentMethod: 'M-Pesa',
-      agentName: client?.salesAgent || '',
+      agentName: client?.sales_agent || '',
       authorizedBy: '',
     },
   });
 
   useEffect(() => {
     if (client) {
-      form.setValue('agentName', client.salesAgent);
+      form.setValue('agentName', client.sales_agent);
     }
     setReceiptData(null);
   }, [client, form]);
 
   const currentAmount = form.watch('amount') || 0;
-  const discountedPrice = client ? client.totalPrice - client.discount : 0;
+  const discountedPrice = client ? client.total_price - client.discount : 0;
   const newBalance = client ? Math.max(0, client.balance - currentAmount) : 0;
-  const newTotalPaid = client ? client.totalPaid + currentAmount : 0;
+  const newTotalPaid = client ? client.total_paid + currentAmount : 0;
 
   const handleGenerateReceipt = (data: PaymentFormData) => {
     if (!client) return;
@@ -75,9 +77,9 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
       }),
       clientName: client.name,
       clientPhone: client.phone,
-      projectName: client.projectName,
-      plotNumber: client.plotNumber,
-      totalPrice: client.totalPrice,
+      projectName: client.project_name,
+      plotNumber: client.plot_number,
+      totalPrice: client.total_price,
       discount: client.discount,
       discountedPrice,
       currentPayment: data.amount,
@@ -119,7 +121,6 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
         </DialogHeader>
 
         <div className="grid gap-6">
-          {/* Client Summary */}
           <div className="bg-muted/50 rounded-lg p-4">
             <h3 className="font-semibold mb-2">Client Summary</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
@@ -128,11 +129,11 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
               <span className="text-muted-foreground">Phone:</span>
               <span>{client.phone}</span>
               <span className="text-muted-foreground">Project:</span>
-              <span>{client.projectName}</span>
+              <span>{client.project_name}</span>
               <span className="text-muted-foreground">Plot:</span>
-              <span>{client.plotNumber}</span>
+              <span>{client.plot_number}</span>
               <span className="text-muted-foreground">Total Price:</span>
-              <span>{formatCurrency(client.totalPrice)}</span>
+              <span>{formatCurrency(client.total_price)}</span>
               <span className="text-muted-foreground">Discount:</span>
               <span className="text-primary">{formatCurrency(client.discount)}</span>
               <span className="text-muted-foreground">Discounted Price:</span>
@@ -144,7 +145,6 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
 
           <Separator />
 
-          {/* Payment Form */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleGenerateReceipt)} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -228,7 +228,6 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
                 />
               </div>
 
-              {/* Balance Preview */}
               <div className="bg-accent/30 rounded-lg p-4 mt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">New Balance After Payment:</span>
@@ -255,7 +254,6 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
             </form>
           </Form>
 
-          {/* Receipt Preview */}
           {receiptData && (
             <>
               <Separator />

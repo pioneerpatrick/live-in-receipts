@@ -30,22 +30,23 @@ interface ClientFormProps {
 }
 
 const PROJECTS = [
-  'Kamulu Phase 1',
-  'Kamulu Phase 2',
-  'Joska Gardens',
-  'Kangundo Road',
-  'Malaa Estate',
-  'Ruiru East',
-  'Juja Farm',
-  'Thika Greens',
+  'Konza Phase 1',
+  'Konza Phase 2',
+  'Konza Phase 3',
+  'Konza Phase 5',
+  'Leshaoo 1',
+  'Leshaoo 2',
+  'Rumuruti',
 ];
 
 const AGENTS = [
-  'John Mwangi',
-  'Mary Wanjiku',
-  'Peter Ochieng',
-  'Grace Njeri',
-  'David Kiprop',
+  'Directors',
+  'Tom',
+  'Happiness',
+  'Wilson',
+  'Kituku',
+  'Raymond',
+  'Sindani',
 ];
 
 const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
@@ -68,12 +69,12 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
       form.reset({
         name: client.name,
         phone: client.phone,
-        projectName: client.projectName,
-        plotNumber: client.plotNumber,
-        totalPrice: client.totalPrice,
+        projectName: client.project_name,
+        plotNumber: client.plot_number,
+        totalPrice: client.total_price,
         discount: client.discount,
-        initialPayment: client.totalPaid,
-        salesAgent: client.salesAgent,
+        initialPayment: client.total_paid,
+        salesAgent: client.sales_agent,
       });
     } else {
       form.reset({
@@ -127,7 +128,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="0712345678" {...field} />
+                      <Input placeholder="254712345678" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

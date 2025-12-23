@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Client } from '@/types/client';
-import { formatCurrency } from '@/lib/storage';
+import { formatCurrency } from '@/lib/supabaseStorage';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,8 +21,8 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onAddNew }: Clie
   const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone.includes(searchTerm) ||
-    client.plotNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.projectName.toLowerCase().includes(searchTerm.toLowerCase())
+    client.plot_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.project_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getBalanceStatus = (balance: number, totalPrice: number) => {
@@ -87,19 +87,19 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onAddNew }: Clie
                   <TableCell className="font-medium">{index + 1}</TableCell>
                   <TableCell className="font-medium">{client.name}</TableCell>
                   <TableCell>{client.phone}</TableCell>
-                  <TableCell>{client.projectName}</TableCell>
-                  <TableCell>{client.plotNumber}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(client.totalPrice)}</TableCell>
+                  <TableCell>{client.project_name}</TableCell>
+                  <TableCell>{client.plot_number}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(client.total_price)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(client.discount)}</TableCell>
                   <TableCell className="text-right text-primary font-medium">
-                    {formatCurrency(client.totalPaid)}
+                    {formatCurrency(client.total_paid)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Badge variant={getBalanceStatus(client.balance, client.totalPrice) as any}>
+                    <Badge variant={getBalanceStatus(client.balance, client.total_price) as any}>
                       {formatCurrency(client.balance)}
                     </Badge>
                   </TableCell>
-                  <TableCell>{client.salesAgent}</TableCell>
+                  <TableCell>{client.sales_agent}</TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-1">
                       <Button
