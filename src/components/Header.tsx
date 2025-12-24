@@ -1,4 +1,5 @@
-import { Mail, Phone, Globe, Home, LogOut, User, Shield } from 'lucide-react';
+import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -89,6 +90,14 @@ const Header = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {role === 'admin' && (
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link to="/admin" className="flex items-center">
+                        <Settings className="w-4 h-4 mr-2" />
+                        <span>Admin Panel</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                     <LogOut className="w-4 h-4 mr-2" />
                     <span>Logout</span>
