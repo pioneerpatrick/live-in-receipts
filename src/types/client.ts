@@ -10,6 +10,7 @@ export interface Client {
   total_price: number;
   discount: number;
   total_paid: number;
+  percent_paid: number;
   balance: number;
   sales_agent: string;
   commission: number;
