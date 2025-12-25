@@ -3,7 +3,8 @@
 
 import { Client } from '@/types/client';
 
-type ClientImport = Omit<Client, 'id' | 'created_at' | 'updated_at'>;
+// percent_paid is calculated by database trigger, so it's optional in import
+type ClientImport = Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid'>;
 
 // Helper to parse dates from various formats
 const parseDate = (dateStr: string | null): string | null => {

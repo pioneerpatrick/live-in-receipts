@@ -16,7 +16,7 @@ export const getClients = async (): Promise<Client[]> => {
   return data || [];
 };
 
-export const addClient = async (client: Omit<Client, 'id' | 'created_at' | 'updated_at'>): Promise<Client> => {
+export const addClient = async (client: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid'>): Promise<Client> => {
   const { data, error } = await supabase
     .from('clients')
     .insert(client)
@@ -122,8 +122,8 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-// Bulk import clients (for Excel data)
-export const bulkImportClients = async (clients: Omit<Client, 'id' | 'created_at' | 'updated_at'>[]): Promise<Client[]> => {
+// Bulk import clients (for Excel data) - percent_paid is calculated by DB trigger
+export const bulkImportClients = async (clients: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid'>[]): Promise<Client[]> => {
   const { data, error } = await supabase
     .from('clients')
     .insert(clients)
