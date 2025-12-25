@@ -15,9 +15,10 @@ import {
   deleteClient,
   addPayment,
   generateReceiptNumber,
+  formatCurrency,
 } from '@/lib/supabaseStorage';
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
-import { LayoutDashboard, FileText, Users } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, TrendingUp, Wallet, BadgeDollarSign } from 'lucide-react';
 
 const Index = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -185,9 +186,19 @@ const Index = () => {
     toast.success('PDF receipt generated!');
   };
 
+  // Dashboard summary calculations
   const totalClients = clients.length;
   const totalReceivables = clients.reduce((sum, c) => sum + c.balance, 0);
   const totalCollected = clients.reduce((sum, c) => sum + c.total_paid, 0);
+  
+  // Accounting summary (YTD totals from Excel bottom section)
+  const totalSalesValue = clients.reduce((sum, c) => sum + c.total_price, 0);
+  const totalDiscount = clients.reduce((sum, c) => sum + c.discount, 0);
+  const totalCommission = clients.reduce((sum, c) => sum + c.commission, 0);
+  const totalCommissionReceived = clients.reduce((sum, c) => sum + c.commission_received, 0);
+  const totalCommissionBalance = clients.reduce((sum, c) => sum + c.commission_balance, 0);
+  const completedClients = clients.filter(c => c.status === 'completed' || c.balance === 0).length;
+  const ongoingClients = clients.filter(c => c.status === 'ongoing' && c.balance > 0).length;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -195,6 +206,7 @@ const Index = () => {
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8">
+        {/* Main Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 animate-fade-in">
           <div className="bg-card rounded-lg p-6 card-shadow card-hover">
             <div className="flex items-center gap-4">
@@ -233,6 +245,54 @@ const Index = () => {
                   KES {totalReceivables.toLocaleString()}
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Accounting Summary Section (YTD Totals) */}
+        <div className="bg-card rounded-lg p-6 card-shadow mb-8 animate-fade-in">
+          <h3 className="font-heading text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            YTD Accounting Summary
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <div className="text-center p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">Total Sales Value</p>
+              <p className="text-lg font-bold text-foreground">{formatCurrency(totalSalesValue)}</p>
+            </div>
+            <div className="text-center p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">Total Discount</p>
+              <p className="text-lg font-bold text-orange-600">{formatCurrency(totalDiscount)}</p>
+            </div>
+            <div className="text-center p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">Total Collected</p>
+              <p className="text-lg font-bold text-primary">{formatCurrency(totalCollected)}</p>
+            </div>
+            <div className="text-center p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">Total Balance</p>
+              <p className="text-lg font-bold text-destructive">{formatCurrency(totalReceivables)}</p>
+            </div>
+            <div className="text-center p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">Total Commission</p>
+              <p className="text-lg font-bold text-secondary">{formatCurrency(totalCommission)}</p>
+            </div>
+            <div className="text-center p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">Comm. Received</p>
+              <p className="text-lg font-bold text-green-600">{formatCurrency(totalCommissionReceived)}</p>
+            </div>
+            <div className="text-center p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">Comm. Balance</p>
+              <p className="text-lg font-bold text-amber-600">{formatCurrency(totalCommissionBalance)}</p>
+            </div>
+          </div>
+          <div className="flex gap-4 mt-4 pt-4 border-t border-border">
+            <div className="flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-green-600" />
+              <span className="text-sm text-muted-foreground">Completed: <span className="font-semibold text-foreground">{completedClients}</span></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <BadgeDollarSign className="w-4 h-4 text-amber-600" />
+              <span className="text-sm text-muted-foreground">Ongoing: <span className="font-semibold text-foreground">{ongoingClients}</span></span>
             </div>
           </div>
         </div>

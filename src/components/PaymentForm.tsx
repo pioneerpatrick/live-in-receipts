@@ -16,6 +16,7 @@ const paymentSchema = z.object({
   amount: z.coerce.number().min(1, 'Payment amount must be greater than 0'),
   paymentMethod: z.enum(['Cash', 'Bank Transfer', 'M-Pesa', 'Cheque']),
   agentName: z.string().min(1, 'Agent name is required'),
+  projectName: z.string().min(1, 'Project name is required'),
   authorizedBy: z.string().optional(),
 });
 
@@ -29,16 +30,6 @@ interface PaymentFormProps {
   onGeneratePDF: (receiptData: ReceiptData) => void;
 }
 
-const AGENTS = [
-  'Directors',
-  'Tom',
-  'Happiness',
-  'Wilson',
-  'Kituku',
-  'Raymond',
-  'Sindani',
-];
-
 const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: PaymentFormProps) => {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [receiptNumber] = useState(generateReceiptNumber());
@@ -49,6 +40,7 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
       amount: 0,
       paymentMethod: 'M-Pesa',
       agentName: client?.sales_agent || '',
+      projectName: client?.project_name || '',
       authorizedBy: '',
     },
   });
@@ -56,6 +48,7 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
   useEffect(() => {
     if (client) {
       form.setValue('agentName', client.sales_agent);
+      form.setValue('projectName', client.project_name);
     }
     setReceiptData(null);
   }, [client, form]);
@@ -77,7 +70,7 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
       }),
       clientName: client.name,
       clientPhone: client.phone,
-      projectName: client.project_name,
+      projectName: data.projectName,
       plotNumber: client.plot_number,
       totalPrice: client.total_price,
       discount: client.discount,
@@ -194,20 +187,9 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Agent Name</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select agent" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {AGENTS.map(agent => (
-                            <SelectItem key={agent} value={agent}>
-                              {agent}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input placeholder="Enter agent name" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -215,18 +197,32 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
 
                 <FormField
                   control={form.control}
-                  name="authorizedBy"
+                  name="projectName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Authorized By (Optional)</FormLabel>
+                      <FormLabel>Project Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Manager name" {...field} />
+                        <Input placeholder="Enter project name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="authorizedBy"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Authorized By (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Manager name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="bg-accent/30 rounded-lg p-4 mt-4">
                 <div className="flex justify-between items-center">
