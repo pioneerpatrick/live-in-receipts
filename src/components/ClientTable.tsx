@@ -5,17 +5,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer } from 'lucide-react';
+import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History } from 'lucide-react';
 
 interface ClientTableProps {
   clients: Client[];
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
   onAddPayment: (client: Client) => void;
+  onViewHistory: (client: Client) => void;
   onAddNew: () => void;
 }
 
-const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onAddNew }: ClientTableProps) => {
+const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, onAddNew }: ClientTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredClients = clients.filter(client =>
@@ -235,6 +236,15 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onAddNew }: Clie
                   <TableCell>{client.sales_agent}</TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onViewHistory(client)}
+                        title="View Payment History"
+                        className="hover:bg-blue-500/10 hover:text-blue-500"
+                      >
+                        <History className="w-4 h-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
