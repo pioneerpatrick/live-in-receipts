@@ -34,7 +34,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onAddNew }: Clie
   const handleExportCSV = () => {
     const headers = [
       '#', 'Client Name', 'Phone', 'Project', 'Plot No.', 'Unit Price', 'No. of Plots',
-      'Total Price', 'Discount', 'Total Paid', 'Balance', 'Sales Agent', 
+      'Total Price', 'Discount', 'Total Paid', '% Paid', 'Balance', 'Sales Agent', 
       'Commission', 'Comm. Received', 'Comm. Balance', 'Payment Period',
       'Sale Date', 'Completion Date', 'Next Payment Date', 'Status', 'Notes'
     ];
@@ -50,6 +50,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onAddNew }: Clie
       client.total_price,
       client.discount,
       client.total_paid,
+      client.percent_paid ?? 0,
       client.balance,
       client.sales_agent,
       client.commission,
@@ -197,6 +198,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onAddNew }: Clie
               <TableHead className="font-semibold text-right">Total Price</TableHead>
               <TableHead className="font-semibold text-right">Discount</TableHead>
               <TableHead className="font-semibold text-right">Total Paid</TableHead>
+              <TableHead className="font-semibold text-right">% Paid</TableHead>
               <TableHead className="font-semibold text-right">Balance</TableHead>
               <TableHead className="font-semibold">Agent</TableHead>
               <TableHead className="font-semibold text-center">Actions</TableHead>
@@ -205,7 +207,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onAddNew }: Clie
           <TableBody>
             {filteredClients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
                   {searchTerm ? 'No clients found matching your search.' : 'No clients yet. Add your first client to get started.'}
                 </TableCell>
               </TableRow>
@@ -221,6 +223,9 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onAddNew }: Clie
                   <TableCell className="text-right">{formatCurrency(client.discount)}</TableCell>
                   <TableCell className="text-right text-primary font-medium">
                     {formatCurrency(client.total_paid)}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {(client.percent_paid ?? 0).toFixed(1)}%
                   </TableCell>
                   <TableCell className="text-right">
                     <Badge variant={getBalanceStatus(client.balance, client.total_price) as any}>
