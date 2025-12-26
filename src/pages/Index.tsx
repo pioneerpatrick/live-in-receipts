@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import ClientTable from '@/components/ClientTable';
 import ClientForm from '@/components/ClientForm';
 import PaymentForm from '@/components/PaymentForm';
+import { PaymentHistory } from '@/components/PaymentHistory';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { Client, ReceiptData } from '@/types/client';
 import {
@@ -24,6 +25,7 @@ const Index = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [clientFormOpen, setClientFormOpen] = useState(false);
   const [paymentFormOpen, setPaymentFormOpen] = useState(false);
+  const [paymentHistoryOpen, setPaymentHistoryOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,10 @@ const Index = () => {
     setPaymentFormOpen(true);
   };
 
-  const handleClientFormSubmit = async (data: any) => {
+  const handleViewHistory = (client: Client) => {
+    setSelectedClient(client);
+    setPaymentHistoryOpen(true);
+  };
     try {
       if (selectedClient) {
         const discountedPrice = data.totalPrice - data.discount;
@@ -302,6 +307,7 @@ const Index = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onAddPayment={handleAddPayment}
+          onViewHistory={handleViewHistory}
           onAddNew={handleAddNew}
         />
       </main>
@@ -327,6 +333,15 @@ const Index = () => {
         client={selectedClient}
         onSubmit={handlePaymentSubmit}
         onGeneratePDF={handleGeneratePDF}
+      />
+
+      <PaymentHistory
+        open={paymentHistoryOpen}
+        onClose={() => {
+          setPaymentHistoryOpen(false);
+          setSelectedClient(null);
+        }}
+        client={selectedClient}
       />
 
       <DeleteConfirmDialog
