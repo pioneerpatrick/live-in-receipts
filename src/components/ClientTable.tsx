@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History } from 'lucide-react';
+import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload } from 'lucide-react';
 
 interface ClientTableProps {
   clients: Client[];
@@ -14,9 +14,10 @@ interface ClientTableProps {
   onAddPayment: (client: Client) => void;
   onViewHistory: (client: Client) => void;
   onAddNew: () => void;
+  onImportExcel: () => void;
 }
 
-const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, onAddNew }: ClientTableProps) => {
+const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, onAddNew, onImportExcel }: ClientTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredClients = clients.filter(client =>
@@ -172,6 +173,9 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
               />
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" size="icon" onClick={onImportExcel} title="Import from Excel">
+                <Upload className="w-4 h-4" />
+              </Button>
               <Button variant="outline" size="icon" onClick={handleExportCSV} title="Export to CSV">
                 <Download className="w-4 h-4" />
               </Button>

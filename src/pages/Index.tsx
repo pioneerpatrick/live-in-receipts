@@ -7,6 +7,7 @@ import ClientTable from '@/components/ClientTable';
 import ClientForm from '@/components/ClientForm';
 import PaymentForm from '@/components/PaymentForm';
 import { PaymentHistory } from '@/components/PaymentHistory';
+import { ExcelUploadDialog } from '@/components/ExcelUploadDialog';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { Client, ReceiptData } from '@/types/client';
 import {
@@ -26,6 +27,7 @@ const Index = () => {
   const [clientFormOpen, setClientFormOpen] = useState(false);
   const [paymentFormOpen, setPaymentFormOpen] = useState(false);
   const [paymentHistoryOpen, setPaymentHistoryOpen] = useState(false);
+  const [excelUploadOpen, setExcelUploadOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
@@ -311,6 +313,7 @@ const Index = () => {
           onAddPayment={handleAddPayment}
           onViewHistory={handleViewHistory}
           onAddNew={handleAddNew}
+          onImportExcel={() => setExcelUploadOpen(true)}
         />
       </main>
 
@@ -345,6 +348,12 @@ const Index = () => {
         }}
         client={selectedClient}
         onClientUpdated={loadClients}
+      />
+
+      <ExcelUploadDialog
+        open={excelUploadOpen}
+        onClose={() => setExcelUploadOpen(false)}
+        onImportComplete={loadClients}
       />
 
       <DeleteConfirmDialog
