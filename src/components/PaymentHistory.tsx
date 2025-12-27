@@ -4,9 +4,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Client, Payment } from '@/types/client';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Client, Payment, ReceiptData } from '@/types/client';
 import { getClientPayments, formatCurrency } from '@/lib/supabaseStorage';
-import { FileText, Loader2 } from 'lucide-react';
+import { generatePDFReceipt } from '@/lib/pdfGenerator';
+import { FileText, Loader2, Printer } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PaymentHistoryProps {
   open: boolean;
@@ -45,6 +48,39 @@ export const PaymentHistory = ({ open, onClose, client }: PaymentHistoryProps) =
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handlePrintReceipt = (payment: Payment) => {
+    if (!client) return;
+
+    const discountedPrice = client.total_price - client.discount;
+    const totalPaidAtPayment = discountedPrice - payment.new_balance;
+
+    const receiptData: ReceiptData = {
+      receiptNumber: payment.receipt_number,
+      date: new Date(payment.payment_date).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }),
+      clientName: client.name,
+      clientPhone: client.phone || '',
+      projectName: client.project_name,
+      plotNumber: client.plot_number,
+      totalPrice: client.total_price,
+      discount: client.discount,
+      discountedPrice: discountedPrice,
+      previousBalance: payment.previous_balance,
+      currentPayment: payment.amount,
+      totalPaid: totalPaidAtPayment,
+      remainingBalance: payment.new_balance,
+      paymentMethod: payment.payment_method,
+      agentName: payment.agent_name || client.sales_agent || '',
+      authorizedBy: payment.authorized_by || '',
+    };
+
+    generatePDFReceipt(receiptData);
+    toast.success(`Receipt ${payment.receipt_number} generated!`);
   };
 
   if (!client) return null;
@@ -113,7 +149,7 @@ export const PaymentHistory = ({ open, onClose, client }: PaymentHistoryProps) =
                   <TableHead className="text-right">Prev. Balance</TableHead>
                   <TableHead className="text-right">New Balance</TableHead>
                   <TableHead>Agent</TableHead>
-                  <TableHead>Authorized By</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -138,7 +174,25 @@ export const PaymentHistory = ({ open, onClose, client }: PaymentHistoryProps) =
                       {formatCurrency(payment.new_balance)}
                     </TableCell>
                     <TableCell>{payment.agent_name || '-'}</TableCell>
-                    <TableCell>{payment.authorized_by || '-'}</TableCell>
+                    <TableCell className="text-center">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handlePrintReceipt(payment)}
+                              className="h-8 w-8"
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Print Receipt</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
