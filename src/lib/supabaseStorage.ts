@@ -89,6 +89,34 @@ export const addPayment = async (payment: Omit<Payment, 'id' | 'created_at'>): P
   return data;
 };
 
+export const updatePayment = async (id: string, updates: Partial<Payment>): Promise<Payment> => {
+  const { data, error } = await supabase
+    .from('payments')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error updating payment:', error);
+    throw error;
+  }
+  
+  return data;
+};
+
+export const deletePayment = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('payments')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error deleting payment:', error);
+    throw error;
+  }
+};
+
 export const getClientPayments = async (clientId: string): Promise<Payment[]> => {
   const { data, error } = await supabase
     .from('payments')

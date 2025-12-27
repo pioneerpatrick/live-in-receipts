@@ -344,6 +344,7 @@ const Index = () => {
           setSelectedClient(null);
         }}
         client={selectedClient}
+        onClientUpdated={loadClients}
       />
 
       <DeleteConfirmDialog
