@@ -71,6 +71,8 @@ const Index = () => {
     setSelectedClient(client);
     setPaymentHistoryOpen(true);
   };
+
+  const handleClientFormSubmit = async (data: any) => {
     try {
       if (selectedClient) {
         const discountedPrice = data.totalPrice - data.discount;
