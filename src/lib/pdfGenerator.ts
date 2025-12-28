@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import { ReceiptData } from '@/types/client';
 import signatureImage from '@/assets/signature.png';
+import logoImage from '@/assets/logo.jpg';
 
 export const generatePDFReceipt = (receipt: ReceiptData): void => {
   const doc = new jsPDF();
@@ -16,28 +17,31 @@ export const generatePDFReceipt = (receipt: ReceiptData): void => {
   
   // Header background
   doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, 45, 'F');
+  doc.rect(0, 0, pageWidth, 50, 'F');
   
-  // Company Name
+  // Add logo
+  doc.addImage(logoImage, 'JPEG', 15, 5, 25, 25);
+  
+  // Company Name (positioned next to logo)
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text('LIVE-IN PROPERTIES', pageWidth / 2, y, { align: 'center' });
+  doc.text('LIVE-IN PROPERTIES', pageWidth / 2 + 10, y, { align: 'center' });
   
   y += 10;
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Genuine plots with ready title deeds', pageWidth / 2, y, { align: 'center' });
+  doc.text('Genuine plots with ready title deeds', pageWidth / 2 + 10, y, { align: 'center' });
   
-  y += 7;
+  y += 6;
   doc.setFontSize(8);
-  doc.text('+254 746 499 499  |  liveinpropertiesltd@gmail.com  |  info@liveinproperties.co.ke', pageWidth / 2, y, { align: 'center' });
+  doc.text('+254 746 499 499  |  liveinpropertiesltd@gmail.com  |  info@liveinproperties.co.ke', pageWidth / 2 + 10, y, { align: 'center' });
   
   y += 5;
-  doc.text('@Live-IN Properties  |  www.liveinproperties.co.ke  |  Kitengela Africa House', pageWidth / 2, y, { align: 'center' });
+  doc.text('@Live-IN Properties  |  www.liveinproperties.co.ke  |  Kitengela Africa House', pageWidth / 2 + 10, y, { align: 'center' });
   
   // Receipt Title
-  y = 55;
+  y = 60;
   doc.setTextColor(...secondaryColor);
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
