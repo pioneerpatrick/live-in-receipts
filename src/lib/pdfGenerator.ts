@@ -9,12 +9,32 @@ const COMPANY_WEBSITE = 'https://live-inproperties.co.ke';
 export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   
   // Colors
   const primaryColor: [number, number, number] = [0, 150, 136]; // Teal
   const secondaryColor: [number, number, number] = [25, 118, 210]; // Blue
   const textColor: [number, number, number] = [33, 33, 33];
   const mutedColor: [number, number, number] = [117, 117, 117];
+  
+  // Add watermark first (behind all content)
+  doc.saveGraphicsState();
+  doc.setGState(new (doc as any).GState({ opacity: 0.08 }));
+  doc.setTextColor(0, 150, 136);
+  doc.setFontSize(60);
+  doc.setFont('helvetica', 'bold');
+  
+  // Rotate and center the watermark text
+  const watermarkText = 'LIVE-IN PROPERTIES';
+  const centerX = pageWidth / 2;
+  const centerY = pageHeight / 2;
+  
+  // Apply rotation transform
+  doc.text(watermarkText, centerX, centerY, { 
+    align: 'center',
+    angle: 45
+  });
+  doc.restoreGraphicsState();
   
   let y = 20;
   
