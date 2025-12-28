@@ -1,9 +1,12 @@
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
 import { ReceiptData } from '@/types/client';
 import signatureImage from '@/assets/signature.png';
 import logoImage from '@/assets/logo.jpg';
 
-export const generatePDFReceipt = (receipt: ReceiptData): void => {
+const COMPANY_WEBSITE = 'https://live-inproperties.co.ke';
+
+export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
@@ -180,6 +183,29 @@ export const generatePDFReceipt = (receipt: ReceiptData): void => {
   doc.setTextColor(...mutedColor);
   doc.setFontSize(8);
   doc.text('Authorized Signature', pageWidth - 50, y, { align: 'center' });
+  
+  // Generate QR Code
+  try {
+    const qrCodeDataUrl = await QRCode.toDataURL(COMPANY_WEBSITE, {
+      width: 100,
+      margin: 1,
+      color: {
+        dark: '#009688',
+        light: '#ffffff'
+      }
+    });
+    
+    // Add QR code to bottom left
+    const qrY = doc.internal.pageSize.getHeight() - 55;
+    doc.addImage(qrCodeDataUrl, 'PNG', 20, qrY, 25, 25);
+    
+    // QR code label
+    doc.setTextColor(...mutedColor);
+    doc.setFontSize(7);
+    doc.text('Scan to verify', 32.5, qrY + 28, { align: 'center' });
+  } catch (error) {
+    console.error('Failed to generate QR code:', error);
+  }
   
   // Footer
   y = doc.internal.pageSize.getHeight() - 30;

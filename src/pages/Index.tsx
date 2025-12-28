@@ -188,8 +188,8 @@ const Index = () => {
     }
   };
 
-  const handleGeneratePDF = (receiptData: ReceiptData) => {
-    generatePDFReceipt(receiptData);
+  const handleGeneratePDF = async (receiptData: ReceiptData) => {
+    await generatePDFReceipt(receiptData);
     toast.success('PDF receipt generated!');
   };
 

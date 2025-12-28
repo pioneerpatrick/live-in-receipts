@@ -60,7 +60,7 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
     });
   };
 
-  const handlePrintReceipt = (payment: Payment) => {
+  const handlePrintReceipt = async (payment: Payment) => {
     if (!client) return;
 
     const discountedPrice = client.total_price - client.discount;
@@ -89,7 +89,7 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
       authorizedBy: payment.authorized_by || '',
     };
 
-    generatePDFReceipt(receiptData);
+    await generatePDFReceipt(receiptData);
     toast.success(`Receipt ${payment.receipt_number} generated!`);
   };
 
