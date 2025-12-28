@@ -55,17 +55,12 @@ const COLUMN_MAPPING: Record<string, keyof ClientImport> = {
   'sales agent': 'sales_agent',
   'sales_agent': 'sales_agent',
   'agent': 'sales_agent',
-  'commission': 'commission',
-  'comm': 'commission',
-  'commission received': 'commission_received',
-  'comm received': 'commission_received',
-  'commission_received': 'commission_received',
-  'commission balance': 'commission_balance',
-  'comm balance': 'commission_balance',
-  'commission_balance': 'commission_balance',
   'payment period': 'payment_period',
   'payment_period': 'payment_period',
   'period': 'payment_period',
+  'payment type': 'payment_type',
+  'payment_type': 'payment_type',
+  'type': 'payment_type',
   'completion date': 'completion_date',
   'completion_date': 'completion_date',
   'next payment date': 'next_payment_date',
@@ -181,9 +176,7 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
           total_paid: 0,
           balance: 0,
           sales_agent: '',
-          commission: 0,
-          commission_received: 0,
-          commission_balance: 0,
+          payment_type: 'installments',
           payment_period: '',
           completion_date: null,
           next_payment_date: null,
@@ -205,6 +198,7 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
             case 'plot_number':
             case 'sales_agent':
             case 'payment_period':
+            case 'payment_type':
             case 'notes':
             case 'status':
               (client as any)[field] = value?.toString() || '';
@@ -215,9 +209,6 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
             case 'discount':
             case 'total_paid':
             case 'balance':
-            case 'commission':
-            case 'commission_received':
-            case 'commission_balance':
               (client as any)[field] = parseNumber(value);
               break;
             case 'completion_date':

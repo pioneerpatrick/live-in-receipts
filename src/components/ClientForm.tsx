@@ -18,6 +18,7 @@ const clientSchema = z.object({
   discount: z.coerce.number().min(0, 'Discount cannot be negative'),
   initialPayment: z.coerce.number().min(0, 'Initial payment cannot be negative'),
   salesAgent: z.string().min(1, 'Sales agent is required'),
+  paymentType: z.enum(['installments', 'cash']),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -28,26 +29,6 @@ interface ClientFormProps {
   onSubmit: (data: ClientFormData) => void;
   client?: Client | null;
 }
-
-const PROJECTS = [
-  'Konza Phase 1',
-  'Konza Phase 2',
-  'Konza Phase 3',
-  'Konza Phase 5',
-  'Leshaoo 1',
-  'Leshaoo 2',
-  'Rumuruti',
-];
-
-const AGENTS = [
-  'Directors',
-  'Tom',
-  'Happiness',
-  'Wilson',
-  'Kituku',
-  'Raymond',
-  'Sindani',
-];
 
 const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
   const form = useForm<ClientFormData>({
@@ -61,6 +42,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
       discount: 0,
       initialPayment: 0,
       salesAgent: '',
+      paymentType: 'installments',
     },
   });
 
@@ -75,6 +57,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
         discount: client.discount,
         initialPayment: client.total_paid,
         salesAgent: client.sales_agent,
+        paymentType: (client.payment_type as 'installments' | 'cash') || 'installments',
       });
     } else {
       form.reset({
@@ -86,6 +69,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
         discount: 0,
         initialPayment: 0,
         salesAgent: '',
+        paymentType: 'installments',
       });
     }
   }, [client, form]);
@@ -143,20 +127,9 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project Name</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select project" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {PROJECTS.map(project => (
-                          <SelectItem key={project} value={project}>
-                            {project}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input placeholder="Enter project name" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -223,30 +196,43 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
               )}
             </div>
 
-            <FormField
-              control={form.control}
-              name="salesAgent"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sales Agent</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="salesAgent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sales Agent</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select agent" />
-                      </SelectTrigger>
+                      <Input placeholder="Enter agent name" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      {AGENTS.map(agent => (
-                        <SelectItem key={agent} value={agent}>
-                          {agent}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="paymentType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Payment Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select payment type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="installments">Installments</SelectItem>
+                        <SelectItem value="cash">Cash (Full Payment)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={onClose}>
