@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { ReceiptData } from '@/types/client';
+import signatureImage from '@/assets/signature.png';
 
 export const generatePDFReceipt = (receipt: ReceiptData): void => {
   const doc = new jsPDF();
@@ -159,8 +160,12 @@ export const generatePDFReceipt = (receipt: ReceiptData): void => {
     doc.text(receipt.authorizedBy, rightCol + 35, y);
   }
   
+  // Signature image
+  y += 15;
+  doc.addImage(signatureImage, 'PNG', pageWidth - 75, y - 15, 50, 25);
+  
   // Signature line
-  y += 20;
+  y += 15;
   doc.setDrawColor(...mutedColor);
   doc.setLineWidth(0.2);
   doc.line(pageWidth - 80, y, pageWidth - 20, y);
