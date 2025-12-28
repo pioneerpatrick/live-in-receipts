@@ -1,11 +1,16 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { Client } from '@/types/client';
 import { formatCurrency } from '@/lib/supabaseStorage';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload, CalendarIcon, X, Filter } from 'lucide-react';
 
 interface ClientTableProps {
   clients: Client[];
@@ -17,15 +22,51 @@ interface ClientTableProps {
   onImportExcel: () => void;
 }
 
+type DateFilterType = 'none' | 'sale_date' | 'completion_date';
+
 const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, onAddNew, onImportExcel }: ClientTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilterType, setDateFilterType] = useState<DateFilterType>('none');
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [showFilters, setShowFilters] = useState(false);
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm) ||
-    client.plot_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.project_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClients = clients.filter(client => {
+    // Text search filter
+    const matchesSearch = 
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.phone.includes(searchTerm) ||
+      client.plot_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.project_name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    // Date range filter
+    if (dateFilterType !== 'none' && (startDate || endDate)) {
+      const dateField = dateFilterType === 'sale_date' ? client.sale_date : client.completion_date;
+      
+      if (!dateField) return false;
+      
+      const clientDate = new Date(dateField);
+      
+      if (startDate && clientDate < startDate) return false;
+      if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (clientDate > endOfDay) return false;
+      }
+    }
+
+    return true;
+  });
+
+  const clearDateFilters = () => {
+    setDateFilterType('none');
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
+
+  const hasActiveFilters = dateFilterType !== 'none' && (startDate || endDate);
 
   const getBalanceStatus = (balance: number, totalPrice: number) => {
     if (balance === 0) return 'success';
@@ -154,37 +195,143 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
   return (
     <div className="bg-card rounded-lg card-shadow animate-fade-in">
       <div className="p-4 md:p-6 border-b border-border">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h2 className="font-heading text-xl font-semibold text-foreground">
-            Client & Payment Database
-          </h2>
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-none">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search clients..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full sm:w-64"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="icon" onClick={onImportExcel} title="Import from Excel">
-                <Upload className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={handleExportCSV} title="Export to CSV">
-                <Download className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={handlePrint} title="Print Table">
-                <Printer className="w-4 h-4" />
-              </Button>
-              <Button onClick={onAddNew} className="gap-2">
-                <UserPlus className="w-4 h-4" />
-                Add Client
-              </Button>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <h2 className="font-heading text-xl font-semibold text-foreground">
+              Client & Payment Database
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search clients..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full sm:w-64"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant={showFilters ? "secondary" : "outline"} 
+                  size="icon" 
+                  onClick={() => setShowFilters(!showFilters)} 
+                  title="Toggle Date Filters"
+                  className={cn(hasActiveFilters && "border-primary text-primary")}
+                >
+                  <Filter className="w-4 h-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={onImportExcel} title="Import from Excel">
+                  <Upload className="w-4 h-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={handleExportCSV} title="Export to CSV">
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={handlePrint} title="Print Table">
+                  <Printer className="w-4 h-4" />
+                </Button>
+                <Button onClick={onAddNew} className="gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Add Client
+                </Button>
+              </div>
             </div>
           </div>
+
+          {/* Date Range Filters */}
+          {showFilters && (
+            <div className="flex flex-wrap items-end gap-4 p-4 bg-muted/30 rounded-lg">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Filter by</label>
+                <Select value={dateFilterType} onValueChange={(value: DateFilterType) => setDateFilterType(value)}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Select date type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No filter</SelectItem>
+                    <SelectItem value="sale_date">Sale Date</SelectItem>
+                    <SelectItem value="completion_date">Completion Date</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {dateFilterType !== 'none' && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">From</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-40 justify-start text-left font-normal",
+                            !startDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {startDate ? format(startDate, "PPP") : "Pick date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={startDate}
+                          onSelect={setStartDate}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">To</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-40 justify-start text-left font-normal",
+                            !endDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {endDate ? format(endDate, "PPP") : "Pick date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={endDate}
+                          onSelect={setEndDate}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={clearDateFilters} className="gap-1">
+                      <X className="w-4 h-4" />
+                      Clear
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="gap-1">
+                <Filter className="w-3 h-3" />
+                Filtering by {dateFilterType === 'sale_date' ? 'Sale Date' : 'Completion Date'}
+                {startDate && ` from ${format(startDate, 'PP')}`}
+                {endDate && ` to ${format(endDate, 'PP')}`}
+              </Badge>
+            </div>
+          )}
         </div>
       </div>
 
@@ -210,7 +357,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
             {filteredClients.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
-                  {searchTerm ? 'No clients found matching your search.' : 'No clients yet. Add your first client to get started.'}
+                  {searchTerm || hasActiveFilters ? 'No clients found matching your filters.' : 'No clients yet. Add your first client to get started.'}
                 </TableCell>
               </TableRow>
             ) : (
