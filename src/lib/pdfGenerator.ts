@@ -29,9 +29,12 @@ export const generatePDFReceipt = (receipt: ReceiptData): void => {
   doc.setFont('helvetica', 'normal');
   doc.text('Genuine plots with ready title deeds', pageWidth / 2, y, { align: 'center' });
   
-  y += 8;
-  doc.setFontSize(9);
-  doc.text('Email: liveinproperties2021@gmail.com | Phone: 0746499499 | Web: live-inproperties.co.ke', pageWidth / 2, y, { align: 'center' });
+  y += 7;
+  doc.setFontSize(8);
+  doc.text('+254 746 499 499  |  liveinpropertiesltd@gmail.com  |  info@liveinproperties.co.ke', pageWidth / 2, y, { align: 'center' });
+  
+  y += 5;
+  doc.text('@Live-IN Properties  |  www.liveinproperties.co.ke  |  Kitengela Africa House', pageWidth / 2, y, { align: 'center' });
   
   // Receipt Title
   y = 55;
@@ -178,16 +181,12 @@ export const generatePDFReceipt = (receipt: ReceiptData): void => {
   y = doc.internal.pageSize.getHeight() - 30;
   
   doc.setFillColor(...secondaryColor);
-  doc.rect(0, y - 5, pageWidth, 35, 'F');
+  doc.rect(0, y - 5, pageWidth, 25, 'F');
   
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'italic');
-  doc.text('We offer a flexible 12-month payment plan for your convenience.', pageWidth / 2, y + 5, { align: 'center' });
-  
-  y += 12;
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('Thank you for choosing Live-IN Properties. We Secure your Future.', pageWidth / 2, y, { align: 'center' });
+  doc.text('Thank you for choosing Live-IN Properties. We Secure your Future.', pageWidth / 2, y + 5, { align: 'center' });
   
   // Save the PDF
   doc.save(`Receipt_${receipt.receiptNumber}.pdf`);
