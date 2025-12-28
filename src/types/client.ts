@@ -13,9 +13,7 @@ export interface Client {
   percent_paid: number;
   balance: number;
   sales_agent: string;
-  commission: number;
-  commission_received: number;
-  commission_balance: number;
+  payment_type?: string; // 'installments' or 'cash' - optional for backwards compatibility
   payment_period: string;
   completion_date: string | null;
   next_payment_date: string | null;
@@ -58,6 +56,7 @@ export interface ReceiptData {
   totalPaid: number;
   agentName: string;
   authorizedBy?: string;
+  paymentType?: string;
 }
 
 export interface UserProfile {

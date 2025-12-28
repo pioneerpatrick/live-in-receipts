@@ -37,8 +37,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
     const headers = [
       '#', 'Client Name', 'Phone', 'Project', 'Plot No.', 'Unit Price', 'No. of Plots',
       'Total Price', 'Discount', 'Total Paid', '% Paid', 'Balance', 'Sales Agent', 
-      'Commission', 'Comm. Received', 'Comm. Balance', 'Payment Period',
-      'Sale Date', 'Completion Date', 'Next Payment Date', 'Status', 'Notes'
+      'Payment Type', 'Payment Period', 'Sale Date', 'Completion Date', 'Next Payment Date', 'Status', 'Notes'
     ];
 
     const rows = filteredClients.map((client, index) => [
@@ -55,9 +54,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
       client.percent_paid ?? 0,
       client.balance,
       client.sales_agent,
-      client.commission,
-      client.commission_received,
-      client.commission_balance,
+      client.payment_type || 'installments',
       client.payment_period,
       client.sale_date || '',
       client.completion_date || '',

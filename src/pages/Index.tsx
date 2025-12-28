@@ -105,9 +105,7 @@ const Index = () => {
           total_paid: data.initialPayment,
           balance: initialBalance,
           sales_agent: data.salesAgent,
-          commission: 0,
-          commission_received: 0,
-          commission_balance: 0,
+          payment_type: data.paymentType || 'installments',
           payment_period: '',
           completion_date: null,
           next_payment_date: null,
@@ -200,12 +198,9 @@ const Index = () => {
   const totalReceivables = clients.reduce((sum, c) => sum + c.balance, 0);
   const totalCollected = clients.reduce((sum, c) => sum + c.total_paid, 0);
   
-  // Accounting summary (YTD totals from Excel bottom section)
+  // Accounting summary (YTD totals)
   const totalSalesValue = clients.reduce((sum, c) => sum + c.total_price, 0);
   const totalDiscount = clients.reduce((sum, c) => sum + c.discount, 0);
-  const totalCommission = clients.reduce((sum, c) => sum + c.commission, 0);
-  const totalCommissionReceived = clients.reduce((sum, c) => sum + c.commission_received, 0);
-  const totalCommissionBalance = clients.reduce((sum, c) => sum + c.commission_balance, 0);
   const completedClients = clients.filter(c => c.status === 'completed' || c.balance === 0).length;
   const ongoingClients = clients.filter(c => c.status === 'ongoing' && c.balance > 0).length;
 
@@ -264,7 +259,7 @@ const Index = () => {
             <TrendingUp className="w-5 h-5 text-primary" />
             YTD Accounting Summary
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-muted/30 rounded-lg">
               <p className="text-xs text-muted-foreground">Total Sales Value</p>
               <p className="text-lg font-bold text-foreground">{formatCurrency(totalSalesValue)}</p>
@@ -280,18 +275,6 @@ const Index = () => {
             <div className="text-center p-3 bg-muted/30 rounded-lg">
               <p className="text-xs text-muted-foreground">Total Balance</p>
               <p className="text-lg font-bold text-destructive">{formatCurrency(totalReceivables)}</p>
-            </div>
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground">Total Commission</p>
-              <p className="text-lg font-bold text-secondary">{formatCurrency(totalCommission)}</p>
-            </div>
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground">Comm. Received</p>
-              <p className="text-lg font-bold text-green-600">{formatCurrency(totalCommissionReceived)}</p>
-            </div>
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground">Comm. Balance</p>
-              <p className="text-lg font-bold text-amber-600">{formatCurrency(totalCommissionBalance)}</p>
             </div>
           </div>
           <div className="flex gap-4 mt-4 pt-4 border-t border-border">
