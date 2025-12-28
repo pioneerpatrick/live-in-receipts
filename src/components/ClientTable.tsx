@@ -30,6 +30,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'completed'>('all');
 
   const filteredClients = clients.filter(client => {
     // Text search filter
@@ -40,6 +41,13 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
       client.project_name.toLowerCase().includes(searchTerm.toLowerCase());
 
     if (!matchesSearch) return false;
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      const clientStatus = client.status?.toLowerCase() || 'ongoing';
+      if (statusFilter === 'completed' && clientStatus !== 'completed') return false;
+      if (statusFilter === 'ongoing' && clientStatus !== 'ongoing') return false;
+    }
 
     // Date range filter
     if (dateFilterType !== 'none' && (startDate || endDate)) {
@@ -66,7 +74,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
     setEndDate(undefined);
   };
 
-  const hasActiveFilters = dateFilterType !== 'none' && (startDate || endDate);
+  const hasActiveFilters = (dateFilterType !== 'none' && (startDate || endDate)) || statusFilter !== 'all';
 
   const getBalanceStatus = (balance: number, totalPrice: number) => {
     if (balance === 0) return 'success';
@@ -211,6 +219,16 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                   className="pl-10 w-full sm:w-64"
                 />
               </div>
+              <Select value={statusFilter} onValueChange={(value: 'all' | 'ongoing' | 'completed') => setStatusFilter(value)}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="ongoing">Ongoing</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
               <div className="flex gap-2">
                 <Button 
                   variant={showFilters ? "secondary" : "outline"} 
