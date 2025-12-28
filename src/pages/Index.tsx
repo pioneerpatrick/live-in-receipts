@@ -8,6 +8,7 @@ import ClientForm from '@/components/ClientForm';
 import PaymentForm from '@/components/PaymentForm';
 import { PaymentHistory } from '@/components/PaymentHistory';
 import { ExcelUploadDialog } from '@/components/ExcelUploadDialog';
+import { PaymentReminders } from '@/components/PaymentReminders';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { Client, ReceiptData } from '@/types/client';
 import {
@@ -287,6 +288,17 @@ const Index = () => {
               <span className="text-sm text-muted-foreground">Ongoing: <span className="font-semibold text-foreground">{ongoingClients}</span></span>
             </div>
           </div>
+        </div>
+
+        {/* Payment Reminders Section */}
+        <div className="mb-8">
+          <PaymentReminders 
+            clients={clients} 
+            onSelectClient={(client) => {
+              setSelectedClient(client);
+              setPaymentFormOpen(true);
+            }} 
+          />
         </div>
 
         <ClientTable
