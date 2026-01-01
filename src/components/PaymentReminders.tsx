@@ -56,14 +56,14 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
 
   if (reminders.length === 0) {
     return (
-      <div className="bg-card rounded-lg p-6 card-shadow animate-fade-in">
-        <h3 className="font-heading text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Bell className="w-5 h-5 text-primary" />
+      <div className="bg-card rounded-lg p-4 sm:p-6 card-shadow animate-fade-in">
+        <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           Payment Reminders
         </h3>
-        <div className="text-center py-8 text-muted-foreground">
-          <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
-          <p>No upcoming payment reminders</p>
+        <div className="text-center py-6 sm:py-8 text-muted-foreground">
+          <Calendar className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-50" />
+          <p className="text-sm sm:text-base">No upcoming payment reminders</p>
         </div>
       </div>
     );
@@ -99,32 +99,32 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
   };
 
   return (
-    <div className="bg-card rounded-lg p-6 card-shadow animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
-          <Bell className="w-5 h-5 text-primary" />
+    <div className="bg-card rounded-lg p-4 sm:p-6 card-shadow animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
+        <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
           Payment Reminders
         </h3>
-        <div className="flex gap-2 text-xs">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
           {overdueCount > 0 && (
-            <span className="px-2 py-1 bg-destructive/10 text-destructive rounded-full font-medium">
+            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-destructive/10 text-destructive rounded-full font-medium">
               {overdueCount} overdue
             </span>
           )}
           {dueTodayCount > 0 && (
-            <span className="px-2 py-1 bg-orange-500/10 text-orange-600 rounded-full font-medium">
+            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-orange-500/10 text-orange-600 rounded-full font-medium">
               {dueTodayCount} due today
             </span>
           )}
           {upcomingCount > 0 && (
-            <span className="px-2 py-1 bg-primary/10 text-primary rounded-full font-medium">
+            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary/10 text-primary rounded-full font-medium">
               {upcomingCount} upcoming
             </span>
           )}
         </div>
       </div>
 
-      <div className="space-y-3 max-h-64 overflow-y-auto">
+      <div className="space-y-2 sm:space-y-3 max-h-64 overflow-y-auto">
         {reminders.map(reminder => {
           const styles = getStatusStyles(reminder.status);
           const IconComponent = styles.icon;
@@ -133,30 +133,30 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
             <div
               key={reminder.id}
               onClick={() => onSelectClient(reminder)}
-              className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${styles.bg} ${styles.border}`}
+              className={`p-2.5 sm:p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md active:scale-[0.99] ${styles.bg} ${styles.border}`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className={`p-1.5 rounded-full ${styles.bg}`}>
-                    <IconComponent className={`w-4 h-4 ${styles.text}`} />
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
+                <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                  <div className={`p-1 sm:p-1.5 rounded-full ${styles.bg} flex-shrink-0`}>
+                    <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 ${styles.text}`} />
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">{reminder.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-foreground text-sm sm:text-base truncate">{reminder.name}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
                       {reminder.project_name} - Plot {reminder.plot_number}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
                       {reminder.next_payment_date && (
                         <>
                           Due: {format(parseISO(reminder.next_payment_date), 'dd MMM yyyy')}
                           {reminder.status === 'overdue' && (
-                            <span className={`ml-2 font-medium ${styles.text}`}>
-                              ({Math.abs(reminder.daysUntilDue)} days overdue)
+                            <span className={`ml-1 sm:ml-2 font-medium ${styles.text}`}>
+                              ({Math.abs(reminder.daysUntilDue)}d late)
                             </span>
                           )}
                           {reminder.status === 'upcoming' && (
-                            <span className={`ml-2 font-medium ${styles.text}`}>
-                              (in {reminder.daysUntilDue} days)
+                            <span className={`ml-1 sm:ml-2 font-medium ${styles.text}`}>
+                              (in {reminder.daysUntilDue}d)
                             </span>
                           )}
                         </>
@@ -164,11 +164,11 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={`font-bold ${styles.text}`}>
+                <div className="text-right flex-shrink-0">
+                  <p className={`font-bold text-sm sm:text-base ${styles.text}`}>
                     {formatCurrency(reminder.balance)}
                   </p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${styles.bg} ${styles.text} font-medium`}>
+                  <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${styles.bg} ${styles.text} font-medium`}>
                     {styles.label}
                   </span>
                 </div>

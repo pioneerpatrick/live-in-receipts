@@ -97,13 +97,28 @@
     @apply border-border;
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Poppins', sans-serif;
+  }
+
+  /* Ensure inputs don't zoom on iOS */
+  input, select, textarea {
+    font-size: 16px !important;
   }
 }
 

@@ -206,47 +206,47 @@ const Index = () => {
   const ongoingClients = clients.filter(c => c.status === 'ongoing' && c.balance > 0).length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col bg-background">
       <Toaster position="top-right" />
       <Header />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-6 lg:py-8 overflow-x-hidden">
         {/* Main Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 animate-fade-in">
-          <div className="bg-card rounded-lg p-6 card-shadow card-hover">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-primary/10">
-                <Users className="w-6 h-6 text-primary" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8 animate-fade-in">
+          <div className="bg-card rounded-lg p-4 sm:p-6 card-shadow card-hover">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 rounded-lg bg-primary/10 flex-shrink-0">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Clients</p>
-                <p className="text-2xl font-heading font-bold text-foreground">{totalClients}</p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Total Clients</p>
+                <p className="text-xl sm:text-2xl font-heading font-bold text-foreground">{totalClients}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-card rounded-lg p-6 card-shadow card-hover">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-secondary/10">
-                <FileText className="w-6 h-6 text-secondary" />
+          <div className="bg-card rounded-lg p-4 sm:p-6 card-shadow card-hover">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 rounded-lg bg-secondary/10 flex-shrink-0">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Collected</p>
-                <p className="text-2xl font-heading font-bold text-primary">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Total Collected</p>
+                <p className="text-xl sm:text-2xl font-heading font-bold text-primary truncate">
                   KES {totalCollected.toLocaleString()}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-card rounded-lg p-6 card-shadow card-hover">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-accent">
-                <LayoutDashboard className="w-6 h-6 text-accent-foreground" />
+          <div className="bg-card rounded-lg p-4 sm:p-6 card-shadow card-hover sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 rounded-lg bg-accent flex-shrink-0">
+                <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6 text-accent-foreground" />
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Outstanding Balance</p>
-                <p className="text-2xl font-heading font-bold text-foreground">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground">Outstanding Balance</p>
+                <p className="text-xl sm:text-2xl font-heading font-bold text-foreground truncate">
                   KES {totalReceivables.toLocaleString()}
                 </p>
               </div>
@@ -255,43 +255,43 @@ const Index = () => {
         </div>
 
         {/* Accounting Summary Section (YTD Totals) */}
-        <div className="bg-card rounded-lg p-6 card-shadow mb-8 animate-fade-in">
-          <h3 className="font-heading text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
+        <div className="bg-card rounded-lg p-4 sm:p-6 card-shadow mb-6 sm:mb-8 animate-fade-in">
+          <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             YTD Accounting Summary
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground">Total Sales Value</p>
-              <p className="text-lg font-bold text-foreground">{formatCurrency(totalSalesValue)}</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+            <div className="text-center p-2 sm:p-3 bg-muted/30 rounded-lg">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Total Sales Value</p>
+              <p className="text-sm sm:text-lg font-bold text-foreground truncate">{formatCurrency(totalSalesValue)}</p>
             </div>
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground">Total Discount</p>
-              <p className="text-lg font-bold text-orange-600">{formatCurrency(totalDiscount)}</p>
+            <div className="text-center p-2 sm:p-3 bg-muted/30 rounded-lg">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Total Discount</p>
+              <p className="text-sm sm:text-lg font-bold text-orange-600 truncate">{formatCurrency(totalDiscount)}</p>
             </div>
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground">Total Collected</p>
-              <p className="text-lg font-bold text-primary">{formatCurrency(totalCollected)}</p>
+            <div className="text-center p-2 sm:p-3 bg-muted/30 rounded-lg">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Total Collected</p>
+              <p className="text-sm sm:text-lg font-bold text-primary truncate">{formatCurrency(totalCollected)}</p>
             </div>
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground">Total Balance</p>
-              <p className="text-lg font-bold text-destructive">{formatCurrency(totalReceivables)}</p>
+            <div className="text-center p-2 sm:p-3 bg-muted/30 rounded-lg">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Total Balance</p>
+              <p className="text-sm sm:text-lg font-bold text-destructive truncate">{formatCurrency(totalReceivables)}</p>
             </div>
           </div>
-          <div className="flex gap-4 mt-4 pt-4 border-t border-border">
+          <div className="flex flex-wrap gap-3 sm:gap-4 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border">
             <div className="flex items-center gap-2">
-              <Wallet className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-muted-foreground">Completed: <span className="font-semibold text-foreground">{completedClients}</span></span>
+              <Wallet className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+              <span className="text-xs sm:text-sm text-muted-foreground">Completed: <span className="font-semibold text-foreground">{completedClients}</span></span>
             </div>
             <div className="flex items-center gap-2">
-              <BadgeDollarSign className="w-4 h-4 text-amber-600" />
-              <span className="text-sm text-muted-foreground">Ongoing: <span className="font-semibold text-foreground">{ongoingClients}</span></span>
+              <BadgeDollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600" />
+              <span className="text-xs sm:text-sm text-muted-foreground">Ongoing: <span className="font-semibold text-foreground">{ongoingClients}</span></span>
             </div>
           </div>
         </div>
 
         {/* Payment Reminders Section */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <PaymentReminders 
             clients={clients} 
             onSelectClient={(client) => {

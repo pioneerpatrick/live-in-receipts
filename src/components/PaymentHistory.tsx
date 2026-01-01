@@ -156,181 +156,241 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-5xl max-h-[85vh]">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col mx-3 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Payment History - {client.name}
+            <DialogTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
+              <FileText className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="truncate">Payment History - {client.name}</span>
               {isAdmin && (
-                <Badge variant="secondary" className="ml-2">Admin</Badge>
+                <Badge variant="secondary" className="text-xs">Admin</Badge>
               )}
             </DialogTitle>
           </DialogHeader>
 
           {/* Client Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-            <div>
-              <p className="text-sm text-muted-foreground">Project</p>
-              <p className="font-medium">{client.project_name}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 p-3 sm:p-4 bg-muted/50 rounded-lg text-xs sm:text-sm">
+            <div className="min-w-0">
+              <p className="text-muted-foreground">Project</p>
+              <p className="font-medium truncate">{client.project_name}</p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Plot Number</p>
+            <div className="min-w-0">
+              <p className="text-muted-foreground">Plot Number</p>
               <p className="font-medium">{client.plot_number}</p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Price</p>
+            <div className="min-w-0">
+              <p className="text-muted-foreground">Total Price</p>
               <p className="font-medium">{formatCurrency(client.total_price - client.discount)}</p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Current Balance</p>
+            <div className="min-w-0">
+              <p className="text-muted-foreground">Current Balance</p>
               <p className="font-medium text-primary">{formatCurrency(client.balance)}</p>
             </div>
           </div>
 
           {/* Payment Progress */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1 bg-muted rounded-full h-3">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex-1 bg-muted rounded-full h-2 sm:h-3">
               <div 
-                className="bg-primary h-3 rounded-full transition-all" 
+                className="bg-primary h-2 sm:h-3 rounded-full transition-all" 
                 style={{ width: `${Math.min(client.percent_paid ?? 0, 100)}%` }}
               />
             </div>
-            <Badge variant="secondary" className="text-sm">
+            <Badge variant="secondary" className="text-xs sm:text-sm flex-shrink-0">
               {(client.percent_paid ?? 0).toFixed(1)}% Paid
             </Badge>
           </div>
 
-          {/* Payments Table */}
-          <ScrollArea className="h-[400px]">
+          {/* Payments List */}
+          <ScrollArea className="flex-1 min-h-0">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : payments.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
+              <div className="text-center py-12 text-muted-foreground text-sm">
                 No payment records found for this client.
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Receipt No.</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead className="text-right">Prev. Balance</TableHead>
-                    <TableHead className="text-right">New Balance</TableHead>
-                    <TableHead>Agent</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Mobile Card View */}
+                <div className="block md:hidden space-y-2 p-1">
                   {payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-mono text-sm">
-                        {payment.receipt_number}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {formatDate(payment.payment_date)}
-                      </TableCell>
-                      <TableCell className="text-right font-medium text-primary">
-                        {formatCurrency(payment.amount)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{payment.payment_method}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {formatCurrency(payment.previous_balance)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(payment.new_balance)}
-                      </TableCell>
-                      <TableCell>{payment.agent_name || '-'}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-center gap-1">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handlePrintReceipt(payment)}
-                                  className="h-8 w-8"
-                                >
-                                  <Printer className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Print Receipt</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-
+                    <div key={payment.id} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-mono text-xs text-muted-foreground">{payment.receipt_number}</p>
+                          <p className="text-xs text-muted-foreground">{formatDate(payment.payment_date)}</p>
+                        </div>
+                        <p className="font-medium text-primary text-sm">{formatCurrency(payment.amount)}</p>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <Badge variant="outline" className="text-xs">{payment.payment_method}</Badge>
+                        <span className="text-muted-foreground">{payment.agent_name || '-'}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs pt-2 border-t border-border/50">
+                        <div>
+                          <span className="text-muted-foreground">Balance: </span>
+                          <span>{formatCurrency(payment.previous_balance)} → {formatCurrency(payment.new_balance)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handlePrintReceipt(payment)}
+                            className="h-7 w-7 p-0"
+                          >
+                            <Printer className="h-3 w-3" />
+                          </Button>
                           {isAdmin && (
                             <>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => setEditingPayment(payment)}
-                                      className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Edit Payment</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => setDeletingPayment(payment)}
-                                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Delete Payment</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingPayment(payment)}
+                                className="h-7 w-7 p-0 text-blue-600"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeletingPayment(payment)}
+                                className="h-7 w-7 p-0 text-destructive"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
                             </>
                           )}
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Receipt No.</TableHead>
+                        <TableHead className="text-xs">Date</TableHead>
+                        <TableHead className="text-right text-xs">Amount</TableHead>
+                        <TableHead className="text-xs">Method</TableHead>
+                        <TableHead className="text-right text-xs">Prev. Balance</TableHead>
+                        <TableHead className="text-right text-xs">New Balance</TableHead>
+                        <TableHead className="text-xs">Agent</TableHead>
+                        <TableHead className="text-center text-xs">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {payments.map((payment) => (
+                        <TableRow key={payment.id}>
+                          <TableCell className="font-mono text-xs">
+                            {payment.receipt_number}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {formatDate(payment.payment_date)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-primary text-xs">
+                            {formatCurrency(payment.amount)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">{payment.payment_method}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right text-muted-foreground text-xs">
+                            {formatCurrency(payment.previous_balance)}
+                          </TableCell>
+                          <TableCell className="text-right text-xs">
+                            {formatCurrency(payment.new_balance)}
+                          </TableCell>
+                          <TableCell className="text-xs">{payment.agent_name || '-'}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-1">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handlePrintReceipt(payment)}
+                                      className="h-7 w-7"
+                                    >
+                                      <Printer className="h-3 w-3" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Print Receipt</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+
+                              {isAdmin && (
+                                <>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => setEditingPayment(payment)}
+                                          className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                        >
+                                          <Pencil className="h-3 w-3" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Edit Payment</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => setDeletingPayment(payment)}
+                                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Delete Payment</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </ScrollArea>
 
           {/* Summary Footer */}
           {payments.length > 0 && (
-            <div className="flex justify-between items-center pt-4 border-t">
-              <p className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-3 sm:pt-4 border-t">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {payments.length} payment{payments.length !== 1 ? 's' : ''} recorded
               </p>
               <div className="text-right">
-                <p className="text-sm text-muted-foreground">Total Collected</p>
-                <p className="text-lg font-bold text-primary">
+                <p className="text-xs sm:text-sm text-muted-foreground">Total Collected</p>
+                <p className="text-base sm:text-lg font-bold text-primary">
                   {formatCurrency(payments.reduce((sum, p) => sum + p.amount, 0))}
                 </p>
               </div>
             </div>
           )}
 
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={onClose}>
+          <div className="flex justify-end pt-2">
+            <Button variant="outline" onClick={onClose} size="sm">
               Close
             </Button>
           </div>

@@ -201,26 +201,28 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
   };
 
   return (
-    <div className="bg-card rounded-lg card-shadow animate-fade-in">
-      <div className="p-4 md:p-6 border-b border-border">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <h2 className="font-heading text-xl font-semibold text-foreground">
+    <div className="bg-card rounded-lg card-shadow animate-fade-in overflow-hidden">
+      <div className="p-3 sm:p-4 md:p-6 border-b border-border">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col gap-3">
+            <h2 className="font-heading text-lg sm:text-xl font-semibold text-foreground">
               Client & Payment Database
             </h2>
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:flex-none">
+            
+            {/* Search and Status Filter Row */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search clients..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full sm:w-64"
+                  className="pl-10 w-full"
                 />
               </div>
               <Select value={statusFilter} onValueChange={(value: 'all' | 'ongoing' | 'completed') => setStatusFilter(value)}>
-                <SelectTrigger className="w-36">
+                <SelectTrigger className="w-full sm:w-32">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -229,30 +231,33 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                   <SelectItem value="completed">Completed</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="flex gap-2">
-                <Button 
-                  variant={showFilters ? "secondary" : "outline"} 
-                  size="icon" 
-                  onClick={() => setShowFilters(!showFilters)} 
-                  title="Toggle Date Filters"
-                  className={cn(hasActiveFilters && "border-primary text-primary")}
-                >
-                  <Filter className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={onImportExcel} title="Import from Excel">
-                  <Upload className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={handleExportCSV} title="Export to CSV">
-                  <Download className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={handlePrint} title="Print Table">
-                  <Printer className="w-4 h-4" />
-                </Button>
-                <Button onClick={onAddNew} className="gap-2">
-                  <UserPlus className="w-4 h-4" />
-                  Add Client
-                </Button>
-              </div>
+            </div>
+
+            {/* Action Buttons Row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button 
+                variant={showFilters ? "secondary" : "outline"} 
+                size="icon" 
+                onClick={() => setShowFilters(!showFilters)} 
+                title="Toggle Date Filters"
+                className={cn("h-9 w-9", hasActiveFilters && "border-primary text-primary")}
+              >
+                <Filter className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={onImportExcel} title="Import from Excel" className="h-9 w-9">
+                <Upload className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleExportCSV} title="Export to CSV" className="h-9 w-9">
+                <Download className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handlePrint} title="Print Table" className="h-9 w-9">
+                <Printer className="w-4 h-4" />
+              </Button>
+              <Button onClick={onAddNew} className="gap-2 h-9 ml-auto">
+                <UserPlus className="w-4 h-4" />
+                <span className="hidden xs:inline">Add Client</span>
+                <span className="xs:hidden">Add</span>
+              </Button>
             </div>
           </div>
 
@@ -353,22 +358,102 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Mobile Card View */}
+      <div className="block md:hidden">
+        {filteredClients.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground px-4">
+            {searchTerm || hasActiveFilters ? 'No clients found matching your filters.' : 'No clients yet. Add your first client to get started.'}
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {filteredClients.map((client, index) => (
+              <div key={client.id} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-foreground truncate">{client.name}</p>
+                    <p className="text-xs text-muted-foreground">{client.phone}</p>
+                  </div>
+                  <Badge variant={getBalanceStatus(client.balance, client.total_price) as any} className="flex-shrink-0 text-xs">
+                    {formatCurrency(client.balance)}
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                  <div>
+                    <span className="text-muted-foreground">Project: </span>
+                    <span className="text-foreground">{client.project_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Plot: </span>
+                    <span className="text-foreground">{client.plot_number}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Paid: </span>
+                    <span className="text-primary font-medium">{formatCurrency(client.total_paid)}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Progress: </span>
+                    <span className="text-foreground font-medium">{(client.percent_paid ?? 0).toFixed(1)}%</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-1 pt-2 border-t border-border/50">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onViewHistory(client)}
+                    className="h-8 px-2 hover:bg-blue-500/10 hover:text-blue-500"
+                  >
+                    <History className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onAddPayment(client)}
+                    className="h-8 px-2 hover:bg-primary/10 hover:text-primary"
+                  >
+                    <Receipt className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEdit(client)}
+                    className="h-8 px-2 hover:bg-secondary/10 hover:text-secondary"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDelete(client)}
+                    className="h-8 px-2 hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">#</TableHead>
-              <TableHead className="font-semibold">Client Name</TableHead>
-              <TableHead className="font-semibold">Phone</TableHead>
-              <TableHead className="font-semibold">Project</TableHead>
-              <TableHead className="font-semibold">Plot No.</TableHead>
-              <TableHead className="font-semibold text-right">Total Price</TableHead>
-              <TableHead className="font-semibold text-right">Discount</TableHead>
-              <TableHead className="font-semibold text-right">Total Paid</TableHead>
-              <TableHead className="font-semibold text-right">% Paid</TableHead>
-              <TableHead className="font-semibold text-right">Balance</TableHead>
-              <TableHead className="font-semibold">Agent</TableHead>
-              <TableHead className="font-semibold text-center">Actions</TableHead>
+              <TableHead className="font-semibold w-10">#</TableHead>
+              <TableHead className="font-semibold min-w-[120px]">Client Name</TableHead>
+              <TableHead className="font-semibold min-w-[100px]">Phone</TableHead>
+              <TableHead className="font-semibold min-w-[100px]">Project</TableHead>
+              <TableHead className="font-semibold min-w-[80px]">Plot No.</TableHead>
+              <TableHead className="font-semibold text-right min-w-[100px]">Total Price</TableHead>
+              <TableHead className="font-semibold text-right min-w-[80px]">Discount</TableHead>
+              <TableHead className="font-semibold text-right min-w-[100px]">Total Paid</TableHead>
+              <TableHead className="font-semibold text-right min-w-[60px]">% Paid</TableHead>
+              <TableHead className="font-semibold text-right min-w-[100px]">Balance</TableHead>
+              <TableHead className="font-semibold min-w-[80px]">Agent</TableHead>
+              <TableHead className="font-semibold text-center min-w-[140px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -448,7 +533,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
       </div>
 
       {filteredClients.length > 0 && (
-        <div className="p-4 border-t border-border text-sm text-muted-foreground">
+        <div className="p-3 sm:p-4 border-t border-border text-xs sm:text-sm text-muted-foreground">
           Showing {filteredClients.length} of {clients.length} clients
         </div>
       )}
