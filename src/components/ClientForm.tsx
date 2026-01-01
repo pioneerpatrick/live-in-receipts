@@ -57,7 +57,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
         discount: client.discount,
         initialPayment: client.total_paid,
         salesAgent: client.sales_agent,
-        paymentType: client.payment_period === 'Full Payment' ? 'cash' : 'installments',
+        paymentType: (client.payment_type as 'installments' | 'cash') || 'installments',
       });
     } else {
       form.reset({

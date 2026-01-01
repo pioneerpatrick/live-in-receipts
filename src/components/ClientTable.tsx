@@ -103,7 +103,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
       client.percent_paid ?? 0,
       client.balance,
       client.sales_agent,
-      client.payment_period || 'Installments',
+      client.payment_type || 'installments',
       client.payment_period,
       client.sale_date || '',
       client.completion_date || '',
