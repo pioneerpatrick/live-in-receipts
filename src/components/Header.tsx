@@ -22,27 +22,27 @@ const Header = () => {
   };
 
   return (
-    <header className="gradient-header border-b border-border">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+    <header className="gradient-header border-b border-border sticky top-0 z-50">
+      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo and Company Name */}
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
-              <Home className="w-7 h-7 text-primary-foreground" />
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
+            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
+              <Home className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="font-heading text-xl md:text-2xl font-bold text-secondary">
+            <div className="min-w-0">
+              <h1 className="font-heading text-base sm:text-xl md:text-2xl font-bold text-secondary truncate">
                 LIVE-IN <span className="text-primary">PROPERTIES</span>
               </h1>
-              <p className="text-sm text-muted-foreground italic">
+              <p className="text-xs sm:text-sm text-muted-foreground italic hidden xs:block truncate">
                 Genuine plots with ready title deeds
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Contact Information */}
-            <div className="hidden lg:flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+            {/* Contact Information - Hidden on mobile/tablet */}
+            <div className="hidden xl:flex flex-wrap items-center justify-center gap-4 text-sm">
               <a 
                 href="mailto:liveinproperties2021@gmail.com" 
                 className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
@@ -68,13 +68,31 @@ const Header = () => {
               </a>
             </div>
 
+            {/* Mobile contact icons */}
+            <div className="flex xl:hidden items-center gap-1">
+              <a 
+                href="tel:0746499499" 
+                className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Call us"
+              >
+                <Phone className="w-4 h-4" />
+              </a>
+              <a 
+                href="mailto:liveinproperties2021@gmail.com" 
+                className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Email us"
+              >
+                <Mail className="w-4 h-4" />
+              </a>
+            </div>
+
             {/* User Menu */}
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
+                  <Button variant="outline" size="sm" className="gap-1 sm:gap-2 px-2 sm:px-3">
                     <User className="w-4 h-4" />
-                    <span className="hidden sm:inline">{user.email?.split('@')[0]}</span>
+                    <span className="hidden sm:inline max-w-[100px] truncate">{user.email?.split('@')[0]}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
