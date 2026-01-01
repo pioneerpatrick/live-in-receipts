@@ -29,6 +29,7 @@ export type Database = {
           notes: string | null
           number_of_plots: number
           payment_period: string | null
+          payment_type: string | null
           percent_paid: number | null
           phone: string | null
           plot_number: string
@@ -55,6 +56,7 @@ export type Database = {
           notes?: string | null
           number_of_plots?: number
           payment_period?: string | null
+          payment_type?: string | null
           percent_paid?: number | null
           phone?: string | null
           plot_number: string
@@ -81,6 +83,7 @@ export type Database = {
           notes?: string | null
           number_of_plots?: number
           payment_period?: string | null
+          payment_type?: string | null
           percent_paid?: number | null
           phone?: string | null
           plot_number?: string
