@@ -106,12 +106,11 @@ const Index = () => {
           total_paid: data.initialPayment,
           balance: initialBalance,
           sales_agent: data.salesAgent,
-          payment_type: data.paymentType || 'installments',
-          payment_period: '',
+          payment_period: data.paymentType === 'cash' ? 'Full Payment' : '',
           completion_date: null,
           next_payment_date: null,
           notes: '',
-          status: 'ongoing',
+          status: data.paymentType === 'cash' ? 'completed' : 'ongoing',
           sale_date: new Date().toISOString().split('T')[0],
         });
 

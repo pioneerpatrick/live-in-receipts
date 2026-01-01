@@ -13,7 +13,7 @@ export interface Client {
   percent_paid: number;
   balance: number;
   sales_agent: string;
-  payment_type?: string; // 'installments' or 'cash' - optional for backwards compatibility
+  // Note: payment_type is handled via payment_period field ('Full Payment' for cash)
   payment_period: string;
   completion_date: string | null;
   next_payment_date: string | null;

@@ -58,9 +58,9 @@ const COLUMN_MAPPING: Record<string, keyof ClientImport> = {
   'payment period': 'payment_period',
   'payment_period': 'payment_period',
   'period': 'payment_period',
-  'payment type': 'payment_type',
-  'payment_type': 'payment_type',
-  'type': 'payment_type',
+  // 'payment type' maps to payment_period - 'Full Payment' for cash, other values for installments
+  'payment type': 'payment_period',
+  'type': 'payment_period',
   'completion date': 'completion_date',
   'completion_date': 'completion_date',
   'next payment date': 'next_payment_date',
@@ -176,7 +176,6 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
           total_paid: 0,
           balance: 0,
           sales_agent: '',
-          payment_type: 'installments',
           payment_period: '',
           completion_date: null,
           next_payment_date: null,
@@ -198,7 +197,6 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
             case 'plot_number':
             case 'sales_agent':
             case 'payment_period':
-            case 'payment_type':
             case 'notes':
             case 'status':
               (client as any)[field] = value?.toString() || '';
