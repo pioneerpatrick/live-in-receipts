@@ -298,18 +298,16 @@ const Index = () => {
           </div>
         )}
 
-        {/* Payment Reminders Section - Admin Only */}
-        {isAdmin && (
-          <div className="mb-6 sm:mb-8">
-            <PaymentReminders 
-              clients={clients} 
-              onSelectClient={(client) => {
-                setSelectedClient(client);
-                setPaymentFormOpen(true);
-              }} 
-            />
-          </div>
-        )}
+        {/* Payment Reminders Section */}
+        <div className="mb-6 sm:mb-8">
+          <PaymentReminders 
+            clients={clients} 
+            onSelectClient={(client) => {
+              setSelectedClient(client);
+              setPaymentFormOpen(true);
+            }} 
+          />
+        </div>
 
         <ClientTable
           clients={clients}
