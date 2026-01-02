@@ -11,20 +11,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { UserProfile } from '@/types/client';
-import { Shield, UserCog, Search, Crown, UserMinus } from 'lucide-react';
+import { Shield, UserCog, Search, Crown, UserMinus, Trash2 } from 'lucide-react';
 
 interface UserWithRole extends UserProfile {
   role?: 'admin' | 'staff';
 }
 
 const Admin = () => {
-  const { role } = useAuth();
+  const { role, user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [newRole, setNewRole] = useState<'admin' | 'staff'>('staff');
 
   useEffect(() => {
@@ -96,6 +99,37 @@ const Admin = () => {
     } catch (error) {
       console.error('Error updating role:', error);
       toast.error('Failed to update user role');
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    setDeleting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke('delete-user', {
+        body: { userId: selectedUser.user_id },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      toast.success(`User ${selectedUser.full_name} deleted successfully`);
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast.error(error.message || 'Failed to delete user');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -185,27 +219,41 @@ const Admin = () => {
                           {new Date(user.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setNewRole(user.role || 'staff');
-                              setRoleDialogOpen(true);
-                            }}
-                          >
-                            {user.role === 'admin' ? (
-                              <>
-                                <UserMinus className="w-4 h-4 mr-1" />
-                                Change Role
-                              </>
-                            ) : (
-                              <>
-                                <Crown className="w-4 h-4 mr-1" />
-                                Promote
-                              </>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setNewRole(user.role || 'staff');
+                                setRoleDialogOpen(true);
+                              }}
+                            >
+                              {user.role === 'admin' ? (
+                                <>
+                                  <UserMinus className="w-4 h-4 mr-1" />
+                                  Change Role
+                                </>
+                              ) : (
+                                <>
+                                  <Crown className="w-4 h-4 mr-1" />
+                                  Promote
+                                </>
+                              )}
+                            </Button>
+                            {user.user_id !== currentUser?.id && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             )}
-                          </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -250,6 +298,28 @@ const Admin = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="font-semibold">{selectedUser?.full_name}</span>? 
+              This action cannot be undone and will permanently remove the user from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Deleting...' : 'Delete User'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
