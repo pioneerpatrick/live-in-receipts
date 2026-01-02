@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { logActivity } from '@/lib/activityLogger';
 
 type UserRole = 'admin' | 'staff';
 
@@ -74,6 +75,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email,
       password,
     });
+    
+    if (!error) {
+      // Log activity after successful login
+      setTimeout(() => {
+        logActivity({ action: 'login' });
+      }, 100);
+    }
+    
     return { error };
   };
 
@@ -94,6 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    await logActivity({ action: 'logout' });
     await supabase.auth.signOut();
     setRole(null);
   };

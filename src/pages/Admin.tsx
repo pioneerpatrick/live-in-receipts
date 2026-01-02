@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { UserProfile } from '@/types/client';
+import { logActivity } from '@/lib/activityLogger';
 import { Shield, UserCog, Search, Crown, UserMinus, Trash2 } from 'lucide-react';
 
 interface UserWithRole extends UserProfile {
@@ -93,6 +94,16 @@ const Admin = () => {
         if (error) throw error;
       }
       
+      await logActivity({
+        action: 'user_role_changed',
+        entityType: 'user',
+        entityId: selectedUser.user_id,
+        details: { 
+          user_name: selectedUser.full_name,
+          new_role: newRole,
+        },
+      });
+      
       toast.success(`User role updated to ${newRole}`);
       setRoleDialogOpen(false);
       fetchUsers();
@@ -120,6 +131,13 @@ const Admin = () => {
       if (response.data?.error) {
         throw new Error(response.data.error);
       }
+
+      await logActivity({
+        action: 'user_deleted',
+        entityType: 'user',
+        entityId: selectedUser.user_id,
+        details: { user_name: selectedUser.full_name },
+      });
 
       toast.success(`User ${selectedUser.full_name} deleted successfully`);
       setDeleteDialogOpen(false);
