@@ -22,6 +22,7 @@ import {
 } from '@/lib/supabaseStorage';
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
+import { logActivity } from '@/lib/activityLogger';
 import { LayoutDashboard, FileText, Users, TrendingUp, Wallet, BadgeDollarSign } from 'lucide-react';
 
 const Index = () => {
@@ -93,6 +94,14 @@ const Index = () => {
           sales_agent: data.salesAgent,
           balance: discountedPrice - selectedClient.total_paid,
         });
+        
+        await logActivity({
+          action: 'client_updated',
+          entityType: 'client',
+          entityId: selectedClient.id,
+          details: { name: data.name },
+        });
+        
         toast.success('Client updated successfully!');
       } else {
         const discountedPrice = data.totalPrice - data.discount;
@@ -133,6 +142,13 @@ const Index = () => {
           });
         }
 
+        await logActivity({
+          action: 'client_created',
+          entityType: 'client',
+          entityId: newClient.id,
+          details: { name: data.name, project: data.projectName },
+        });
+
         toast.success('Client added successfully!');
       }
 
@@ -168,6 +184,16 @@ const Index = () => {
         agent_name: data.agentName,
       });
 
+      await logActivity({
+        action: 'payment_added',
+        entityType: 'payment',
+        details: { 
+          client_name: selectedClient.name,
+          amount: data.amount,
+          receipt: receiptData.receiptNumber,
+        },
+      });
+
       toast.success('Payment recorded successfully!');
       await loadClients();
       setPaymentFormOpen(false);
@@ -183,6 +209,14 @@ const Index = () => {
 
     try {
       await deleteClient(selectedClient.id);
+      
+      await logActivity({
+        action: 'client_deleted',
+        entityType: 'client',
+        entityId: selectedClient.id,
+        details: { name: selectedClient.name },
+      });
+      
       toast.success('Client deleted successfully!');
       await loadClients();
       setDeleteDialogOpen(false);
@@ -195,6 +229,16 @@ const Index = () => {
 
   const handleGeneratePDF = async (receiptData: ReceiptData) => {
     await generatePDFReceipt(receiptData);
+    
+    await logActivity({
+      action: 'receipt_generated',
+      entityType: 'receipt',
+      details: { 
+        receipt_number: receiptData.receiptNumber,
+        client_name: receiptData.clientName,
+      },
+    });
+    
     toast.success('PDF receipt generated!');
   };
 

@@ -1,4 +1,4 @@
-import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, BarChart3 } from 'lucide-react';
+import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, BarChart3, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -119,8 +119,16 @@ const Header = () => {
                   {role === 'admin' && (
                     <DropdownMenuItem asChild className="cursor-pointer">
                       <Link to="/admin" className="flex items-center">
-                        <Settings className="w-4 h-4 mr-2" />
+                        <Shield className="w-4 h-4 mr-2" />
                         <span>Admin Panel</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {role === 'admin' && (
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link to="/settings" className="flex items-center">
+                        <Settings className="w-4 h-4 mr-2" />
+                        <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
                   )}
