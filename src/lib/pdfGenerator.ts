@@ -204,41 +204,61 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.setFontSize(8);
   doc.text('Authorized Signature', pageWidth - 50, y, { align: 'center' });
   
-  // PAID Stamp - centered on the page
+  // PAID Stamp - rectangular style centered on the page
   const stampCenterX = pageWidth / 2;
-  const stampCenterY = 175; // Position in the middle area of the receipt
-  const stampRadius = 28;
+  const stampCenterY = 175;
+  const stampWidth = 70;
+  const stampHeight = 45;
+  const stampX = stampCenterX - stampWidth / 2;
+  const stampY = stampCenterY - stampHeight / 2;
   
-  // Draw outer circle
+  // Blue color for stamp border and text
+  const stampBlue: [number, number, number] = [30, 64, 175]; // Blue
+  const stampRed: [number, number, number] = [220, 38, 38]; // Red for PAID and date
+  
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.85 }));
-  doc.setDrawColor(220, 38, 38); // Red color for stamp
-  doc.setLineWidth(2);
-  doc.circle(stampCenterX, stampCenterY, stampRadius, 'S');
+  doc.setGState(new (doc as any).GState({ opacity: 0.9 }));
   
-  // Draw inner circle
-  doc.setLineWidth(1);
-  doc.circle(stampCenterX, stampCenterY, stampRadius - 4, 'S');
+  // Draw outer rectangle border
+  doc.setDrawColor(...stampBlue);
+  doc.setLineWidth(1.5);
+  doc.rect(stampX, stampY, stampWidth, stampHeight, 'S');
   
-  // Company name curved at top
-  doc.setTextColor(220, 38, 38);
-  doc.setFontSize(6);
+  // Draw inner rectangle border
+  doc.setLineWidth(0.8);
+  doc.rect(stampX + 2, stampY + 2, stampWidth - 4, stampHeight - 4, 'S');
+  
+  // Company name at top - blue
+  doc.setTextColor(...stampBlue);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text('LIVE-IN PROPERTIES LIMITED', stampCenterX, stampCenterY - 18, { align: 'center' });
+  doc.text('LIVE-IN PROPERTIES', stampCenterX, stampY + 10, { align: 'center' });
   
-  // PAID text in center - large and bold
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text('PAID', stampCenterX, stampCenterY + 2, { align: 'center' });
-  
-  // Date
+  // LIMITED text
   doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  doc.text(receipt.date, stampCenterX, stampCenterY + 10, { align: 'center' });
+  doc.text('LIMITED', stampCenterX, stampY + 15, { align: 'center' });
   
-  // P.O Box at bottom
-  doc.setFontSize(5);
-  doc.text('P.O BOX 530-00241, KITENGELA', stampCenterX, stampCenterY + 18, { align: 'center' });
+  // PAID text in center - large, bold, RED
+  doc.setTextColor(...stampRed);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PAID', stampCenterX, stampY + 25, { align: 'center' });
+  
+  // Date - RED
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text(receipt.date, stampCenterX, stampY + 32, { align: 'center' });
+  
+  // P.O Box - blue
+  doc.setTextColor(...stampBlue);
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'normal');
+  doc.text('P.O. Box 530 - 00241', stampCenterX, stampY + 38, { align: 'center' });
+  
+  // KITENGELA - blue
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.text('KITENGELA', stampCenterX, stampY + 43, { align: 'center' });
   
   doc.restoreGraphicsState();
   
