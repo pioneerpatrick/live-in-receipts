@@ -204,61 +204,84 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.setFontSize(8);
   doc.text('Authorized Signature', pageWidth - 50, y, { align: 'center' });
   
-  // PAID Stamp - rectangular style centered on the page
+  // PAID Stamp - rectangular style with rotation for authentic look
   const stampCenterX = pageWidth / 2;
   const stampCenterY = 175;
-  const stampWidth = 70;
-  const stampHeight = 45;
-  const stampX = stampCenterX - stampWidth / 2;
-  const stampY = stampCenterY - stampHeight / 2;
+  const stampWidth = 75;
+  const stampHeight = 50;
+  const rotationAngle = -8; // Slight counter-clockwise rotation for authentic look
   
   // Blue color for stamp border and text
   const stampBlue: [number, number, number] = [30, 64, 175]; // Blue
-  const stampRed: [number, number, number] = [220, 38, 38]; // Red for PAID and date
+  const stampRed: [number, number, number] = [200, 30, 30]; // Red for PAID and date
   
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.9 }));
+  doc.setGState(new (doc as any).GState({ opacity: 0.88 }));
+  
+  // Apply rotation transformation around the stamp center
+  const radians = (rotationAngle * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  
+  // Transform matrix for rotation around center point
+  // Translation to origin, rotate, translate back
+  const a = cos;
+  const b = sin;
+  const c = -sin;
+  const d = cos;
+  const e = stampCenterX - cos * stampCenterX + sin * stampCenterY;
+  const f = stampCenterY - sin * stampCenterX - cos * stampCenterY;
+  
+  // Apply transformation matrix
+  (doc as any).internal.write(`q ${a.toFixed(4)} ${b.toFixed(4)} ${c.toFixed(4)} ${d.toFixed(4)} ${e.toFixed(4)} ${f.toFixed(4)} cm`);
+  
+  const stampX = stampCenterX - stampWidth / 2;
+  const stampY = stampCenterY - stampHeight / 2;
   
   // Draw outer rectangle border
   doc.setDrawColor(...stampBlue);
-  doc.setLineWidth(1.5);
+  doc.setLineWidth(2);
   doc.rect(stampX, stampY, stampWidth, stampHeight, 'S');
   
   // Draw inner rectangle border
-  doc.setLineWidth(0.8);
-  doc.rect(stampX + 2, stampY + 2, stampWidth - 4, stampHeight - 4, 'S');
+  doc.setLineWidth(1);
+  doc.rect(stampX + 3, stampY + 3, stampWidth - 6, stampHeight - 6, 'S');
   
-  // Company name at top - blue
+  // Company name at top - blue (Times font)
   doc.setTextColor(...stampBlue);
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.text('LIVE-IN PROPERTIES', stampCenterX, stampY + 10, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('times', 'bold');
+  doc.text('LIVE-IN PROPERTIES', stampCenterX, stampY + 12, { align: 'center' });
   
   // LIMITED text
-  doc.setFontSize(7);
-  doc.text('LIMITED', stampCenterX, stampY + 15, { align: 'center' });
+  doc.setFontSize(9);
+  doc.setFont('times', 'bold');
+  doc.text('LIMITED', stampCenterX, stampY + 18, { align: 'center' });
   
   // PAID text in center - large, bold, RED
   doc.setTextColor(...stampRed);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('PAID', stampCenterX, stampY + 25, { align: 'center' });
+  doc.setFontSize(20);
+  doc.setFont('times', 'bold');
+  doc.text('PAID', stampCenterX, stampY + 30, { align: 'center' });
   
   // Date - RED
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text(receipt.date, stampCenterX, stampY + 32, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('times', 'bold');
+  doc.text(receipt.date, stampCenterX, stampY + 38, { align: 'center' });
   
   // P.O Box - blue
   doc.setTextColor(...stampBlue);
-  doc.setFontSize(6);
-  doc.setFont('helvetica', 'normal');
-  doc.text('P.O. Box 530 - 00241', stampCenterX, stampY + 38, { align: 'center' });
+  doc.setFontSize(7);
+  doc.setFont('times', 'normal');
+  doc.text('P.O. Box 530 - 00241', stampCenterX, stampY + 44, { align: 'center' });
   
   // KITENGELA - blue
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'bold');
-  doc.text('KITENGELA', stampCenterX, stampY + 43, { align: 'center' });
+  doc.setFontSize(8);
+  doc.setFont('times', 'bold');
+  doc.text('KITENGELA', stampCenterX, stampY + 49, { align: 'center' });
+  
+  // Reset transformation
+  (doc as any).internal.write('Q');
   
   doc.restoreGraphicsState();
   
