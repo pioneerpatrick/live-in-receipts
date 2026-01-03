@@ -204,6 +204,44 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.setFontSize(8);
   doc.text('Authorized Signature', pageWidth - 50, y, { align: 'center' });
   
+  // PAID Stamp - centered on the page
+  const stampCenterX = pageWidth / 2;
+  const stampCenterY = 175; // Position in the middle area of the receipt
+  const stampRadius = 28;
+  
+  // Draw outer circle
+  doc.saveGraphicsState();
+  doc.setGState(new (doc as any).GState({ opacity: 0.85 }));
+  doc.setDrawColor(220, 38, 38); // Red color for stamp
+  doc.setLineWidth(2);
+  doc.circle(stampCenterX, stampCenterY, stampRadius, 'S');
+  
+  // Draw inner circle
+  doc.setLineWidth(1);
+  doc.circle(stampCenterX, stampCenterY, stampRadius - 4, 'S');
+  
+  // Company name curved at top
+  doc.setTextColor(220, 38, 38);
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'bold');
+  doc.text('LIVE-IN PROPERTIES LIMITED', stampCenterX, stampCenterY - 18, { align: 'center' });
+  
+  // PAID text in center - large and bold
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PAID', stampCenterX, stampCenterY + 2, { align: 'center' });
+  
+  // Date
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text(receipt.date, stampCenterX, stampCenterY + 10, { align: 'center' });
+  
+  // P.O Box at bottom
+  doc.setFontSize(5);
+  doc.text('P.O BOX 530-00241, KITENGELA', stampCenterX, stampCenterY + 18, { align: 'center' });
+  
+  doc.restoreGraphicsState();
+  
   // Generate QR Code
   try {
     const qrCodeDataUrl = await QRCode.toDataURL(COMPANY_WEBSITE, {
