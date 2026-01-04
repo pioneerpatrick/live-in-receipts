@@ -73,6 +73,7 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
         month: 'short',
         year: 'numeric'
       }),
+      clientId: client.id,
       clientName: client.name,
       clientPhone: client.phone || '',
       projectName: client.project_name,

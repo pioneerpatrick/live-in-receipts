@@ -4,7 +4,7 @@ import { ReceiptData } from '@/types/client';
 import signatureImage from '@/assets/signature.png';
 import logoImage from '@/assets/logo.jpg';
 
-const COMPANY_WEBSITE = 'https://live-inproperties.co.ke';
+const APP_BASE_URL = window.location.origin;
 
 export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> => {
   const doc = new jsPDF();
@@ -294,9 +294,10 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   
   doc.restoreGraphicsState();
   
-  // Generate QR Code
+  // Generate QR Code - links to client payment history
   try {
-    const qrCodeDataUrl = await QRCode.toDataURL(COMPANY_WEBSITE, {
+    const paymentHistoryUrl = `${APP_BASE_URL}/payments/${receipt.clientId}`;
+    const qrCodeDataUrl = await QRCode.toDataURL(paymentHistoryUrl, {
       width: 100,
       margin: 1,
       color: {
@@ -312,7 +313,7 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
     // QR code label
     doc.setTextColor(...mutedColor);
     doc.setFontSize(7);
-    doc.text('Scan to verify', 32.5, qrY + 28, { align: 'center' });
+    doc.text('Scan for payment history', 32.5, qrY + 28, { align: 'center' });
   } catch (error) {
     console.error('Failed to generate QR code:', error);
   }

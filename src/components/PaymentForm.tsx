@@ -68,6 +68,7 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
         month: 'long',
         year: 'numeric',
       }),
+      clientId: client.id,
       clientName: client.name,
       clientPhone: client.phone,
       projectName: data.projectName,
