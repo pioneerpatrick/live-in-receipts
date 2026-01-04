@@ -204,19 +204,18 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.setFontSize(8);
   doc.text('Authorized Signature', pageWidth - 50, y, { align: 'center' });
   
-  // PAID Stamp - rectangular style with rotation for authentic look
+  // PAID Stamp - rectangular style with rotation and ink texture for authentic look
   const stampCenterX = pageWidth / 2;
   const stampCenterY = 175;
-  const stampWidth = 75;
-  const stampHeight = 50;
-  const rotationAngle = -8; // Slight counter-clockwise rotation for authentic look
+  const stampWidth = 85;
+  const stampHeight = 48;
+  const rotationAngle = -6; // Slight counter-clockwise rotation for authentic look
   
   // Blue color for stamp border and text
-  const stampBlue: [number, number, number] = [30, 64, 175]; // Blue
-  const stampRed: [number, number, number] = [200, 30, 30]; // Red for PAID and date
+  const stampBlue: [number, number, number] = [25, 55, 160]; // Deep blue
+  const stampRed: [number, number, number] = [185, 25, 25]; // Bold red for PAID and date
   
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.88 }));
   
   // Apply rotation transformation around the stamp center
   const radians = (rotationAngle * Math.PI) / 180;
@@ -224,7 +223,6 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   const sin = Math.sin(radians);
   
   // Transform matrix for rotation around center point
-  // Translation to origin, rotate, translate back
   const a = cos;
   const b = sin;
   const c = -sin;
@@ -238,47 +236,58 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   const stampX = stampCenterX - stampWidth / 2;
   const stampY = stampCenterY - stampHeight / 2;
   
-  // Draw outer rectangle border
+  // Ink texture effect - draw multiple overlapping elements with varying opacity
+  const drawWithInkVariation = (drawFn: () => void, variations: number = 3) => {
+    for (let i = 0; i < variations; i++) {
+      const offsetX = (Math.random() - 0.5) * 0.3;
+      const offsetY = (Math.random() - 0.5) * 0.3;
+      const opacity = 0.7 + Math.random() * 0.25;
+      doc.setGState(new (doc as any).GState({ opacity }));
+      doc.saveGraphicsState();
+      (doc as any).internal.write(`1 0 0 1 ${offsetX.toFixed(3)} ${offsetY.toFixed(3)} cm`);
+      drawFn();
+      doc.restoreGraphicsState();
+    }
+  };
+  
+  // Draw outer rectangle border with ink variation
   doc.setDrawColor(...stampBlue);
-  doc.setLineWidth(2);
-  doc.rect(stampX, stampY, stampWidth, stampHeight, 'S');
+  drawWithInkVariation(() => {
+    doc.setLineWidth(2.5);
+    doc.rect(stampX, stampY, stampWidth, stampHeight, 'S');
+  }, 2);
   
   // Draw inner rectangle border
-  doc.setLineWidth(1);
-  doc.rect(stampX + 3, stampY + 3, stampWidth - 6, stampHeight - 6, 'S');
+  drawWithInkVariation(() => {
+    doc.setLineWidth(1.2);
+    doc.rect(stampX + 3.5, stampY + 3.5, stampWidth - 7, stampHeight - 7, 'S');
+  }, 2);
   
-  // Company name at top - blue (Times font)
+  // Company name - single line, blue (Times font)
+  doc.setGState(new (doc as any).GState({ opacity: 0.85 }));
   doc.setTextColor(...stampBlue);
-  doc.setFontSize(10);
-  doc.setFont('times', 'bold');
-  doc.text('LIVE-IN PROPERTIES', stampCenterX, stampY + 12, { align: 'center' });
-  
-  // LIMITED text
   doc.setFontSize(9);
   doc.setFont('times', 'bold');
-  doc.text('LIMITED', stampCenterX, stampY + 18, { align: 'center' });
+  doc.text('LIVE-IN PROPERTIES LIMITED', stampCenterX, stampY + 10, { align: 'center' });
   
-  // PAID text in center - large, bold, RED
+  // PAID text in center - LARGE, BOLD, RED - SHOUTING
+  doc.setGState(new (doc as any).GState({ opacity: 0.92 }));
   doc.setTextColor(...stampRed);
-  doc.setFontSize(20);
+  doc.setFontSize(28);
   doc.setFont('times', 'bold');
-  doc.text('PAID', stampCenterX, stampY + 30, { align: 'center' });
+  doc.text('PAID', stampCenterX, stampY + 26, { align: 'center' });
   
-  // Date - RED
-  doc.setFontSize(10);
+  // Date - LARGE, RED, prominent
+  doc.setFontSize(13);
   doc.setFont('times', 'bold');
-  doc.text(receipt.date, stampCenterX, stampY + 38, { align: 'center' });
+  doc.text(receipt.date, stampCenterX, stampY + 35, { align: 'center' });
   
-  // P.O Box - blue
+  // Address - single line, blue
+  doc.setGState(new (doc as any).GState({ opacity: 0.8 }));
   doc.setTextColor(...stampBlue);
-  doc.setFontSize(7);
-  doc.setFont('times', 'normal');
-  doc.text('P.O. Box 530 - 00241', stampCenterX, stampY + 44, { align: 'center' });
-  
-  // KITENGELA - blue
   doc.setFontSize(8);
   doc.setFont('times', 'bold');
-  doc.text('KITENGELA', stampCenterX, stampY + 49, { align: 'center' });
+  doc.text('P.O. Box 530-00241, KITENGELA', stampCenterX, stampY + 43, { align: 'center' });
   
   // Reset transformation
   (doc as any).internal.write('Q');
