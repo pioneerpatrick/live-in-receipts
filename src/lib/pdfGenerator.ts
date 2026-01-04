@@ -236,71 +236,32 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   const stampX = stampCenterX - stampWidth / 2;
   const stampY = stampCenterY - stampHeight / 2;
   
-  // Draw worn/faded border effect - segments with varying opacity to simulate uneven ink
-  const drawWornBorder = (x: number, y: number, w: number, h: number, lineWidth: number) => {
-    doc.setDrawColor(...stampBlue);
-    doc.setLineWidth(lineWidth);
-    
-    // Number of segments per side
-    const segments = 8;
-    
-    // Top edge - segments with varying opacity
-    for (let i = 0; i < segments; i++) {
-      const segStart = x + (w / segments) * i;
-      const segEnd = x + (w / segments) * (i + 1);
-      const opacity = 0.5 + Math.random() * 0.45; // Varying opacity for worn look
+  // Ink texture effect - draw multiple overlapping elements with varying opacity
+  const drawWithInkVariation = (drawFn: () => void, variations: number = 3) => {
+    for (let i = 0; i < variations; i++) {
+      const offsetX = (Math.random() - 0.5) * 0.3;
+      const offsetY = (Math.random() - 0.5) * 0.3;
+      const opacity = 0.7 + Math.random() * 0.25;
       doc.setGState(new (doc as any).GState({ opacity }));
-      doc.line(segStart, y, segEnd, y);
+      doc.saveGraphicsState();
+      (doc as any).internal.write(`1 0 0 1 ${offsetX.toFixed(3)} ${offsetY.toFixed(3)} cm`);
+      drawFn();
+      doc.restoreGraphicsState();
     }
-    
-    // Bottom edge
-    for (let i = 0; i < segments; i++) {
-      const segStart = x + (w / segments) * i;
-      const segEnd = x + (w / segments) * (i + 1);
-      const opacity = 0.5 + Math.random() * 0.45;
-      doc.setGState(new (doc as any).GState({ opacity }));
-      doc.line(segStart, y + h, segEnd, y + h);
-    }
-    
-    // Left edge
-    const vSegments = 6;
-    for (let i = 0; i < vSegments; i++) {
-      const segStart = y + (h / vSegments) * i;
-      const segEnd = y + (h / vSegments) * (i + 1);
-      const opacity = 0.5 + Math.random() * 0.45;
-      doc.setGState(new (doc as any).GState({ opacity }));
-      doc.line(x, segStart, x, segEnd);
-    }
-    
-    // Right edge
-    for (let i = 0; i < vSegments; i++) {
-      const segStart = y + (h / vSegments) * i;
-      const segEnd = y + (h / vSegments) * (i + 1);
-      const opacity = 0.5 + Math.random() * 0.45;
-      doc.setGState(new (doc as any).GState({ opacity }));
-      doc.line(x + w, segStart, x + w, segEnd);
-    }
-    
-    // Add corner emphasis with slight fade
-    doc.setGState(new (doc as any).GState({ opacity: 0.7 }));
-    doc.setLineWidth(lineWidth * 0.8);
-    // Corners get extra ink deposit look
-    const cornerLen = 4;
-    doc.line(x, y, x + cornerLen, y);
-    doc.line(x, y, x, y + cornerLen);
-    doc.line(x + w - cornerLen, y, x + w, y);
-    doc.line(x + w, y, x + w, y + cornerLen);
-    doc.line(x, y + h - cornerLen, x, y + h);
-    doc.line(x, y + h, x + cornerLen, y + h);
-    doc.line(x + w, y + h - cornerLen, x + w, y + h);
-    doc.line(x + w - cornerLen, y + h, x + w, y + h);
   };
   
-  // Draw outer worn border
-  drawWornBorder(stampX, stampY, stampWidth, stampHeight, 2.5);
+  // Draw outer rectangle border with ink variation
+  doc.setDrawColor(...stampBlue);
+  drawWithInkVariation(() => {
+    doc.setLineWidth(2.5);
+    doc.rect(stampX, stampY, stampWidth, stampHeight, 'S');
+  }, 2);
   
-  // Draw inner worn border
-  drawWornBorder(stampX + 3.5, stampY + 3.5, stampWidth - 7, stampHeight - 7, 1.2);
+  // Draw inner rectangle border
+  drawWithInkVariation(() => {
+    doc.setLineWidth(1.2);
+    doc.rect(stampX + 3.5, stampY + 3.5, stampWidth - 7, stampHeight - 7, 'S');
+  }, 2);
   
   // Company name - single line, blue (Times font)
   doc.setGState(new (doc as any).GState({ opacity: 0.85 }));
