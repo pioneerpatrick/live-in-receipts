@@ -42,6 +42,7 @@ export interface Payment {
 export interface ReceiptData {
   receiptNumber: string;
   date: string;
+  clientId: string;
   clientName: string;
   clientPhone: string;
   projectName: string;
