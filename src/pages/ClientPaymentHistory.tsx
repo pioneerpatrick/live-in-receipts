@@ -6,8 +6,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { Client, Payment } from '@/types/client';
-import { Loader2, FileText, Building2, MapPin, Phone, User } from 'lucide-react';
+import { Loader2, FileText, Building2, MapPin, Phone, User, Mail, Globe } from 'lucide-react';
 import logoImage from '@/assets/logo.jpg';
+
+interface CompanySettings {
+  company_name: string;
+  company_tagline: string | null;
+  phone: string | null;
+  email: string | null;
+  email_secondary: string | null;
+  website: string | null;
+  address: string | null;
+  po_box: string | null;
+  logo_url: string | null;
+}
 
 const formatCurrency = (amount: number): string => {
   return `KES ${amount.toLocaleString()}`;
@@ -25,6 +37,7 @@ const ClientPaymentHistory = () => {
   const { clientId } = useParams<{ clientId: string }>();
   const [client, setClient] = useState<Client | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +50,29 @@ const ClientPaymentHistory = () => {
       }
 
       try {
+        // Fetch company settings
+        const { data: settingsData } = await supabase
+          .from('company_settings')
+          .select('*')
+          .maybeSingle();
+
+        if (settingsData) {
+          setCompanySettings(settingsData as CompanySettings);
+        } else {
+          // Default settings if none found
+          setCompanySettings({
+            company_name: 'LIVE-IN PROPERTIES',
+            company_tagline: 'Genuine plots with ready title deeds',
+            phone: '+254 746 499 499',
+            email: 'liveinpropertiesltd@gmail.com',
+            email_secondary: 'info@liveinproperties.co.ke',
+            website: 'www.liveinproperties.co.ke',
+            address: 'Kitengela Africa House',
+            po_box: 'P.O. Box 530-00241, KITENGELA',
+            logo_url: null,
+          });
+        }
+
         // Fetch client data
         const { data: clientData, error: clientError } = await supabase
           .from('clients')
@@ -81,7 +117,7 @@ const ClientPaymentHistory = () => {
     );
   }
 
-  if (error || !client) {
+  if (error || !client || !companySettings) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="max-w-md mx-4">
@@ -95,6 +131,7 @@ const ClientPaymentHistory = () => {
 
   const discountedPrice = client.total_price - client.discount;
   const percentPaid = client.percent_paid ?? 0;
+  const logoSrc = companySettings.logo_url || logoImage;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 py-6 px-4">
@@ -103,10 +140,29 @@ const ClientPaymentHistory = () => {
         <Card className="border-primary/20">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-4">
-              <img src={logoImage} alt="Logo" className="h-16 w-16 rounded-lg object-cover" />
-              <div>
-                <CardTitle className="text-xl text-primary">LIVE-IN PROPERTIES LIMITED</CardTitle>
-                <p className="text-sm text-muted-foreground">Payment History</p>
+              <img src={logoSrc} alt="Logo" className="h-16 w-16 rounded-lg object-cover" />
+              <div className="flex-1">
+                <CardTitle className="text-xl text-primary">{companySettings.company_name}</CardTitle>
+                {companySettings.company_tagline && (
+                  <p className="text-sm text-muted-foreground">{companySettings.company_tagline}</p>
+                )}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
+                  {companySettings.phone && (
+                    <span className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" /> {companySettings.phone}
+                    </span>
+                  )}
+                  {companySettings.email && (
+                    <span className="flex items-center gap-1">
+                      <Mail className="h-3 w-3" /> {companySettings.email}
+                    </span>
+                  )}
+                  {companySettings.website && (
+                    <span className="flex items-center gap-1">
+                      <Globe className="h-3 w-3" /> {companySettings.website}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -259,8 +315,8 @@ const ClientPaymentHistory = () => {
 
         {/* Footer */}
         <div className="text-center text-sm text-muted-foreground pb-4">
-          <p>LIVE-IN PROPERTIES LIMITED</p>
-          <p>P.O. Box 530-00241, Kitengela</p>
+          <p>{companySettings.company_name}</p>
+          <p>{companySettings.po_box || companySettings.address}</p>
         </div>
       </div>
     </div>
