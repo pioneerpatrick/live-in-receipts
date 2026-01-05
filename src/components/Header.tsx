@@ -52,60 +52,60 @@ const Header = () => {
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {/* Admin Navigation Links */}
             {role === 'admin' && (
-              <nav className="hidden md:flex items-center gap-0.5">
+              <nav className="hidden lg:flex items-center gap-0.5">
                 <Button
                   asChild
                   variant={isActive('/') ? 'default' : 'ghost'}
                   size="sm"
-                  className="px-2"
-                  title="Dashboard"
+                  className="gap-1.5 px-2.5 text-xs"
                 >
                   <Link to="/">
-                    <LayoutDashboard className="w-4 h-4" />
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    <span>Dashboard</span>
                   </Link>
                 </Button>
                 <Button
                   asChild
                   variant={isActive('/admin') ? 'default' : 'ghost'}
                   size="sm"
-                  className="px-2"
-                  title="Accounting"
+                  className="gap-1.5 px-2.5 text-xs"
                 >
                   <Link to="/admin">
-                    <BarChart3 className="w-4 h-4" />
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    <span>Accounts</span>
                   </Link>
                 </Button>
                 <Button
                   asChild
                   variant={isActive('/payroll') ? 'default' : 'ghost'}
                   size="sm"
-                  className="px-2"
-                  title="Payroll"
+                  className="gap-1.5 px-2.5 text-xs"
                 >
                   <Link to="/payroll">
-                    <Calculator className="w-4 h-4" />
+                    <Calculator className="w-3.5 h-3.5" />
+                    <span>Payroll</span>
                   </Link>
                 </Button>
                 <Button
                   asChild
                   variant={isActive('/projects') ? 'default' : 'ghost'}
                   size="sm"
-                  className="px-2"
-                  title="Projects"
+                  className="gap-1.5 px-2.5 text-xs"
                 >
                   <Link to="/projects">
-                    <Building className="w-4 h-4" />
+                    <Building className="w-3.5 h-3.5" />
+                    <span>Projects</span>
                   </Link>
                 </Button>
                 <Button
                   asChild
                   variant={isActive('/settings') ? 'default' : 'ghost'}
                   size="sm"
-                  className="px-2"
-                  title="Settings"
+                  className="gap-1.5 px-2.5 text-xs"
                 >
                   <Link to="/settings">
-                    <Settings className="w-4 h-4" />
+                    <Settings className="w-3.5 h-3.5" />
+                    <span>Settings</span>
                   </Link>
                 </Button>
               </nav>
