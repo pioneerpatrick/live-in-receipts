@@ -346,8 +346,14 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   
   doc.restoreGraphicsState();
   
-  // QR Code and Signature Section - positioned clearly above footer
-  const sectionY = 210; // Fixed position for QR and signature section
+  // QR Code and Signature Section - positioned just above footer
+  const footerY = pageHeight - 20;
+  const sectionY = footerY - 50; // Position 50px above footer
+
+  // Draw a subtle separator line above QR and Signature
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.3);
+  doc.line(20, sectionY - 5, pageWidth - 20, sectionY - 5);
   
   // QR Code on the left
   try {
@@ -361,30 +367,28 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
       }
     });
     
-    doc.addImage(qrCodeDataUrl, 'PNG', 20, sectionY, 30, 30);
+    doc.addImage(qrCodeDataUrl, 'PNG', 20, sectionY, 28, 28);
     
     // QR code label
     doc.setTextColor(...mutedColor);
     doc.setFontSize(7);
-    doc.text('Scan for payment history', 35, sectionY + 34, { align: 'center' });
+    doc.text('Scan for payment history', 34, sectionY + 32, { align: 'center' });
   } catch (error) {
     console.error('Failed to generate QR code:', error);
   }
   
-  // Signature on the right
-  doc.addImage(signatureImage, 'PNG', pageWidth - 75, sectionY, 50, 25);
+  // Signature on the right - aligned with QR code
+  doc.addImage(signatureImage, 'PNG', pageWidth - 70, sectionY, 45, 22);
   
   // Signature line
   doc.setDrawColor(...mutedColor);
   doc.setLineWidth(0.2);
-  doc.line(pageWidth - 80, sectionY + 28, pageWidth - 20, sectionY + 28);
+  doc.line(pageWidth - 75, sectionY + 25, pageWidth - 20, sectionY + 25);
   doc.setTextColor(...mutedColor);
   doc.setFontSize(8);
-  doc.text('Authorized Signature', pageWidth - 50, sectionY + 33, { align: 'center' });
+  doc.text('Authorized Signature', pageWidth - 47, sectionY + 30, { align: 'center' });
   
   // Footer - at the very bottom
-  const footerY = pageHeight - 20;
-  
   doc.setFillColor(...secondaryColor);
   doc.rect(0, footerY - 10, pageWidth, 30, 'F');
   
