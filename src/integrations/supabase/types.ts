@@ -58,6 +58,7 @@ export type Database = {
           commission_received: number | null
           completion_date: string | null
           created_at: string
+          created_by: string | null
           discount: number
           id: string
           initial_payment_method: string | null
@@ -87,6 +88,7 @@ export type Database = {
           commission_received?: number | null
           completion_date?: string | null
           created_at?: string
+          created_by?: string | null
           discount?: number
           id?: string
           initial_payment_method?: string | null
@@ -116,6 +118,7 @@ export type Database = {
           commission_received?: number | null
           completion_date?: string | null
           created_at?: string
+          created_by?: string | null
           discount?: number
           id?: string
           initial_payment_method?: string | null
