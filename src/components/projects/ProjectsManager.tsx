@@ -98,16 +98,45 @@ export function ProjectsManager() {
   }, [selectedProject]);
 
   // Project handlers
-  const handleAddProject = async (data: Omit<Project, 'id' | 'created_at' | 'updated_at' | 'total_plots'>) => {
+  const handleAddProject = async (data: { 
+    name: string; 
+    location: string; 
+    description: string | null; 
+    capacity: number;
+    plotNumbers?: string[];
+  }) => {
     setIsSubmitting(true);
     try {
-      await addProject(data);
-      toast.success('Project created successfully');
+      // Create the project first
+      const project = await addProject({
+        name: data.name,
+        location: data.location,
+        description: data.description,
+        capacity: data.capacity
+      });
+      
+      // If plot numbers were provided, create the plots
+      if (data.plotNumbers && data.plotNumbers.length > 0) {
+        const plotsToAdd = data.plotNumbers.map(plotNumber => ({
+          project_id: project.id,
+          plot_number: plotNumber,
+          size: 'TBD', // Default size, can be updated later
+          price: 0, // Default price, can be updated later
+          status: 'available' as const
+        }));
+        await addBulkPlots(plotsToAdd);
+      }
+      
+      toast.success(`Project created with ${data.plotNumbers?.length || 0} plots`);
       setShowProjectForm(false);
       fetchProjects();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding project:', error);
-      toast.error('Failed to create project');
+      if (error.code === '23505') {
+        toast.error('Some plot numbers already exist');
+      } else {
+        toast.error('Failed to create project');
+      }
     } finally {
       setIsSubmitting(false);
     }
