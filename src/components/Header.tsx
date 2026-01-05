@@ -49,15 +49,16 @@ const Header = () => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {/* Admin Navigation Links */}
             {role === 'admin' && (
-              <nav className="hidden lg:flex items-center gap-0.5">
+              <nav className="hidden md:flex items-center gap-0.5">
                 <Button
                   asChild
                   variant={isActive('/') ? 'default' : 'ghost'}
                   size="sm"
-                  className="gap-1 px-2"
+                  className="px-2"
+                  title="Dashboard"
                 >
                   <Link to="/">
                     <LayoutDashboard className="w-4 h-4" />
@@ -67,44 +68,44 @@ const Header = () => {
                   asChild
                   variant={isActive('/admin') ? 'default' : 'ghost'}
                   size="sm"
-                  className="gap-2"
+                  className="px-2"
+                  title="Accounting"
                 >
                   <Link to="/admin">
                     <BarChart3 className="w-4 h-4" />
-                    <span>Accounting</span>
                   </Link>
                 </Button>
                 <Button
                   asChild
                   variant={isActive('/payroll') ? 'default' : 'ghost'}
                   size="sm"
-                  className="gap-2"
+                  className="px-2"
+                  title="Payroll"
                 >
                   <Link to="/payroll">
                     <Calculator className="w-4 h-4" />
-                    <span>Payroll</span>
                   </Link>
                 </Button>
                 <Button
                   asChild
                   variant={isActive('/projects') ? 'default' : 'ghost'}
                   size="sm"
-                  className="gap-2"
+                  className="px-2"
+                  title="Projects"
                 >
                   <Link to="/projects">
                     <Building className="w-4 h-4" />
-                    <span>Projects</span>
                   </Link>
                 </Button>
                 <Button
                   asChild
                   variant={isActive('/settings') ? 'default' : 'ghost'}
                   size="sm"
-                  className="gap-2"
+                  className="px-2"
+                  title="Settings"
                 >
                   <Link to="/settings">
                     <Settings className="w-4 h-4" />
-                    <span>Settings</span>
                   </Link>
                 </Button>
               </nav>
@@ -120,39 +121,13 @@ const Header = () => {
               </Button>
             )}
 
-            {/* Contact Information - Hidden on mobile/tablet */}
-            <div className="hidden xl:flex flex-wrap items-center justify-center gap-4 text-sm">
-              <a 
-                href="mailto:liveinproperties2021@gmail.com" 
-                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Mail className="w-4 h-4" />
-                <span>liveinproperties2021@gmail.com</span>
-              </a>
-              <a 
-                href="tel:0746499499" 
-                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Phone className="w-4 h-4" />
-                <span>0746499499</span>
-              </a>
-              <a 
-                href="https://live-inproperties.co.ke" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Globe className="w-4 h-4" />
-                <span>live-inproperties.co.ke</span>
-              </a>
-            </div>
-
-            {/* Mobile contact icons */}
-            <div className="flex xl:hidden items-center gap-1">
+            {/* Contact icons - always shown as icons */}
+            <div className="flex items-center gap-0.5">
               <a 
                 href="tel:0746499499" 
                 className="p-2 text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Call us"
+                title="0746499499"
               >
                 <Phone className="w-4 h-4" />
               </a>
@@ -160,8 +135,19 @@ const Header = () => {
                 href="mailto:liveinproperties2021@gmail.com" 
                 className="p-2 text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Email us"
+                title="liveinproperties2021@gmail.com"
               >
                 <Mail className="w-4 h-4" />
+              </a>
+              <a 
+                href="https://live-inproperties.co.ke" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="p-2 text-muted-foreground hover:text-primary transition-colors hidden sm:block"
+                aria-label="Visit website"
+                title="live-inproperties.co.ke"
+              >
+                <Globe className="w-4 h-4" />
               </a>
             </div>
 
