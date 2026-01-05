@@ -142,12 +142,14 @@ export const generateReceiptNumber = (): string => {
 };
 
 export const formatCurrency = (amount: number): string => {
+  // Validate the number to prevent displaying corrupted data
+  const validAmount = typeof amount === 'number' && isFinite(amount) ? amount : 0;
   return new Intl.NumberFormat('en-KE', {
     style: 'currency',
     currency: 'KES',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(validAmount);
 };
 
 // Bulk import clients (for Excel data) - percent_paid is calculated by DB trigger
