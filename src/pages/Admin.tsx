@@ -439,10 +439,10 @@ const Admin = () => {
       <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
-            <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+            <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             <div>
-              <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">Admin Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Manage accounting, users, and settings</p>
+              <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">Accounting Panel</h1>
+              <p className="text-sm text-muted-foreground">Manage accounting, users, and activity logs</p>
             </div>
           </div>
           <Button onClick={loadAllData} variant="outline" className="flex items-center gap-2">
@@ -512,10 +512,6 @@ const Admin = () => {
             <TabsTrigger value="users" className="flex items-center gap-2">
               <UserCog className="w-4 h-4" />
               <span className="hidden sm:inline">Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="company" className="flex items-center gap-2">
-              <Building className="w-4 h-4" />
-              <span className="hidden sm:inline">Company</span>
             </TabsTrigger>
             <TabsTrigger value="activity" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
@@ -639,197 +635,6 @@ const Admin = () => {
                       </TableBody>
                     </Table>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Company Settings Tab */}
-          <TabsContent value="company">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Building className="w-5 h-5" />
-                      Company & Receipt Settings
-                    </CardTitle>
-                    <CardDescription>
-                      Customize company details and receipt headers/footers
-                    </CardDescription>
-                  </div>
-                  <Button onClick={handleSaveSettings} disabled={savingSettings || !companySettings}>
-                    {savingSettings ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4 mr-2" />
-                    )}
-                    Save Changes
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {!companySettings ? (
-                  <div className="text-center py-8 text-muted-foreground">Loading settings...</div>
-                ) : (
-                  <>
-                    {/* Company Logo */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Company Logo</h3>
-                      <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0">
-                          {companySettings.logo_url ? (
-                            <div className="relative">
-                              <img
-                                src={companySettings.logo_url}
-                                alt="Company Logo"
-                                className="w-24 h-24 object-contain border rounded-lg bg-muted"
-                              />
-                              <Button
-                                variant="destructive"
-                                size="icon"
-                                className="absolute -top-2 -right-2 w-6 h-6"
-                                onClick={handleRemoveLogo}
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/50">
-                              <Image className="w-8 h-8 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleLogoUpload}
-                            className="hidden"
-                          />
-                          <Button
-                            variant="outline"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploadingLogo}
-                          >
-                            {uploadingLogo ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                              <Upload className="w-4 h-4 mr-2" />
-                            )}
-                            Upload Logo
-                          </Button>
-                          <p className="text-xs text-muted-foreground">Max 2MB, JPG/PNG</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Company Information */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Company Information</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="company_name">Company Name</Label>
-                          <Input
-                            id="company_name"
-                            value={companySettings.company_name}
-                            onChange={(e) => updateSetting('company_name', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="company_tagline">Tagline</Label>
-                          <Input
-                            id="company_tagline"
-                            value={companySettings.company_tagline || ''}
-                            onChange={(e) => updateSetting('company_tagline', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Phone</Label>
-                          <Input
-                            id="phone"
-                            value={companySettings.phone || ''}
-                            onChange={(e) => updateSetting('phone', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Primary Email</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={companySettings.email || ''}
-                            onChange={(e) => updateSetting('email', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email_secondary">Secondary Email</Label>
-                          <Input
-                            id="email_secondary"
-                            type="email"
-                            value={companySettings.email_secondary || ''}
-                            onChange={(e) => updateSetting('email_secondary', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="website">Website</Label>
-                          <Input
-                            id="website"
-                            value={companySettings.website || ''}
-                            onChange={(e) => updateSetting('website', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="social_handle">Social Handle</Label>
-                          <Input
-                            id="social_handle"
-                            value={companySettings.social_handle || ''}
-                            onChange={(e) => updateSetting('social_handle', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="address">Address</Label>
-                          <Input
-                            id="address"
-                            value={companySettings.address || ''}
-                            onChange={(e) => updateSetting('address', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2 sm:col-span-2">
-                          <Label htmlFor="po_box">P.O. Box</Label>
-                          <Input
-                            id="po_box"
-                            value={companySettings.po_box || ''}
-                            onChange={(e) => updateSetting('po_box', e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Receipt Customization */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4">Receipt Customization</h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="receipt_footer_message">Footer Message</Label>
-                          <Textarea
-                            id="receipt_footer_message"
-                            value={companySettings.receipt_footer_message || ''}
-                            onChange={(e) => updateSetting('receipt_footer_message', e.target.value)}
-                            rows={2}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="receipt_watermark">Watermark Text</Label>
-                          <Input
-                            id="receipt_watermark"
-                            value={companySettings.receipt_watermark || ''}
-                            onChange={(e) => updateSetting('receipt_watermark', e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </>
                 )}
               </CardContent>
             </Card>

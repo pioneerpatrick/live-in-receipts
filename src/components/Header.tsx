@@ -126,7 +126,7 @@ const Header = () => {
                     <DropdownMenuItem asChild className="cursor-pointer">
                       <Link to="/admin" className="flex items-center">
                         <Shield className="w-4 h-4 mr-2" />
-                        <span>Admin Panel</span>
+                        <span>Accounting Panel</span>
                       </Link>
                     </DropdownMenuItem>
                   )}
