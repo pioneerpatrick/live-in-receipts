@@ -279,12 +279,20 @@ const Settings = () => {
       <Header />
       
       <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <div className="flex items-center gap-3 mb-6 sm:mb-8">
-          <SettingsIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">Settings</h1>
-            <p className="text-sm text-muted-foreground">System settings and activity logs</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+          <div className="flex items-center gap-3">
+            <SettingsIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">Settings</h1>
+              <p className="text-sm text-muted-foreground">System settings and activity logs</p>
+            </div>
           </div>
+          <Button asChild variant="outline">
+            <Link to="/" className="flex items-center gap-2">
+              <Home className="w-4 h-4" />
+              Back to Dashboard
+            </Link>
+          </Button>
         </div>
 
         <Tabs defaultValue="company" className="space-y-4">

@@ -41,16 +41,6 @@ const Header = () => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-            {/* Dashboard Button - Always visible for logged in users */}
-            {user && (
-              <Button asChild variant="outline" size="sm" className="gap-1 sm:gap-2 px-2 sm:px-3">
-                <Link to="/">
-                  <Home className="w-4 h-4" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                </Link>
-              </Button>
-            )}
-
             {/* Contact Information - Hidden on mobile/tablet */}
             <div className="hidden xl:flex flex-wrap items-center justify-center gap-4 text-sm">
               <a 

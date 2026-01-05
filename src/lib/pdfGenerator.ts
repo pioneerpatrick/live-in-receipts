@@ -257,9 +257,8 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   }
   
   // PAID Stamp - rectangular style with rotation and ink texture for authentic look
-  // Position stamp after all the table content - use current y position
   const stampCenterX = pageWidth / 2;
-  const stampCenterY = y + 30; // Position stamp below the agent details
+  const stampCenterY = 175;
   const stampWidth = 85;
   const stampHeight = 48;
   const rotationAngle = -6; // Slight counter-clockwise rotation for authentic look
@@ -347,8 +346,8 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   
   doc.restoreGraphicsState();
   
-  // QR Code and Signature Section - positioned below the stamp with proper spacing
-  const sectionY = stampCenterY + 40; // Position below the PAID stamp
+  // QR Code and Signature Section - positioned clearly above footer
+  const sectionY = 210; // Fixed position for QR and signature section
   
   // QR Code on the left
   try {

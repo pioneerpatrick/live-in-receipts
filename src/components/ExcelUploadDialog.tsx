@@ -74,52 +74,12 @@ const COLUMN_MAPPING: Record<string, keyof ClientImport> = {
   'date of sale': 'sale_date',
 };
 
-interface ValidationError {
-  row: number;
-  field: string;
-  message: string;
-  value: any;
-}
-
-const MAX_REASONABLE_AMOUNT = 1000000000; // 1 billion KES
-const MIN_AMOUNT = 0;
-
 const parseNumber = (value: any): number => {
   if (value === null || value === undefined || value === '' || value === '-') return 0;
-  if (typeof value === 'number') {
-    // Check for reasonable bounds
-    if (!isFinite(value) || value > MAX_REASONABLE_AMOUNT || value < -MAX_REASONABLE_AMOUNT) {
-      return 0;
-    }
-    return value;
-  }
-  
-  // Clean the string - remove currency symbols, commas, and spaces
-  const cleaned = value.toString().replace(/[,KES\s]/gi, '').trim();
-  
-  // Check for concatenated numbers (e.g., "200000300000" which should be "200000" or "300000")
-  // If the cleaned number is unreasonably large, try to parse it differently
+  if (typeof value === 'number') return value;
+  const cleaned = value.toString().replace(/[,KES\s]/gi, '');
   const num = parseFloat(cleaned);
-  
-  if (isNaN(num)) return 0;
-  
-  // Validate the number is within reasonable bounds
-  if (num > MAX_REASONABLE_AMOUNT || num < -MAX_REASONABLE_AMOUNT) {
-    console.warn(`Suspicious value detected: ${value} -> ${num}. Setting to 0.`);
-    return 0;
-  }
-  
-  return num;
-};
-
-const validateNumber = (value: number, fieldName: string, rowNum: number): ValidationError | null => {
-  if (value < MIN_AMOUNT) {
-    return { row: rowNum, field: fieldName, message: `${fieldName} cannot be negative`, value };
-  }
-  if (value > MAX_REASONABLE_AMOUNT) {
-    return { row: rowNum, field: fieldName, message: `${fieldName} exceeds maximum allowed value`, value };
-  }
-  return null;
+  return isNaN(num) ? 0 : num;
 };
 
 const parseDate = (value: any): string | null => {
@@ -150,8 +110,6 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
   const [importing, setImporting] = useState(false);
   const [mappedColumns, setMappedColumns] = useState<string[]>([]);
   const [unmappedColumns, setUnmappedColumns] = useState<string[]>([]);
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-  const [skippedRows, setSkippedRows] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,15 +158,10 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
       setMappedColumns(mapped);
       setUnmappedColumns(unmapped);
 
-      // Parse data rows with validation
+      // Parse data rows
       const clients: ClientImport[] = [];
-      const errors: ValidationError[] = [];
-      let skipped = 0;
-      
       for (let i = 1; i < jsonData.length; i++) {
         const row = jsonData[i];
-        const rowNum = i + 1; // Excel row number (1-indexed, accounting for header)
-        
         if (!row || row.length === 0) continue;
 
         const client: Partial<ClientImport> = {
@@ -232,8 +185,6 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
           sale_date: null,
         };
 
-        let hasValidationError = false;
-
         Object.entries(columnIndexMap).forEach(([indexStr, field]) => {
           const index = parseInt(indexStr);
           const value = row[index];
@@ -250,23 +201,16 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
             case 'payment_type':
             case 'notes':
             case 'status':
-              (client as any)[field] = value?.toString().trim() || '';
+              (client as any)[field] = value?.toString() || '';
               break;
             case 'unit_price':
             case 'number_of_plots':
             case 'total_price':
             case 'discount':
             case 'total_paid':
-            case 'balance': {
-              const numValue = parseNumber(value);
-              const error = validateNumber(numValue, field, rowNum);
-              if (error) {
-                errors.push(error);
-                hasValidationError = true;
-              }
-              (client as any)[field] = numValue;
+            case 'balance':
+              (client as any)[field] = parseNumber(value);
               break;
-            }
             case 'completion_date':
             case 'next_payment_date':
             case 'sale_date':
@@ -276,50 +220,18 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
         });
 
         // Skip rows without a name
-        if (!client.name?.trim()) {
-          skipped++;
-          continue;
-        }
+        if (!client.name?.trim()) continue;
 
         // Ensure phone is a string
         if (client.phone && typeof client.phone !== 'string') {
           client.phone = String(client.phone);
         }
 
-        // Additional validation: check data consistency
-        if (client.total_price && client.total_paid && client.balance !== undefined) {
-          const expectedBalance = (client.total_price || 0) - (client.discount || 0) - (client.total_paid || 0);
-          const actualBalance = client.balance || 0;
-          
-          // If balance doesn't match, recalculate it
-          if (Math.abs(expectedBalance - actualBalance) > 1) {
-            client.balance = Math.max(0, expectedBalance);
-          }
-        }
-
-        // Validate total_paid doesn't exceed total_price (accounting for discount)
-        const maxPayable = (client.total_price || 0) - (client.discount || 0);
-        if ((client.total_paid || 0) > maxPayable * 1.1) { // Allow 10% tolerance for rounding
-          errors.push({
-            row: rowNum,
-            field: 'total_paid',
-            message: `Total paid (${client.total_paid}) exceeds price after discount (${maxPayable})`,
-            value: client.total_paid
-          });
-        }
-
         clients.push(client as ClientImport);
       }
 
-      setValidationErrors(errors);
-      setSkippedRows(skipped);
       setParsedData(clients);
-      
-      if (errors.length > 0) {
-        toast.warning(`Parsed ${clients.length} records with ${errors.length} validation warnings`);
-      } else {
-        toast.success(`Parsed ${clients.length} records from Excel`);
-      }
+      toast.success(`Parsed ${clients.length} records from Excel`);
     } catch (error) {
       console.error('Error parsing Excel:', error);
       toast.error('Failed to parse Excel file');
@@ -351,8 +263,6 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
     setParsedData([]);
     setMappedColumns([]);
     setUnmappedColumns([]);
-    setValidationErrors([]);
-    setSkippedRows(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -493,43 +403,11 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
               )}
             </div>
 
-            {/* Validation Errors */}
-            {validationErrors.length > 0 && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  <p className="font-medium mb-2">{validationErrors.length} validation warnings found:</p>
-                  <ScrollArea className="h-[100px]">
-                    <ul className="text-sm space-y-1">
-                      {validationErrors.slice(0, 10).map((error, idx) => (
-                        <li key={idx}>
-                          Row {error.row}: {error.message}
-                        </li>
-                      ))}
-                      {validationErrors.length > 10 && (
-                        <li className="text-muted-foreground">... and {validationErrors.length - 10} more</li>
-                      )}
-                    </ul>
-                  </ScrollArea>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {skippedRows > 0 && (
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  {skippedRows} rows were skipped (missing client name)
-                </AlertDescription>
-              </Alert>
-            )}
-
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 Importing will add {parsedData.length} new client records to the database. 
                 This will not delete or modify existing records.
-                {validationErrors.length > 0 && ' Some values have been automatically corrected.'}
               </AlertDescription>
             </Alert>
           </div>
