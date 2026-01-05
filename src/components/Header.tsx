@@ -1,4 +1,4 @@
-import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, LayoutDashboard, Building } from 'lucide-react';
+import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, LayoutDashboard, Building, BarChart3 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,35 +26,79 @@ const Header = () => {
     toast.success('Logged out successfully');
   };
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <header className="gradient-header border-b border-border sticky top-0 z-50">
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo and Company Name */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
-            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
-              <Home className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="font-heading text-base sm:text-xl md:text-2xl font-bold text-secondary truncate">
-                LIVE-IN <span className="text-primary">PROPERTIES</span>
-              </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground italic hidden xs:block truncate">
-                Genuine plots with ready title deeds
-              </p>
-            </div>
+            <Link to="/" className="flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
+                <Home className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="font-heading text-base sm:text-xl md:text-2xl font-bold text-secondary truncate">
+                  LIVE-IN <span className="text-primary">PROPERTIES</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground italic hidden xs:block truncate">
+                  Genuine plots with ready title deeds
+                </p>
+              </div>
+            </Link>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-            {/* Back to Dashboard Button for Admins */}
+            {/* Admin Navigation Links */}
+            {role === 'admin' && (
+              <nav className="hidden md:flex items-center gap-1">
+                <Button
+                  asChild
+                  variant={isActive('/admin') ? 'default' : 'ghost'}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Link to="/admin">
+                    <BarChart3 className="w-4 h-4" />
+                    <span>Accounting</span>
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant={isActive('/projects') ? 'default' : 'ghost'}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Link to="/projects">
+                    <Building className="w-4 h-4" />
+                    <span>Projects</span>
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant={isActive('/settings') ? 'default' : 'ghost'}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Link to="/settings">
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                  </Link>
+                </Button>
+              </nav>
+            )}
+
+            {/* Back to Dashboard Button for Admins (mobile only when on subpage) */}
             {showBackToDashboard && (
-              <Button asChild variant="outline" size="sm" className="gap-1 sm:gap-2">
+              <Button asChild variant="outline" size="sm" className="gap-1 sm:gap-2 md:hidden">
                 <Link to="/">
                   <LayoutDashboard className="w-4 h-4" />
                   <span className="hidden sm:inline">Dashboard</span>
                 </Link>
               </Button>
             )}
+
             {/* Contact Information - Hidden on mobile/tablet */}
             <div className="hidden xl:flex flex-wrap items-center justify-center gap-4 text-sm">
               <a 
@@ -122,29 +166,29 @@ const Header = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {/* Mobile navigation for admins */}
                   {role === 'admin' && (
-                    <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link to="/admin" className="flex items-center">
-                        <Shield className="w-4 h-4 mr-2" />
-                        <span>Accounting Panel</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  {role === 'admin' && (
-                    <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link to="/projects" className="flex items-center">
-                        <Building className="w-4 h-4 mr-2" />
-                        <span>Projects & Plots</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  {role === 'admin' && (
-                    <DropdownMenuItem asChild className="cursor-pointer">
-                      <Link to="/settings" className="flex items-center">
-                        <Settings className="w-4 h-4 mr-2" />
-                        <span>Settings</span>
-                      </Link>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem asChild className="cursor-pointer md:hidden">
+                        <Link to="/admin" className="flex items-center">
+                          <BarChart3 className="w-4 h-4 mr-2" />
+                          <span>Accounting Panel</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="cursor-pointer md:hidden">
+                        <Link to="/projects" className="flex items-center">
+                          <Building className="w-4 h-4 mr-2" />
+                          <span>Projects & Plots</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="cursor-pointer md:hidden">
+                        <Link to="/settings" className="flex items-center">
+                          <Settings className="w-4 h-4 mr-2" />
+                          <span>Settings</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="md:hidden" />
+                    </>
                   )}
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                     <LogOut className="w-4 h-4 mr-2" />
