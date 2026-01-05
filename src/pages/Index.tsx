@@ -22,6 +22,7 @@ import {
   generateReceiptNumber,
   formatCurrency,
 } from '@/lib/supabaseStorage';
+import { getProjects, getPlots, sellPlot } from '@/lib/projectStorage';
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
 import { logActivity } from '@/lib/activityLogger';
@@ -145,6 +146,22 @@ const Index = () => {
           commission_received: 0,
           commission_balance: data.commission || null,
         });
+
+        // Mark the plot as sold
+        try {
+          const projects = await getProjects();
+          const project = projects.find(p => p.name === data.projectName);
+          if (project) {
+            const plots = await getPlots(project.id);
+            const plot = plots.find(p => p.plot_number === data.plotNumber);
+            if (plot) {
+              await sellPlot(plot.id, newClient.id);
+            }
+          }
+        } catch (plotError) {
+          console.error('Error marking plot as sold:', plotError);
+          // Don't fail the whole operation if plot update fails
+        }
 
         if (data.initialPayment > 0) {
           await addPayment({

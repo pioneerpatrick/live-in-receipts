@@ -1,13 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Client } from '@/types/client';
+import { Project, Plot } from '@/types/project';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getProjects, getPlots } from '@/lib/projectStorage';
 
 const clientSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -34,6 +36,12 @@ interface ClientFormProps {
 }
 
 const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [plots, setPlots] = useState<Plot[]>([]);
+  const [availablePlots, setAvailablePlots] = useState<Plot[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [isLoadingPlots, setIsLoadingPlots] = useState(false);
+
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
@@ -53,6 +61,48 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
   });
 
   const paymentType = form.watch('paymentType');
+  const selectedProjectName = form.watch('projectName');
+  const selectedPlotNumber = form.watch('plotNumber');
+
+  // Fetch projects when dialog opens
+  useEffect(() => {
+    if (open) {
+      setIsLoadingProjects(true);
+      getProjects()
+        .then(setProjects)
+        .catch(console.error)
+        .finally(() => setIsLoadingProjects(false));
+    }
+  }, [open]);
+
+  // Fetch plots when project is selected
+  useEffect(() => {
+    if (selectedProjectName && !client) {
+      const selectedProject = projects.find(p => p.name === selectedProjectName);
+      if (selectedProject) {
+        setIsLoadingPlots(true);
+        getPlots(selectedProject.id)
+          .then((allPlots) => {
+            setPlots(allPlots);
+            // Filter to only available plots
+            const available = allPlots.filter(p => p.status === 'available');
+            setAvailablePlots(available);
+          })
+          .catch(console.error)
+          .finally(() => setIsLoadingPlots(false));
+      }
+    }
+  }, [selectedProjectName, projects, client]);
+
+  // Auto-populate price when plot is selected
+  useEffect(() => {
+    if (selectedPlotNumber && !client) {
+      const selectedPlot = plots.find(p => p.plot_number === selectedPlotNumber);
+      if (selectedPlot) {
+        form.setValue('totalPrice', selectedPlot.price);
+      }
+    }
+  }, [selectedPlotNumber, plots, form, client]);
 
   useEffect(() => {
     if (client) {
@@ -85,6 +135,8 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
         installmentMonths: undefined,
         commission: 0,
       });
+      setPlots([]);
+      setAvailablePlots([]);
     }
   }, [client, form]);
 
@@ -141,9 +193,34 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter project name" {...field} />
-                    </FormControl>
+                    {client ? (
+                      <FormControl>
+                        <Input {...field} disabled />
+                      </FormControl>
+                    ) : (
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue('plotNumber', '');
+                          form.setValue('totalPrice', 0);
+                        }} 
+                        value={field.value}
+                        disabled={isLoadingProjects}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={isLoadingProjects ? "Loading..." : "Select project"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {projects.map((project) => (
+                            <SelectItem key={project.id} value={project.name}>
+                              {project.name} ({project.location})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -155,9 +232,35 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Plot Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="A-123" {...field} />
-                    </FormControl>
+                    {client ? (
+                      <FormControl>
+                        <Input {...field} disabled />
+                      </FormControl>
+                    ) : (
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                        disabled={!selectedProjectName || isLoadingPlots}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={
+                              isLoadingPlots ? "Loading..." : 
+                              !selectedProjectName ? "Select project first" : 
+                              availablePlots.length === 0 ? "No plots available" :
+                              "Select plot"
+                            } />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availablePlots.map((plot) => (
+                            <SelectItem key={plot.id} value={plot.plot_number}>
+                              {plot.plot_number} - {plot.size} (KES {plot.price.toLocaleString()})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
