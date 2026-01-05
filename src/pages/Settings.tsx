@@ -20,8 +20,9 @@ import { logActivity, getActionLabel, ActivityAction } from '@/lib/activityLogge
 import { format } from 'date-fns';
 import { 
   Settings as SettingsIcon, Save, Loader2, Upload, X, Image, 
-  UserCog, Activity, Crown, UserMinus, Trash2, Search, Filter, RefreshCw, Building, Users
+  UserCog, Activity, Crown, UserMinus, Trash2, Search, Filter, RefreshCw, Building, Users, Calculator
 } from 'lucide-react';
+import StatutoryRatesManager from '@/components/payroll/StatutoryRatesManager';
 
 interface UserWithRole extends UserProfile {
   role?: 'admin' | 'staff';
@@ -476,6 +477,10 @@ const Settings = () => {
               <Building className="w-4 h-4" />
               <span className="hidden sm:inline">Company</span>
             </TabsTrigger>
+            <TabsTrigger value="statutory" className="flex items-center gap-2">
+              <Calculator className="w-4 h-4" />
+              <span className="hidden sm:inline">Statutory Rates</span>
+            </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <UserCog className="w-4 h-4" />
               <span className="hidden sm:inline">Users</span>
@@ -678,6 +683,11 @@ const Settings = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Statutory Rates Tab */}
+          <TabsContent value="statutory">
+            <StatutoryRatesManager />
           </TabsContent>
 
           {/* Users Tab */}
