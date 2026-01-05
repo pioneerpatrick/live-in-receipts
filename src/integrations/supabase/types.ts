@@ -714,6 +714,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_orphaned_plots: { Args: never; Returns: number }
       get_user_full_name: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {

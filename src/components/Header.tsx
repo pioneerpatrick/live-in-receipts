@@ -55,6 +55,17 @@ const Header = () => {
               <nav className="hidden md:flex items-center gap-1">
                 <Button
                   asChild
+                  variant={isActive('/') ? 'default' : 'ghost'}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Link to="/">
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </Button>
+                <Button
+                  asChild
                   variant={isActive('/admin') ? 'default' : 'ghost'}
                   size="sm"
                   className="gap-2"
@@ -180,6 +191,12 @@ const Header = () => {
                   {/* Mobile navigation for admins */}
                   {role === 'admin' && (
                     <>
+                      <DropdownMenuItem asChild className="cursor-pointer md:hidden">
+                        <Link to="/" className="flex items-center">
+                          <LayoutDashboard className="w-4 h-4 mr-2" />
+                          <span>Dashboard</span>
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem asChild className="cursor-pointer md:hidden">
                         <Link to="/admin" className="flex items-center">
                           <BarChart3 className="w-4 h-4 mr-2" />
