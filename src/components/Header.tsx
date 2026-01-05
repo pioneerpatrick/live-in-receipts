@@ -52,16 +52,15 @@ const Header = () => {
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             {/* Admin Navigation Links */}
             {role === 'admin' && (
-              <nav className="hidden md:flex items-center gap-1">
+              <nav className="hidden lg:flex items-center gap-0.5">
                 <Button
                   asChild
                   variant={isActive('/') ? 'default' : 'ghost'}
                   size="sm"
-                  className="gap-2"
+                  className="gap-1 px-2"
                 >
                   <Link to="/">
                     <LayoutDashboard className="w-4 h-4" />
-                    <span>Dashboard</span>
                   </Link>
                 </Button>
                 <Button
