@@ -1,12 +1,50 @@
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import { ReceiptData } from '@/types/client';
+import { supabase } from '@/integrations/supabase/client';
 import signatureImage from '@/assets/signature.png';
 import logoImage from '@/assets/logo.jpg';
 
 const APP_BASE_URL = window.location.origin;
 
+interface CompanySettings {
+  company_name: string;
+  company_tagline: string | null;
+  phone: string | null;
+  email: string | null;
+  email_secondary: string | null;
+  social_handle: string | null;
+  website: string | null;
+  address: string | null;
+  po_box: string | null;
+  receipt_footer_message: string | null;
+  receipt_watermark: string | null;
+}
+
+const getCompanySettings = async (): Promise<CompanySettings> => {
+  const { data } = await supabase
+    .from('company_settings')
+    .select('*')
+    .maybeSingle();
+
+  return data || {
+    company_name: 'LIVE-IN PROPERTIES',
+    company_tagline: 'Genuine plots with ready title deeds',
+    phone: '+254 746 499 499',
+    email: 'liveinpropertiesltd@gmail.com',
+    email_secondary: 'info@liveinproperties.co.ke',
+    social_handle: '@Live-IN Properties',
+    website: 'www.liveinproperties.co.ke',
+    address: 'Kitengela Africa House',
+    po_box: 'P.O. Box 530-00241, KITENGELA',
+    receipt_footer_message: 'Thank you for choosing Live-IN Properties. We Secure your Future.',
+    receipt_watermark: 'LIVE-IN PROPERTIES',
+  };
+};
+
 export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> => {
+  const settings = await getCompanySettings();
+  
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -25,7 +63,7 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.setFont('helvetica', 'bold');
   
   // Rotate and center the watermark text
-  const watermarkText = 'LIVE-IN PROPERTIES';
+  const watermarkText = settings.receipt_watermark || settings.company_name;
   const centerX = pageWidth / 2;
   const centerY = pageHeight / 2;
   
@@ -49,19 +87,21 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text('LIVE-IN PROPERTIES', pageWidth / 2 + 10, y, { align: 'center' });
+  doc.text(settings.company_name, pageWidth / 2 + 10, y, { align: 'center' });
   
   y += 10;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Genuine plots with ready title deeds', pageWidth / 2 + 10, y, { align: 'center' });
+  doc.text(settings.company_tagline || '', pageWidth / 2 + 10, y, { align: 'center' });
   
   y += 6;
   doc.setFontSize(8);
-  doc.text('+254 746 499 499  |  liveinpropertiesltd@gmail.com  |  info@liveinproperties.co.ke', pageWidth / 2 + 10, y, { align: 'center' });
+  const contactLine1 = `${settings.phone || ''}  |  ${settings.email || ''}  |  ${settings.email_secondary || ''}`;
+  doc.text(contactLine1, pageWidth / 2 + 10, y, { align: 'center' });
   
   y += 5;
-  doc.text('@Live-IN Properties  |  www.liveinproperties.co.ke  |  Kitengela Africa House', pageWidth / 2 + 10, y, { align: 'center' });
+  const contactLine2 = `${settings.social_handle || ''}  |  ${settings.website || ''}  |  ${settings.address || ''}`;
+  doc.text(contactLine2, pageWidth / 2 + 10, y, { align: 'center' });
   
   // Receipt Title
   y = 60;
@@ -268,7 +308,7 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.setTextColor(...stampBlue);
   doc.setFontSize(9);
   doc.setFont('times', 'bold');
-  doc.text('LIVE-IN PROPERTIES LIMITED', stampCenterX, stampY + 10, { align: 'center' });
+  doc.text(`${settings.company_name} LIMITED`, stampCenterX, stampY + 10, { align: 'center' });
   
   // PAID text in center - LARGE, BOLD, RED - SHOUTING
   doc.setGState(new (doc as any).GState({ opacity: 0.92 }));
@@ -287,7 +327,7 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.setTextColor(...stampBlue);
   doc.setFontSize(8);
   doc.setFont('times', 'bold');
-  doc.text('P.O. Box 530-00241, KITENGELA', stampCenterX, stampY + 43, { align: 'center' });
+  doc.text(settings.po_box || '', stampCenterX, stampY + 43, { align: 'center' });
   
   // Reset transformation
   (doc as any).internal.write('Q');
@@ -327,7 +367,7 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('Thank you for choosing Live-IN Properties. We Secure your Future.', pageWidth / 2, y + 5, { align: 'center' });
+  doc.text(settings.receipt_footer_message || '', pageWidth / 2, y + 5, { align: 'center' });
   
   // Save the PDF
   doc.save(`Receipt_${receipt.receiptNumber}.pdf`);

@@ -134,6 +134,57 @@ export type Database = {
         }
         Relationships: []
       }
+      company_settings: {
+        Row: {
+          address: string | null
+          company_name: string
+          company_tagline: string | null
+          created_at: string
+          email: string | null
+          email_secondary: string | null
+          id: string
+          phone: string | null
+          po_box: string | null
+          receipt_footer_message: string | null
+          receipt_watermark: string | null
+          social_handle: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_name?: string
+          company_tagline?: string | null
+          created_at?: string
+          email?: string | null
+          email_secondary?: string | null
+          id?: string
+          phone?: string | null
+          po_box?: string | null
+          receipt_footer_message?: string | null
+          receipt_watermark?: string | null
+          social_handle?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_name?: string
+          company_tagline?: string | null
+          created_at?: string
+          email?: string | null
+          email_secondary?: string | null
+          id?: string
+          phone?: string | null
+          po_box?: string | null
+          receipt_footer_message?: string | null
+          receipt_watermark?: string | null
+          social_handle?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           agent_name: string | null

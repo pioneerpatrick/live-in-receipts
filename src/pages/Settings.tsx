@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
@@ -9,10 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings as SettingsIcon, Activity, Users, RefreshCw, Search, Filter } from 'lucide-react';
+import { Settings as SettingsIcon, Activity, Users, RefreshCw, Search, Filter, Building, Home, Save, Loader2 } from 'lucide-react';
 import { getActionLabel, ActivityAction } from '@/lib/activityLogger';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface ActivityLog {
   id: string;
@@ -25,6 +29,21 @@ interface ActivityLog {
   created_at: string;
 }
 
+interface CompanySettings {
+  id: string;
+  company_name: string;
+  company_tagline: string | null;
+  phone: string | null;
+  email: string | null;
+  email_secondary: string | null;
+  social_handle: string | null;
+  website: string | null;
+  address: string | null;
+  po_box: string | null;
+  receipt_footer_message: string | null;
+  receipt_watermark: string | null;
+}
+
 const Settings = () => {
   const { role } = useAuth();
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
@@ -32,11 +51,15 @@ const Settings = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
   const [userStats, setUserStats] = useState({ total: 0, admins: 0, staff: 0 });
+  
+  const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     if (role === 'admin') {
       fetchActivityLogs();
       fetchUserStats();
+      fetchCompanySettings();
     }
   }, [role]);
 
@@ -76,6 +99,59 @@ const Settings = () => {
     }
   };
 
+  const fetchCompanySettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('company_settings')
+        .select('*')
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        setCompanySettings(data);
+      }
+    } catch (error) {
+      console.error('Error fetching company settings:', error);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    if (!companySettings) return;
+    
+    setSavingSettings(true);
+    try {
+      const { error } = await supabase
+        .from('company_settings')
+        .update({
+          company_name: companySettings.company_name,
+          company_tagline: companySettings.company_tagline,
+          phone: companySettings.phone,
+          email: companySettings.email,
+          email_secondary: companySettings.email_secondary,
+          social_handle: companySettings.social_handle,
+          website: companySettings.website,
+          address: companySettings.address,
+          po_box: companySettings.po_box,
+          receipt_footer_message: companySettings.receipt_footer_message,
+          receipt_watermark: companySettings.receipt_watermark,
+        })
+        .eq('id', companySettings.id);
+
+      if (error) throw error;
+      toast.success('Company settings saved successfully');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error('Failed to save settings');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const updateSetting = (key: keyof CompanySettings, value: string) => {
+    if (!companySettings) return;
+    setCompanySettings({ ...companySettings, [key]: value });
+  };
+
   const getActionBadgeVariant = (action: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
     if (action.includes('deleted')) return 'destructive';
     if (action.includes('created') || action.includes('added')) return 'default';
@@ -111,27 +187,177 @@ const Settings = () => {
       <Header />
       
       <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <div className="flex items-center gap-3 mb-6 sm:mb-8">
-          <SettingsIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">Settings</h1>
-            <p className="text-sm text-muted-foreground">System settings and activity logs</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+          <div className="flex items-center gap-3">
+            <SettingsIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">Settings</h1>
+              <p className="text-sm text-muted-foreground">System settings and activity logs</p>
+            </div>
           </div>
+          <Button asChild variant="outline">
+            <Link to="/" className="flex items-center gap-2">
+              <Home className="w-4 h-4" />
+              Back to Dashboard
+            </Link>
+          </Button>
         </div>
 
-        <Tabs defaultValue="activity" className="space-y-4">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+        <Tabs defaultValue="company" className="space-y-4">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
+            <TabsTrigger value="company" className="flex items-center gap-2">
+              <Building className="w-4 h-4" />
+              <span className="hidden sm:inline">Company</span>
+            </TabsTrigger>
             <TabsTrigger value="activity" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
-              <span className="hidden sm:inline">Activity Logs</span>
-              <span className="sm:hidden">Activity</span>
+              <span className="hidden sm:inline">Activity</span>
             </TabsTrigger>
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">System Overview</span>
-              <span className="sm:hidden">Overview</span>
+              <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="company" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building className="w-5 h-5" />
+                      Company & Receipt Settings
+                    </CardTitle>
+                    <CardDescription>
+                      Customize company details and receipt headers/footers
+                    </CardDescription>
+                  </div>
+                  <Button onClick={handleSaveSettings} disabled={savingSettings || !companySettings}>
+                    {savingSettings ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Save Changes
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {!companySettings ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading settings...</div>
+                ) : (
+                  <>
+                    {/* Company Information */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Company Information</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="company_name">Company Name</Label>
+                          <Input
+                            id="company_name"
+                            value={companySettings.company_name}
+                            onChange={(e) => updateSetting('company_name', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="company_tagline">Tagline</Label>
+                          <Input
+                            id="company_tagline"
+                            value={companySettings.company_tagline || ''}
+                            onChange={(e) => updateSetting('company_tagline', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">Phone</Label>
+                          <Input
+                            id="phone"
+                            value={companySettings.phone || ''}
+                            onChange={(e) => updateSetting('phone', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Primary Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={companySettings.email || ''}
+                            onChange={(e) => updateSetting('email', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="email_secondary">Secondary Email</Label>
+                          <Input
+                            id="email_secondary"
+                            type="email"
+                            value={companySettings.email_secondary || ''}
+                            onChange={(e) => updateSetting('email_secondary', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="website">Website</Label>
+                          <Input
+                            id="website"
+                            value={companySettings.website || ''}
+                            onChange={(e) => updateSetting('website', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="social_handle">Social Handle</Label>
+                          <Input
+                            id="social_handle"
+                            value={companySettings.social_handle || ''}
+                            onChange={(e) => updateSetting('social_handle', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="address">Address</Label>
+                          <Input
+                            id="address"
+                            value={companySettings.address || ''}
+                            onChange={(e) => updateSetting('address', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2 sm:col-span-2">
+                          <Label htmlFor="po_box">P.O. Box</Label>
+                          <Input
+                            id="po_box"
+                            value={companySettings.po_box || ''}
+                            onChange={(e) => updateSetting('po_box', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Receipt Settings */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Receipt Customization</h3>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="receipt_watermark">Receipt Watermark Text</Label>
+                          <Input
+                            id="receipt_watermark"
+                            value={companySettings.receipt_watermark || ''}
+                            onChange={(e) => updateSetting('receipt_watermark', e.target.value)}
+                            placeholder="Text shown as watermark on receipts"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="receipt_footer_message">Receipt Footer Message</Label>
+                          <Textarea
+                            id="receipt_footer_message"
+                            value={companySettings.receipt_footer_message || ''}
+                            onChange={(e) => updateSetting('receipt_footer_message', e.target.value)}
+                            placeholder="Thank you message shown at the bottom of receipts"
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="activity" className="space-y-4">
             <Card>
