@@ -25,6 +25,7 @@ export interface Client {
   commission: number | null;
   commission_received: number | null;
   commission_balance: number | null;
+  created_by?: string;
   created_at: string;
   updated_at: string;
 }

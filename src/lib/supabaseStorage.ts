@@ -16,10 +16,16 @@ export const getClients = async (): Promise<Client[]> => {
   return data || [];
 };
 
-export const addClient = async (client: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid'>): Promise<Client> => {
+export const addClient = async (client: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid' | 'created_by'>): Promise<Client> => {
+  // Get current user to set created_by
+  const { data: { user } } = await supabase.auth.getUser();
+  
   const { data, error } = await supabase
     .from('clients')
-    .insert(client)
+    .insert({
+      ...client,
+      created_by: user?.id,
+    })
     .select()
     .single();
   
@@ -197,10 +203,18 @@ export const formatCurrency = (amount: number): string => {
 };
 
 // Bulk import clients (for Excel data) - percent_paid is calculated by DB trigger
-export const bulkImportClients = async (clients: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid'>[]): Promise<Client[]> => {
+export const bulkImportClients = async (clients: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid' | 'created_by'>[]): Promise<Client[]> => {
+  // Get current user to set created_by
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  const clientsWithCreator = clients.map(client => ({
+    ...client,
+    created_by: user?.id,
+  }));
+  
   const { data, error } = await supabase
     .from('clients')
-    .insert(clients)
+    .insert(clientsWithCreator)
     .select();
   
   if (error) {
