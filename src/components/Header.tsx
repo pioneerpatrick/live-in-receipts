@@ -1,4 +1,4 @@
-import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, LayoutDashboard, Building, BarChart3 } from 'lucide-react';
+import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, LayoutDashboard, Building, BarChart3, Calculator } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -62,6 +62,17 @@ const Header = () => {
                   <Link to="/admin">
                     <BarChart3 className="w-4 h-4" />
                     <span>Accounting</span>
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant={isActive('/payroll') ? 'default' : 'ghost'}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Link to="/payroll">
+                    <Calculator className="w-4 h-4" />
+                    <span>Payroll</span>
                   </Link>
                 </Button>
                 <Button
@@ -173,6 +184,12 @@ const Header = () => {
                         <Link to="/admin" className="flex items-center">
                           <BarChart3 className="w-4 h-4 mr-2" />
                           <span>Accounting Panel</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="cursor-pointer md:hidden">
+                        <Link to="/payroll" className="flex items-center">
+                          <Calculator className="w-4 h-4 mr-2" />
+                          <span>Payroll</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild className="cursor-pointer md:hidden">
