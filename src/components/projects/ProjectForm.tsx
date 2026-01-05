@@ -14,6 +14,7 @@ interface ProjectFormProps {
     location: string; 
     description: string | null; 
     capacity: number;
+    buying_price: number;
     plotNumbers?: string[];
     plotSize?: string;
     plotPrice?: number;
@@ -36,6 +37,7 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoadi
   const [plotNumbersText, setPlotNumbersText] = useState('');
   const [plotSize, setPlotSize] = useState('');
   const [plotPrice, setPlotPrice] = useState('');
+  const [buyingPrice, setBuyingPrice] = useState('');
   const [description, setDescription] = useState('');
 
   // Reset form when dialog opens/closes or initialData changes
@@ -44,6 +46,7 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoadi
       setName(initialData?.name || '');
       setLocation(initialData?.location || '');
       setDescription(initialData?.description || '');
+      setBuyingPrice(initialData?.buying_price?.toString() || '');
       setPlotNumbersText('');
       setPlotSize('');
       setPlotPrice('');
@@ -63,6 +66,7 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoadi
       name, 
       location, 
       capacity: initialData ? initialData.capacity : plotNumbers.length,
+      buying_price: parseFloat(buyingPrice) || 0,
       description: description || null,
       plotNumbers: initialData ? undefined : plotNumbers,
       plotSize: initialData ? undefined : plotSize,
@@ -102,6 +106,21 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoadi
                 placeholder="e.g., Kitengela, Kajiado"
                 required
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="buyingPrice">Buying Price (KES) *</Label>
+              <Input
+                id="buyingPrice"
+                type="number"
+                value={buyingPrice}
+                onChange={(e) => setBuyingPrice(e.target.value)}
+                placeholder="Total cost of acquiring the project/land"
+                required
+                min="0"
+              />
+              <p className="text-xs text-muted-foreground">
+                Used to calculate profit/loss in accounting reports
+              </p>
             </div>
             {!initialData && (
               <div className="grid gap-2">

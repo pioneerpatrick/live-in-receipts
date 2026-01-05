@@ -4,6 +4,7 @@ export interface Project {
   location: string;
   capacity: number;
   total_plots: number;
+  buying_price: number;
   description?: string;
   created_at: string;
   updated_at: string;

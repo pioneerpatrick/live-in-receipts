@@ -621,6 +621,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          buying_price: number | null
           capacity: number
           created_at: string
           description: string | null
@@ -631,6 +632,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          buying_price?: number | null
           capacity?: number
           created_at?: string
           description?: string | null
@@ -641,6 +643,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          buying_price?: number | null
           capacity?: number
           created_at?: string
           description?: string | null
