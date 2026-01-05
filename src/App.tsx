@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import ClientPaymentHistory from "./pages/ClientPaymentHistory";
+import Projects from "./pages/Projects";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,14 @@ const App = () => (
               } 
             />
             <Route path="/payments/:clientId" element={<ClientPaymentHistory />} />
+            <Route 
+              path="/projects" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Projects />
+                </ProtectedRoute>
+              } 
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
