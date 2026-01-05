@@ -8,7 +8,6 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
-import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import ClientPaymentHistory from "./pages/ClientPaymentHistory";
 import NotFound from "./pages/NotFound";
@@ -32,15 +31,7 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
+            <Route
               path="/admin" 
               element={
                 <ProtectedRoute requiredRole="admin">
