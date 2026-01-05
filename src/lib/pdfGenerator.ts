@@ -348,7 +348,7 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   
   // QR Code and Signature Section - positioned just above footer
   const footerY = pageHeight - 20;
-  const sectionY = footerY - 50; // Position 50px above footer
+  const sectionY = footerY - 45; // Position 45px above footer
 
   // Draw a subtle separator line above QR and Signature
   doc.setDrawColor(200, 200, 200);
