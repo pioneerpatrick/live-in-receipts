@@ -19,6 +19,8 @@ const clientSchema = z.object({
   initialPayment: z.coerce.number().min(0, 'Initial payment cannot be negative'),
   salesAgent: z.string().min(1, 'Sales agent is required'),
   paymentType: z.enum(['installments', 'cash']),
+  initialPaymentMethod: z.enum(['Cash', 'M-Pesa', 'Bank']),
+  installmentMonths: z.coerce.number().min(1).optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -43,8 +45,12 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
       initialPayment: 0,
       salesAgent: '',
       paymentType: 'installments',
+      initialPaymentMethod: 'Cash',
+      installmentMonths: undefined,
     },
   });
+
+  const paymentType = form.watch('paymentType');
 
   useEffect(() => {
     if (client) {
@@ -58,6 +64,8 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
         initialPayment: client.total_paid,
         salesAgent: client.sales_agent,
         paymentType: (client.payment_type as 'installments' | 'cash') || 'installments',
+        initialPaymentMethod: (client.initial_payment_method as 'Cash' | 'M-Pesa' | 'Bank') || 'Cash',
+        installmentMonths: client.installment_months || undefined,
       });
     } else {
       form.reset({
@@ -70,6 +78,8 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
         initialPayment: 0,
         salesAgent: '',
         paymentType: 'installments',
+        initialPaymentMethod: 'Cash',
+        installmentMonths: undefined,
       });
     }
   }, [client, form]);
@@ -213,6 +223,31 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
 
               <FormField
                 control={form.control}
+                name="initialPaymentMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Payment Method</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="M-Pesa">M-Pesa</SelectItem>
+                        <SelectItem value="Bank">Bank Transfer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
                 name="paymentType"
                 render={({ field }) => (
                   <FormItem>
@@ -232,6 +267,35 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
                   </FormItem>
                 )}
               />
+
+              {paymentType === 'installments' && (
+                <FormField
+                  control={form.control}
+                  name="installmentMonths"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Installment Period (Months)</FormLabel>
+                      <Select onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select months" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="3">3 Months</SelectItem>
+                          <SelectItem value="6">6 Months</SelectItem>
+                          <SelectItem value="9">9 Months</SelectItem>
+                          <SelectItem value="12">12 Months</SelectItem>
+                          <SelectItem value="18">18 Months</SelectItem>
+                          <SelectItem value="24">24 Months</SelectItem>
+                          <SelectItem value="36">36 Months</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-4">

@@ -120,9 +120,13 @@ const Index = () => {
           balance: initialBalance,
           sales_agent: data.salesAgent,
           payment_type: data.paymentType || 'installments',
-          payment_period: '',
+          payment_period: data.installmentMonths ? `${data.installmentMonths} months` : '',
+          installment_months: data.paymentType === 'installments' ? (data.installmentMonths || null) : null,
+          initial_payment_method: data.initialPaymentMethod || 'Cash',
           completion_date: null,
-          next_payment_date: null,
+          next_payment_date: data.paymentType === 'installments' && data.installmentMonths 
+            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] 
+            : null,
           notes: '',
           status: data.paymentType === 'cash' ? 'completed' : 'ongoing',
           sale_date: new Date().toISOString().split('T')[0],
@@ -132,7 +136,7 @@ const Index = () => {
           await addPayment({
             client_id: newClient.id,
             amount: data.initialPayment,
-            payment_method: 'Cash',
+            payment_method: data.initialPaymentMethod || 'Cash',
             payment_date: new Date().toISOString(),
             previous_balance: discountedPrice,
             new_balance: initialBalance,
