@@ -16,13 +16,18 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { AccountingDashboard } from '@/components/accounting/AccountingDashboard';
+import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { UserProfile, Client, Payment } from '@/types/client';
 import { getClients, getPayments } from '@/lib/supabaseStorage';
 import { logActivity, getActionLabel, ActivityAction } from '@/lib/activityLogger';
 import { format } from 'date-fns';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { formatCurrency } from '@/lib/supabaseStorage';
 import { 
   Shield, UserCog, Search, Crown, UserMinus, Trash2, BarChart3, 
-  Activity, Building, Save, Loader2, Upload, X, Image, Users, Filter, RefreshCw 
+  Activity, Building, Save, Loader2, Upload, X, Image, Users, Filter, RefreshCw,
+  TrendingUp, Calendar
 } from 'lucide-react';
 
 interface UserWithRole extends UserProfile {
@@ -500,6 +505,10 @@ const Admin = () => {
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Accounting</span>
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <UserCog className="w-4 h-4" />
               <span className="hidden sm:inline">Users</span>
@@ -522,6 +531,11 @@ const Admin = () => {
               timeRange={timeRange}
               onTimeRangeChange={setTimeRange}
             />
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics">
+            <AnalyticsDashboard clients={clients} payments={payments} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
           </TabsContent>
 
           {/* Users Tab */}
