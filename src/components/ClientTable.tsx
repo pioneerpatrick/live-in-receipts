@@ -20,11 +20,12 @@ interface ClientTableProps {
   onViewHistory: (client: Client) => void;
   onAddNew: () => void;
   onImportExcel: () => void;
+  onImportWithPayments?: () => void;
 }
 
 type DateFilterType = 'none' | 'sale_date' | 'completion_date';
 
-const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, onAddNew, onImportExcel }: ClientTableProps) => {
+const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, onAddNew, onImportExcel, onImportWithPayments }: ClientTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilterType, setDateFilterType] = useState<DateFilterType>('none');
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -281,6 +282,11 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
               <Button variant="outline" size="icon" onClick={onImportExcel} title="Import from Excel" className="h-9 w-9">
                 <Upload className="w-4 h-4" />
               </Button>
+              {onImportWithPayments && (
+                <Button variant="outline" size="icon" onClick={onImportWithPayments} title="Import with Payment History" className="h-9 w-9">
+                  <History className="w-4 h-4" />
+                </Button>
+              )}
               <Button variant="outline" size="icon" onClick={handleExportCSV} title="Export to CSV" className="h-9 w-9">
                 <Download className="w-4 h-4" />
               </Button>

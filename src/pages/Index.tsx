@@ -8,6 +8,7 @@ import ClientForm from '@/components/ClientForm';
 import PaymentForm from '@/components/PaymentForm';
 import { PaymentHistory } from '@/components/PaymentHistory';
 import { ExcelUploadDialog } from '@/components/ExcelUploadDialog';
+import { PaymentHistoryImportDialog } from '@/components/PaymentHistoryImportDialog';
 import { PaymentReminders } from '@/components/PaymentReminders';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { Client, ReceiptData } from '@/types/client';
@@ -34,6 +35,7 @@ const Index = () => {
   const [paymentFormOpen, setPaymentFormOpen] = useState(false);
   const [paymentHistoryOpen, setPaymentHistoryOpen] = useState(false);
   const [excelUploadOpen, setExcelUploadOpen] = useState(false);
+  const [paymentHistoryImportOpen, setPaymentHistoryImportOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
@@ -365,6 +367,7 @@ const Index = () => {
           onViewHistory={handleViewHistory}
           onAddNew={handleAddNew}
           onImportExcel={() => setExcelUploadOpen(true)}
+          onImportWithPayments={() => setPaymentHistoryImportOpen(true)}
         />
       </main>
 
@@ -404,6 +407,12 @@ const Index = () => {
       <ExcelUploadDialog
         open={excelUploadOpen}
         onClose={() => setExcelUploadOpen(false)}
+        onImportComplete={loadClients}
+      />
+
+      <PaymentHistoryImportDialog
+        open={paymentHistoryImportOpen}
+        onClose={() => setPaymentHistoryImportOpen(false)}
         onImportComplete={loadClients}
       />
 
