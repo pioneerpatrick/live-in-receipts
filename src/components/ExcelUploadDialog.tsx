@@ -8,10 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileSpreadsheet, Loader2, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Upload, FileSpreadsheet, Loader2, CheckCircle, AlertTriangle, X, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { bulkImportClients, formatCurrency } from '@/lib/supabaseStorage';
 import { Client } from '@/types/client';
+import { parseExcelData, ParsedClientData } from '@/lib/excelDataParser';
+import { bulkImportWithPayments } from '@/lib/bulkImportWithPayments';
 
 interface ExcelUploadDialogProps {
   open: boolean;
