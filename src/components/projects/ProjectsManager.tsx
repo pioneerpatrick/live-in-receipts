@@ -364,7 +364,19 @@ export function ProjectsManager() {
                               {project.location}
                             </p>
                           </div>
-                          <Badge variant="secondary">{project.total_plots} plots</Badge>
+                          <Badge variant="secondary">{project.total_plots} / {project.capacity}</Badge>
+                        </div>
+                        <div className="mt-2">
+                          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                            <span>Inventory</span>
+                            <span>{project.total_plots} of {project.capacity} plots added</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-1.5">
+                            <div 
+                              className="bg-primary h-1.5 rounded-full" 
+                              style={{ width: `${project.capacity > 0 ? (project.total_plots / project.capacity) * 100 : 0}%` }}
+                            />
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent>

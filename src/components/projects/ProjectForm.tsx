@@ -17,14 +17,16 @@ interface ProjectFormProps {
 export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoading }: ProjectFormProps) {
   const [name, setName] = useState(initialData?.name || '');
   const [location, setLocation] = useState(initialData?.location || '');
+  const [capacity, setCapacity] = useState(initialData?.capacity?.toString() || '');
   const [description, setDescription] = useState(initialData?.description || '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ name, location, description });
+    onSubmit({ name, location, capacity: parseInt(capacity) || 0, description });
     if (!initialData) {
       setName('');
       setLocation('');
+      setCapacity('');
       setDescription('');
     }
   };
@@ -56,6 +58,19 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoadi
                 placeholder="e.g., Kitengela, Kajiado"
                 required
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="capacity">Plot Capacity *</Label>
+              <Input
+                id="capacity"
+                type="number"
+                value={capacity}
+                onChange={(e) => setCapacity(e.target.value)}
+                placeholder="e.g., 100"
+                required
+                min="1"
+              />
+              <p className="text-xs text-muted-foreground">Maximum number of plots this project can have</p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>

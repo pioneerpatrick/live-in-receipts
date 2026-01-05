@@ -192,10 +192,11 @@ export const getAllInventoryStats = async () => {
   const overallStats = {
     totalProjects: projects.length,
     totalPlots: plots.length,
+    totalCapacity: projects.reduce((sum, p) => sum + (p.capacity || 0), 0),
     availablePlots: plots.filter(p => p.status === 'available').length,
     soldPlots: plots.filter(p => p.status === 'sold').length,
     reservedPlots: plots.filter(p => p.status === 'reserved').length,
-    fullySoldProjects: projectStats.filter(p => p.stats.total > 0 && p.stats.available === 0).length
+    fullySoldProjects: projectStats.filter(p => p.capacity > 0 && p.stats.available === 0 && p.stats.total >= p.capacity).length
   };
 
   return { projectStats, overallStats };

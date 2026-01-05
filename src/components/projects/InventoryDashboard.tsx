@@ -11,6 +11,7 @@ interface ProjectStat {
   id: string;
   name: string;
   location: string;
+  capacity: number;
   stats: {
     total: number;
     available: number;
@@ -147,10 +148,11 @@ export function InventoryDashboard() {
           ) : (
             <div className="space-y-6">
               {projectStats.map((project) => {
-                const soldPercentage = project.stats.total > 0 
-                  ? Math.round((project.stats.sold / project.stats.total) * 100) 
+                const soldPercentage = project.capacity > 0 
+                  ? Math.round((project.stats.sold / project.capacity) * 100) 
                   : 0;
-                const isFullySold = project.stats.total > 0 && project.stats.available === 0;
+                const isFullySold = project.capacity > 0 && project.stats.available === 0 && project.stats.total >= project.capacity;
+                const remainingCapacity = project.capacity - project.stats.total;
 
                 return (
                   <div key={project.id} className="space-y-2">
@@ -167,18 +169,28 @@ export function InventoryDashboard() {
                         <p className="text-sm text-muted-foreground">{project.location}</p>
                       </div>
                       <div className="text-right text-sm">
-                        <p><span className="font-medium">{project.stats.total}</span> plots</p>
+                        <p>
+                          <span className="font-medium">{project.stats.total}</span> / {project.capacity} plots
+                          {remainingCapacity > 0 && (
+                            <span className="text-muted-foreground ml-1">({remainingCapacity} slots left)</span>
+                          )}
+                        </p>
                         <p className="text-muted-foreground">
-                          <span className="text-green-600">{project.stats.available}</span> available, {' '}
-                          <span className="text-primary">{project.stats.sold}</span> sold
+                          <span className="text-green-600 font-medium">{project.stats.available}</span> available, {' '}
+                          <span className="text-primary font-medium">{project.stats.sold}</span> sold
                           {project.stats.reserved > 0 && (
-                            <>, <span className="text-yellow-600">{project.stats.reserved}</span> reserved</>
+                            <>, <span className="text-yellow-600 font-medium">{project.stats.reserved}</span> reserved</>
                           )}
                         </p>
                       </div>
                     </div>
-                    <Progress value={soldPercentage} className="h-2" />
-                    <p className="text-xs text-muted-foreground text-right">{soldPercentage}% sold</p>
+                    <div className="space-y-1">
+                      <Progress value={soldPercentage} className="h-2" />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Inventory: {project.stats.total} added</span>
+                        <span>{soldPercentage}% sold</span>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
