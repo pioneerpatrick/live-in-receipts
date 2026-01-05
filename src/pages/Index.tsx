@@ -22,7 +22,7 @@ import {
   generateReceiptNumber,
   formatCurrency,
 } from '@/lib/supabaseStorage';
-import { getProjects, getPlots, sellPlot } from '@/lib/projectStorage';
+import { getProjects, getPlots, sellPlot, returnPlot } from '@/lib/projectStorage';
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
 import { logActivity } from '@/lib/activityLogger';
@@ -243,6 +243,22 @@ const Index = () => {
     if (!selectedClient) return;
 
     try {
+      // Return the plot to available status before deleting the client
+      try {
+        const projects = await getProjects();
+        const project = projects.find(p => p.name === selectedClient.project_name);
+        if (project) {
+          const plots = await getPlots(project.id);
+          const plot = plots.find(p => p.plot_number === selectedClient.plot_number);
+          if (plot && plot.status === 'sold') {
+            await returnPlot(plot.id);
+          }
+        }
+      } catch (plotError) {
+        console.error('Error returning plot:', plotError);
+        // Don't fail the whole operation if plot update fails
+      }
+
       await deleteClient(selectedClient.id);
       
       await logActivity({
@@ -252,7 +268,7 @@ const Index = () => {
         details: { name: selectedClient.name },
       });
       
-      toast.success('Client deleted successfully!');
+      toast.success('Client deleted and plot returned to available!');
       await loadData();
       setDeleteDialogOpen(false);
       setSelectedClient(null);
