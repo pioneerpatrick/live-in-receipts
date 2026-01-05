@@ -104,10 +104,11 @@ export function ProjectsManager() {
     description: string | null; 
     capacity: number;
     plotNumbers?: string[];
+    plotSize?: string;
+    plotPrice?: number;
   }) => {
     setIsSubmitting(true);
     try {
-      // Create the project first
       const project = await addProject({
         name: data.name,
         location: data.location,
@@ -115,13 +116,12 @@ export function ProjectsManager() {
         capacity: data.capacity
       });
       
-      // If plot numbers were provided, create the plots
       if (data.plotNumbers && data.plotNumbers.length > 0) {
         const plotsToAdd = data.plotNumbers.map(plotNumber => ({
           project_id: project.id,
           plot_number: plotNumber,
-          size: 'TBD', // Default size, can be updated later
-          price: 0, // Default price, can be updated later
+          size: data.plotSize || 'TBD',
+          price: data.plotPrice || 0,
           status: 'available' as const
         }));
         await addBulkPlots(plotsToAdd);

@@ -15,6 +15,8 @@ interface ProjectFormProps {
     description: string | null; 
     capacity: number;
     plotNumbers?: string[];
+    plotSize?: string;
+    plotPrice?: number;
   }) => void;
   initialData?: Project;
   isLoading?: boolean;
@@ -32,6 +34,8 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoadi
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [plotNumbersText, setPlotNumbersText] = useState('');
+  const [plotSize, setPlotSize] = useState('');
+  const [plotPrice, setPlotPrice] = useState('');
   const [description, setDescription] = useState('');
 
   // Reset form when dialog opens/closes or initialData changes
@@ -40,7 +44,9 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoadi
       setName(initialData?.name || '');
       setLocation(initialData?.location || '');
       setDescription(initialData?.description || '');
-      setPlotNumbersText(''); // Plot numbers only for new projects
+      setPlotNumbersText('');
+      setPlotSize('');
+      setPlotPrice('');
     }
   }, [open, initialData]);
 
@@ -50,7 +56,7 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoadi
     e.preventDefault();
     
     if (!initialData && plotNumbers.length === 0) {
-      return; // Require at least one plot for new projects
+      return;
     }
 
     onSubmit({ 
@@ -58,7 +64,9 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoadi
       location, 
       capacity: initialData ? initialData.capacity : plotNumbers.length,
       description: description || null,
-      plotNumbers: initialData ? undefined : plotNumbers
+      plotNumbers: initialData ? undefined : plotNumbers,
+      plotSize: initialData ? undefined : plotSize,
+      plotPrice: initialData ? undefined : (parseFloat(plotPrice) || 0)
     });
   };
 
@@ -116,6 +124,32 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData, isLoadi
                     'Enter all plot numbers for this project'
                   )}
                 </p>
+              </div>
+            )}
+            {!initialData && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="plotSize">Plot Size *</Label>
+                  <Input
+                    id="plotSize"
+                    value={plotSize}
+                    onChange={(e) => setPlotSize(e.target.value)}
+                    placeholder="e.g., 50x100 ft"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="plotPrice">Price per Plot (KES) *</Label>
+                  <Input
+                    id="plotPrice"
+                    type="number"
+                    value={plotPrice}
+                    onChange={(e) => setPlotPrice(e.target.value)}
+                    placeholder="e.g., 500000"
+                    required
+                    min="0"
+                  />
+                </div>
               </div>
             )}
             {initialData && (
