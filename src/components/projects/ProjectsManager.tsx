@@ -165,25 +165,25 @@ export function ProjectsManager() {
     }
   };
 
-  const handleBulkAddPlots = async (data: { prefix: string; startNumber: number; count: number; size: string; price: number }) => {
+  const handleBulkAddPlots = async (data: { plotNumbers: string[]; size: string; price: number }) => {
     if (!selectedProject) return;
     setIsSubmitting(true);
     try {
-      const plotsToAdd = Array.from({ length: data.count }, (_, i) => ({
+      const plotsToAdd = data.plotNumbers.map(plotNumber => ({
         project_id: selectedProject.id,
-        plot_number: `${data.prefix}${data.startNumber + i}`,
+        plot_number: plotNumber,
         size: data.size,
         price: data.price,
         status: 'available' as const
       }));
       await addBulkPlots(plotsToAdd);
-      toast.success(`${data.count} plots added successfully`);
+      toast.success(`${data.plotNumbers.length} plots added successfully`);
       setShowBulkForm(false);
       fetchPlots(selectedProject.id);
     } catch (error: any) {
       console.error('Error bulk adding plots:', error);
       if (error.code === '23505') {
-        toast.error('Some plot numbers already exist');
+        toast.error('Some plot numbers already exist in this project');
       } else {
         toast.error('Failed to add plots');
       }
