@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, differenceInDays, parseISO, isValid } from 'date-fns';
 import { Client } from '@/types/client';
 import { formatCurrency } from '@/lib/supabaseStorage';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload, CalendarIcon, X, Filter, CreditCard, Clock } from 'lucide-react';
+import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload, CalendarIcon, X, Filter, CreditCard, Clock, AlertTriangle } from 'lucide-react';
 
 interface ClientTableProps {
   clients: Client[];
@@ -87,6 +87,33 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
       return null;
     }
     return client.balance / client.installment_months;
+  };
+
+  const getPaymentStatus = (client: Client) => {
+    if (client.balance <= 0) return 'paid';
+    if (!client.next_payment_date) return 'unknown';
+    
+    const paymentDate = parseISO(client.next_payment_date);
+    if (!isValid(paymentDate)) return 'unknown';
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysUntilDue = differenceInDays(paymentDate, today);
+    
+    if (daysUntilDue < 0) return 'overdue';
+    if (daysUntilDue === 0) return 'due-today';
+    if (daysUntilDue <= 7) return 'upcoming';
+    return 'ok';
+  };
+
+  const getDaysOverdue = (client: Client) => {
+    if (!client.next_payment_date) return 0;
+    const paymentDate = parseISO(client.next_payment_date);
+    if (!isValid(paymentDate)) return 0;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.abs(differenceInDays(paymentDate, today));
   };
 
   const handleExportCSV = () => {
@@ -373,11 +400,37 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {filteredClients.map((client, index) => (
-              <div key={client.id} className="p-3 sm:p-4 hover:bg-muted/30 transition-colors">
+            {filteredClients.map((client, index) => {
+              const paymentStatus = getPaymentStatus(client);
+              const isOverdue = paymentStatus === 'overdue';
+              const isDueToday = paymentStatus === 'due-today';
+              
+              return (
+              <div 
+                key={client.id} 
+                className={cn(
+                  "p-3 sm:p-4 transition-colors",
+                  isOverdue && "bg-destructive/5 border-l-4 border-l-destructive",
+                  isDueToday && "bg-orange-500/5 border-l-4 border-l-orange-500",
+                  !isOverdue && !isDueToday && "hover:bg-muted/30"
+                )}
+              >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground truncate">{client.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground truncate">{client.name}</p>
+                      {isOverdue && (
+                        <span className="flex items-center gap-1 text-[10px] text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
+                          <AlertTriangle className="w-3 h-3" />
+                          {getDaysOverdue(client)}d late
+                        </span>
+                      )}
+                      {isDueToday && (
+                        <span className="text-[10px] text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded-full">
+                          Due today
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">{client.phone}</p>
                   </div>
                   <Badge variant={getBalanceStatus(client.balance, client.total_price) as any} className="flex-shrink-0 text-xs">
@@ -455,7 +508,8 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                   </Button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -490,10 +544,38 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                 </TableCell>
               </TableRow>
             ) : (
-              filteredClients.map((client, index) => (
-                <TableRow key={client.id} className="hover:bg-muted/30 transition-colors">
+              filteredClients.map((client, index) => {
+                const paymentStatus = getPaymentStatus(client);
+                const isOverdue = paymentStatus === 'overdue';
+                const isDueToday = paymentStatus === 'due-today';
+                
+                return (
+                <TableRow 
+                  key={client.id} 
+                  className={cn(
+                    "transition-colors",
+                    isOverdue && "bg-destructive/5 border-l-4 border-l-destructive",
+                    isDueToday && "bg-orange-500/5 border-l-4 border-l-orange-500",
+                    !isOverdue && !isDueToday && "hover:bg-muted/30"
+                  )}
+                >
                   <TableCell className="font-medium">{index + 1}</TableCell>
-                  <TableCell className="font-medium">{client.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <span>{client.name}</span>
+                      {isOverdue && (
+                        <span className="flex items-center gap-1 text-[10px] text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                          <AlertTriangle className="w-3 h-3" />
+                          {getDaysOverdue(client)}d late
+                        </span>
+                      )}
+                      {isDueToday && (
+                        <span className="text-[10px] text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                          Due today
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{client.phone}</TableCell>
                   <TableCell>{client.project_name}</TableCell>
                   <TableCell>{client.plot_number}</TableCell>
@@ -571,7 +653,8 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
