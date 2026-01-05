@@ -112,14 +112,19 @@ export const updatePayment = async (id: string, updates: Partial<Payment>): Prom
 };
 
 export const deletePayment = async (id: string): Promise<void> => {
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from('payments')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('id', id);
   
   if (error) {
     console.error('Error deleting payment:', error);
     throw error;
+  }
+  
+  // Check if deletion actually occurred (RLS might silently block it)
+  if (count === 0) {
+    throw new Error('Payment deletion failed - insufficient permissions or payment not found');
   }
 };
 
