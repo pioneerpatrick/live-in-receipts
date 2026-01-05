@@ -389,11 +389,11 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                   </div>
                   <div>
                     <span className="text-muted-foreground">Paid: </span>
-                    <span className="text-primary font-medium">{formatCurrency(client.total_paid)}</span>
+                    <span className="text-primary font-medium">{formatCurrency(Number(client.total_paid) || 0)}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Progress: </span>
-                    <span className="text-foreground font-medium">{(client.percent_paid ?? 0).toFixed(1)}%</span>
+                    <span className="text-foreground font-medium">{Math.min(100, Math.max(0, Number(client.percent_paid) || 0)).toFixed(1)}%</span>
                   </div>
                 </div>
 
@@ -474,10 +474,10 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                   <TableCell className="text-right">{formatCurrency(client.total_price)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(client.discount)}</TableCell>
                   <TableCell className="text-right text-primary font-medium">
-                    {formatCurrency(client.total_paid)}
+                    {formatCurrency(Number(client.total_paid) || 0)}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {(client.percent_paid ?? 0).toFixed(1)}%
+                    {Math.min(100, Math.max(0, Number(client.percent_paid) || 0)).toFixed(1)}%
                   </TableCell>
                   <TableCell className="text-right">
                     <Badge variant={getBalanceStatus(client.balance, client.total_price) as any}>

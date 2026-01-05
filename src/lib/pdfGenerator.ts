@@ -256,20 +256,6 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
     doc.text(receipt.authorizedBy, rightCol + 35, y);
   }
   
-  // Signature image
-  y += 15;
-  doc.addImage(signatureImage, 'PNG', pageWidth - 75, y - 15, 50, 25);
-  
-  // Signature line
-  y += 15;
-  doc.setDrawColor(...mutedColor);
-  doc.setLineWidth(0.2);
-  doc.line(pageWidth - 80, y, pageWidth - 20, y);
-  y += 5;
-  doc.setTextColor(...mutedColor);
-  doc.setFontSize(8);
-  doc.text('Authorized Signature', pageWidth - 50, y, { align: 'center' });
-  
   // PAID Stamp - rectangular style with rotation and ink texture for authentic look
   const stampCenterX = pageWidth / 2;
   const stampCenterY = 175;
@@ -360,7 +346,10 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   
   doc.restoreGraphicsState();
   
-  // Generate QR Code - links to client payment history
+  // QR Code and Signature Section - positioned clearly above footer
+  const sectionY = 210; // Fixed position for QR and signature section
+  
+  // QR Code on the left
   try {
     const paymentHistoryUrl = `${APP_BASE_URL}/payments/${receipt.clientId}`;
     const qrCodeDataUrl = await QRCode.toDataURL(paymentHistoryUrl, {
@@ -372,28 +361,37 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
       }
     });
     
-    // Add QR code to bottom left
-    const qrY = doc.internal.pageSize.getHeight() - 55;
-    doc.addImage(qrCodeDataUrl, 'PNG', 20, qrY, 25, 25);
+    doc.addImage(qrCodeDataUrl, 'PNG', 20, sectionY, 30, 30);
     
     // QR code label
     doc.setTextColor(...mutedColor);
     doc.setFontSize(7);
-    doc.text('Scan for payment history', 32.5, qrY + 28, { align: 'center' });
+    doc.text('Scan for payment history', 35, sectionY + 34, { align: 'center' });
   } catch (error) {
     console.error('Failed to generate QR code:', error);
   }
   
-  // Footer
-  y = doc.internal.pageSize.getHeight() - 30;
+  // Signature on the right
+  doc.addImage(signatureImage, 'PNG', pageWidth - 75, sectionY, 50, 25);
+  
+  // Signature line
+  doc.setDrawColor(...mutedColor);
+  doc.setLineWidth(0.2);
+  doc.line(pageWidth - 80, sectionY + 28, pageWidth - 20, sectionY + 28);
+  doc.setTextColor(...mutedColor);
+  doc.setFontSize(8);
+  doc.text('Authorized Signature', pageWidth - 50, sectionY + 33, { align: 'center' });
+  
+  // Footer - at the very bottom
+  const footerY = pageHeight - 20;
   
   doc.setFillColor(...secondaryColor);
-  doc.rect(0, y - 5, pageWidth, 25, 'F');
+  doc.rect(0, footerY - 10, pageWidth, 30, 'F');
   
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text(settings.receipt_footer_message || '', pageWidth / 2, y + 5, { align: 'center' });
+  doc.text(settings.receipt_footer_message || '', pageWidth / 2, footerY, { align: 'center' });
   
   // Save the PDF
   doc.save(`Receipt_${receipt.receiptNumber}.pdf`);
