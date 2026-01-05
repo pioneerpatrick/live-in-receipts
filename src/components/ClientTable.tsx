@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload, CalendarIcon, X, Filter } from 'lucide-react';
+import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload, CalendarIcon, X, Filter, CreditCard, Clock } from 'lucide-react';
 
 interface ClientTableProps {
   clients: Client[];
@@ -395,6 +395,16 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                     <span className="text-muted-foreground">Progress: </span>
                     <span className="text-foreground font-medium">{Math.min(100, Math.max(0, Number(client.percent_paid) || 0)).toFixed(1)}%</span>
                   </div>
+                  <div className="flex items-center gap-1">
+                    <CreditCard className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-foreground">{client.initial_payment_method || 'Cash'}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-foreground">
+                      {client.payment_type === 'cash' ? 'Full' : (client.installment_months ? `${client.installment_months}mo` : 'N/A')}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-1 pt-2 border-t border-border/50">
@@ -453,13 +463,15 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
               <TableHead className="font-semibold text-right min-w-[60px]">% Paid</TableHead>
               <TableHead className="font-semibold text-right min-w-[100px]">Balance</TableHead>
               <TableHead className="font-semibold min-w-[80px]">Agent</TableHead>
+              <TableHead className="font-semibold text-center min-w-[80px]">Method</TableHead>
+              <TableHead className="font-semibold text-center min-w-[70px]">Period</TableHead>
               <TableHead className="font-semibold text-center min-w-[140px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredClients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={14} className="text-center py-12 text-muted-foreground">
                   {searchTerm || hasActiveFilters ? 'No clients found matching your filters.' : 'No clients yet. Add your first client to get started.'}
                 </TableCell>
               </TableRow>
@@ -485,6 +497,16 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                     </Badge>
                   </TableCell>
                   <TableCell>{client.sales_agent}</TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant="outline" className="text-xs">
+                      {client.initial_payment_method || 'Cash'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant={client.payment_type === 'cash' ? 'default' : 'secondary'} className="text-xs">
+                      {client.payment_type === 'cash' ? 'Full' : (client.installment_months ? `${client.installment_months}mo` : 'N/A')}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-1">
                       <Button
