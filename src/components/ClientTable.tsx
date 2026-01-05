@@ -82,6 +82,13 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
     return 'default';
   };
 
+  const calculateMonthlyPayment = (client: Client) => {
+    if (client.payment_type === 'cash' || !client.installment_months || client.balance <= 0) {
+      return null;
+    }
+    return client.balance / client.installment_months;
+  };
+
   const handleExportCSV = () => {
     const headers = [
       '#', 'Client Name', 'Phone', 'Project', 'Plot No.', 'Unit Price', 'No. of Plots',
@@ -405,6 +412,12 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                       {client.payment_type === 'cash' ? 'Full' : (client.installment_months ? `${client.installment_months}mo` : 'N/A')}
                     </span>
                   </div>
+                  {calculateMonthlyPayment(client) && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Monthly: </span>
+                      <span className="text-secondary font-medium">{formatCurrency(calculateMonthlyPayment(client)!)}/mo</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-end gap-1 pt-2 border-t border-border/50">
@@ -465,13 +478,14 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
               <TableHead className="font-semibold min-w-[80px]">Agent</TableHead>
               <TableHead className="font-semibold text-center min-w-[80px]">Method</TableHead>
               <TableHead className="font-semibold text-center min-w-[70px]">Period</TableHead>
+              <TableHead className="font-semibold text-right min-w-[100px]">Monthly</TableHead>
               <TableHead className="font-semibold text-center min-w-[140px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredClients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={14} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={15} className="text-center py-12 text-muted-foreground">
                   {searchTerm || hasActiveFilters ? 'No clients found matching your filters.' : 'No clients yet. Add your first client to get started.'}
                 </TableCell>
               </TableRow>
@@ -506,6 +520,15 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                     <Badge variant={client.payment_type === 'cash' ? 'default' : 'secondary'} className="text-xs">
                       {client.payment_type === 'cash' ? 'Full' : (client.installment_months ? `${client.installment_months}mo` : 'N/A')}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {calculateMonthlyPayment(client) ? (
+                      <span className="text-secondary font-medium text-sm">
+                        {formatCurrency(calculateMonthlyPayment(client)!)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-1">
