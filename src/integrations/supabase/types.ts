@@ -143,6 +143,7 @@ export type Database = {
           email: string | null
           email_secondary: string | null
           id: string
+          logo_url: string | null
           phone: string | null
           po_box: string | null
           receipt_footer_message: string | null
@@ -159,6 +160,7 @@ export type Database = {
           email?: string | null
           email_secondary?: string | null
           id?: string
+          logo_url?: string | null
           phone?: string | null
           po_box?: string | null
           receipt_footer_message?: string | null
@@ -175,6 +177,7 @@ export type Database = {
           email?: string | null
           email_secondary?: string | null
           id?: string
+          logo_url?: string | null
           phone?: string | null
           po_box?: string | null
           receipt_footer_message?: string | null

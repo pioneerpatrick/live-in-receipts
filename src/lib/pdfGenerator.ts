@@ -19,6 +19,7 @@ interface CompanySettings {
   po_box: string | null;
   receipt_footer_message: string | null;
   receipt_watermark: string | null;
+  logo_url: string | null;
 }
 
 const getCompanySettings = async (): Promise<CompanySettings> => {
@@ -39,7 +40,23 @@ const getCompanySettings = async (): Promise<CompanySettings> => {
     po_box: 'P.O. Box 530-00241, KITENGELA',
     receipt_footer_message: 'Thank you for choosing Live-IN Properties. We Secure your Future.',
     receipt_watermark: 'LIVE-IN PROPERTIES',
+    logo_url: null,
   };
+};
+
+const loadImageAsBase64 = async (url: string): Promise<string | null> => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 };
 
 export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> => {
@@ -80,8 +97,17 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.setFillColor(...primaryColor);
   doc.rect(0, 0, pageWidth, 50, 'F');
   
-  // Add logo
-  doc.addImage(logoImage, 'JPEG', 15, 5, 25, 25);
+  // Add logo - use custom logo if available, otherwise use default
+  if (settings.logo_url) {
+    const customLogoBase64 = await loadImageAsBase64(settings.logo_url);
+    if (customLogoBase64) {
+      doc.addImage(customLogoBase64, 'PNG', 15, 5, 25, 25);
+    } else {
+      doc.addImage(logoImage, 'JPEG', 15, 5, 25, 25);
+    }
+  } else {
+    doc.addImage(logoImage, 'JPEG', 15, 5, 25, 25);
+  }
   
   // Company Name (positioned next to logo)
   doc.setTextColor(255, 255, 255);
