@@ -94,6 +94,7 @@ const Index = () => {
     try {
       if (selectedClient) {
         const discountedPrice = data.totalPrice - data.discount;
+        const commissionValue = data.commission || 0;
         await updateClient(selectedClient.id, {
           name: data.name,
           phone: data.phone,
@@ -103,6 +104,8 @@ const Index = () => {
           discount: data.discount,
           sales_agent: data.salesAgent,
           balance: discountedPrice - selectedClient.total_paid,
+          commission: commissionValue,
+          commission_balance: commissionValue - (selectedClient.commission_received || 0),
         });
         
         await logActivity({
@@ -140,6 +143,9 @@ const Index = () => {
           notes: '',
           status: data.paymentType === 'cash' ? 'completed' : 'ongoing',
           sale_date: new Date().toISOString().split('T')[0],
+          commission: data.commission || null,
+          commission_received: 0,
+          commission_balance: data.commission || null,
         });
 
         if (data.initialPayment > 0) {

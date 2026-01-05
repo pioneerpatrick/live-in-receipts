@@ -17,11 +17,13 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   LineChart as LineChartIcon,
-  BookOpen
+  BookOpen,
+  Receipt
 } from 'lucide-react';
 import { RevenueCharts } from './RevenueCharts';
 import { AccountingReports } from './AccountingReports';
 import { GeneralLedger } from './GeneralLedger';
+import { ExpensesDashboard } from '@/components/expenses/ExpensesDashboard';
 import { exportAccountingToPDF, exportAccountingToExcel } from '@/lib/accountingExport';
 
 interface AccountingDashboardProps {
@@ -239,7 +241,7 @@ export const AccountingDashboard = ({
 
       {/* Tabs for Different Views */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
           <TabsTrigger value="overview" className="flex items-center gap-1">
             <LineChartIcon className="w-4 h-4" />
             <span className="hidden sm:inline">Charts</span>
@@ -247,6 +249,10 @@ export const AccountingDashboard = ({
           <TabsTrigger value="reports" className="flex items-center gap-1">
             <PieChartIcon className="w-4 h-4" />
             <span className="hidden sm:inline">Reports</span>
+          </TabsTrigger>
+          <TabsTrigger value="expenses" className="flex items-center gap-1">
+            <Receipt className="w-4 h-4" />
+            <span className="hidden sm:inline">Expenses</span>
           </TabsTrigger>
           <TabsTrigger value="ledger" className="flex items-center gap-1">
             <BookOpen className="w-4 h-4" />
@@ -267,6 +273,10 @@ export const AccountingDashboard = ({
             payments={filteredPayments}
             metrics={metrics}
           />
+        </TabsContent>
+
+        <TabsContent value="expenses" className="mt-4">
+          <ExpensesDashboard clients={clients} />
         </TabsContent>
 
         <TabsContent value="ledger" className="mt-4">

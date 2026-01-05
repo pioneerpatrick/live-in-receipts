@@ -266,6 +266,9 @@ export const parseExcelData = (rows: any[][]): ParsedClientData[] => {
           notes: '',
           status: parseStatus(status),
           sale_date: null,
+          commission: null,
+          commission_received: null,
+          commission_balance: null,
         },
         payments: []
       };

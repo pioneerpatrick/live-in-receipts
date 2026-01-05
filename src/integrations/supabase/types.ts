@@ -194,6 +194,68 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          agent_id: string | null
+          amount: number
+          category: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          expense_date: string
+          id: string
+          is_commission_payout: boolean | null
+          notes: string | null
+          payment_method: string | null
+          recipient: string | null
+          reference_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          amount?: number
+          category: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          expense_date?: string
+          id?: string
+          is_commission_payout?: boolean | null
+          notes?: string | null
+          payment_method?: string | null
+          recipient?: string | null
+          reference_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          amount?: number
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          is_commission_payout?: boolean | null
+          notes?: string | null
+          payment_method?: string | null
+          recipient?: string | null
+          reference_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           agent_name: string | null

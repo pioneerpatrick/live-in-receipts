@@ -22,6 +22,9 @@ export interface Client {
   notes: string;
   status: string;
   sale_date: string | null;
+  commission: number | null;
+  commission_received: number | null;
+  commission_balance: number | null;
   created_at: string;
   updated_at: string;
 }

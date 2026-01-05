@@ -21,6 +21,7 @@ const clientSchema = z.object({
   paymentType: z.enum(['installments', 'cash']),
   initialPaymentMethod: z.enum(['Cash', 'M-Pesa', 'Bank']),
   installmentMonths: z.coerce.number().min(1).optional(),
+  commission: z.coerce.number().min(0, 'Commission cannot be negative').optional(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -47,6 +48,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
       paymentType: 'installments',
       initialPaymentMethod: 'Cash',
       installmentMonths: undefined,
+      commission: 0,
     },
   });
 
@@ -66,6 +68,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
         paymentType: (client.payment_type as 'installments' | 'cash') || 'installments',
         initialPaymentMethod: (client.initial_payment_method as 'Cash' | 'M-Pesa' | 'Bank') || 'Cash',
         installmentMonths: client.installment_months || undefined,
+        commission: client.commission || 0,
       });
     } else {
       form.reset({
@@ -80,6 +83,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
         paymentType: 'installments',
         initialPaymentMethod: 'Cash',
         installmentMonths: undefined,
+        commission: 0,
       });
     }
   }, [client, form]);
@@ -221,6 +225,22 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="commission"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Agent Commission (KES)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="0" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="initialPaymentMethod"
