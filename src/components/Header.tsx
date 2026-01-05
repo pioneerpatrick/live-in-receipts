@@ -1,4 +1,5 @@
-import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, BarChart3, Activity } from 'lucide-react';
+import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, BarChart3, LayoutDashboard } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,10 @@ import { toast } from 'sonner';
 
 const Header = () => {
   const { user, role, signOut } = useAuth();
+  const location = useLocation();
+  
+  // Show "Back to Dashboard" button for admin on non-dashboard pages
+  const showBackToDashboard = role === 'admin' && location.pathname !== '/';
 
   const handleSignOut = async () => {
     await signOut();
@@ -41,6 +46,15 @@ const Header = () => {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+            {/* Back to Dashboard Button for Admins */}
+            {showBackToDashboard && (
+              <Button asChild variant="outline" size="sm" className="gap-1 sm:gap-2">
+                <Link to="/">
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </Link>
+              </Button>
+            )}
             {/* Contact Information - Hidden on mobile/tablet */}
             <div className="hidden xl:flex flex-wrap items-center justify-center gap-4 text-sm">
               <a 
