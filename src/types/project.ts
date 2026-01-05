@@ -2,6 +2,7 @@ export interface Project {
   id: string;
   name: string;
   location: string;
+  capacity: number;
   total_plots: number;
   description?: string;
   created_at: string;
