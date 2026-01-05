@@ -11,9 +11,11 @@ import { ExcelUploadDialog } from '@/components/ExcelUploadDialog';
 import { PaymentHistoryImportDialog } from '@/components/PaymentHistoryImportDialog';
 import { PaymentReminders } from '@/components/PaymentReminders';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
-import { Client, ReceiptData } from '@/types/client';
+import { AccountingDashboard } from '@/components/accounting/AccountingDashboard';
+import { Client, Payment, ReceiptData } from '@/types/client';
 import {
   getClients,
+  getPayments,
   addClient,
   updateClient,
   deleteClient,
@@ -31,6 +33,7 @@ const Index = () => {
   const isAdmin = role === 'admin';
   
   const [clients, setClients] = useState<Client[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [clientFormOpen, setClientFormOpen] = useState(false);
   const [paymentFormOpen, setPaymentFormOpen] = useState(false);
   const [paymentHistoryOpen, setPaymentHistoryOpen] = useState(false);
@@ -39,19 +42,24 @@ const Index = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState('all');
 
   useEffect(() => {
-    loadClients();
+    loadData();
   }, []);
 
-  const loadClients = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const data = await getClients();
-      setClients(data);
+      const [clientsData, paymentsData] = await Promise.all([
+        getClients(),
+        getPayments()
+      ]);
+      setClients(clientsData);
+      setPayments(paymentsData);
     } catch (error) {
-      console.error('Error loading clients:', error);
-      toast.error('Failed to load clients');
+      console.error('Error loading data:', error);
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -158,7 +166,7 @@ const Index = () => {
         toast.success('Client added successfully!');
       }
 
-      await loadClients();
+      await loadData();
       setClientFormOpen(false);
       setSelectedClient(null);
     } catch (error) {
@@ -201,7 +209,7 @@ const Index = () => {
       });
 
       toast.success('Payment recorded successfully!');
-      await loadClients();
+      await loadData();
       setPaymentFormOpen(false);
       setSelectedClient(null);
     } catch (error) {
@@ -224,7 +232,7 @@ const Index = () => {
       });
       
       toast.success('Client deleted successfully!');
-      await loadClients();
+      await loadData();
       setDeleteDialogOpen(false);
       setSelectedClient(null);
     } catch (error) {
@@ -310,41 +318,15 @@ const Index = () => {
           </div>
         )}
 
-        {/* Accounting Summary Section (YTD Totals) - Admin Only */}
+        {/* Full Accounting Dashboard - Admin Only */}
         {isAdmin && (
-          <div className="bg-card rounded-lg p-4 sm:p-6 card-shadow mb-6 sm:mb-8 animate-fade-in">
-            <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              YTD Accounting Summary
-            </h3>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-              <div className="text-center p-2 sm:p-3 bg-muted/30 rounded-lg">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Total Sales Value</p>
-                <p className="text-sm sm:text-lg font-bold text-foreground truncate">{formatCurrency(totalSalesValue)}</p>
-              </div>
-              <div className="text-center p-2 sm:p-3 bg-muted/30 rounded-lg">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Total Discount</p>
-                <p className="text-sm sm:text-lg font-bold text-orange-600 truncate">{formatCurrency(totalDiscount)}</p>
-              </div>
-              <div className="text-center p-2 sm:p-3 bg-muted/30 rounded-lg">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Total Collected</p>
-                <p className="text-sm sm:text-lg font-bold text-primary truncate">{formatCurrency(totalCollected)}</p>
-              </div>
-              <div className="text-center p-2 sm:p-3 bg-muted/30 rounded-lg">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">Total Balance</p>
-                <p className="text-sm sm:text-lg font-bold text-destructive truncate">{formatCurrency(totalReceivables)}</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3 sm:gap-4 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border">
-              <div className="flex items-center gap-2">
-                <Wallet className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-                <span className="text-xs sm:text-sm text-muted-foreground">Completed: <span className="font-semibold text-foreground">{completedClients}</span></span>
-              </div>
-              <div className="flex items-center gap-2">
-                <BadgeDollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-amber-600" />
-                <span className="text-xs sm:text-sm text-muted-foreground">Ongoing: <span className="font-semibold text-foreground">{ongoingClients}</span></span>
-              </div>
-            </div>
+          <div className="mb-6 sm:mb-8 animate-fade-in">
+            <AccountingDashboard 
+              clients={clients}
+              payments={payments}
+              timeRange={timeRange}
+              onTimeRangeChange={setTimeRange}
+            />
           </div>
         )}
 
@@ -401,19 +383,19 @@ const Index = () => {
           setSelectedClient(null);
         }}
         client={selectedClient}
-        onClientUpdated={loadClients}
+        onClientUpdated={loadData}
       />
 
       <ExcelUploadDialog
         open={excelUploadOpen}
         onClose={() => setExcelUploadOpen(false)}
-        onImportComplete={loadClients}
+        onImportComplete={loadData}
       />
 
       <PaymentHistoryImportDialog
         open={paymentHistoryImportOpen}
         onClose={() => setPaymentHistoryImportOpen(false)}
-        onImportComplete={loadClients}
+        onImportComplete={loadData}
       />
 
       <DeleteConfirmDialog
