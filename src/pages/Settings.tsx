@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings as SettingsIcon, Activity, Users, RefreshCw, Search, Filter, Building, Home, Save, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, Activity, Users, RefreshCw, Search, Filter, Building, Home, Save, Loader2, Upload, X, Image } from 'lucide-react';
 import { getActionLabel, ActivityAction } from '@/lib/activityLogger';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -42,6 +42,7 @@ interface CompanySettings {
   po_box: string | null;
   receipt_footer_message: string | null;
   receipt_watermark: string | null;
+  logo_url: string | null;
 }
 
 const Settings = () => {
@@ -54,6 +55,8 @@ const Settings = () => {
   
   const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (role === 'admin') {
@@ -134,6 +137,7 @@ const Settings = () => {
           po_box: companySettings.po_box,
           receipt_footer_message: companySettings.receipt_footer_message,
           receipt_watermark: companySettings.receipt_watermark,
+          logo_url: companySettings.logo_url,
         })
         .eq('id', companySettings.id);
 
@@ -144,6 +148,94 @@ const Settings = () => {
       toast.error('Failed to save settings');
     } finally {
       setSavingSettings(false);
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !companySettings) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Logo must be less than 2MB');
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `company-logo-${Date.now()}.${fileExt}`;
+
+      // Delete old logo if exists
+      if (companySettings.logo_url) {
+        const oldPath = companySettings.logo_url.split('/').pop();
+        if (oldPath) {
+          await supabase.storage.from('company-logos').remove([oldPath]);
+        }
+      }
+
+      // Upload new logo
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(fileName);
+
+      const newLogoUrl = urlData.publicUrl;
+
+      // Update company settings with new logo URL
+      const { error: updateError } = await supabase
+        .from('company_settings')
+        .update({ logo_url: newLogoUrl })
+        .eq('id', companySettings.id);
+
+      if (updateError) throw updateError;
+
+      setCompanySettings({ ...companySettings, logo_url: newLogoUrl });
+      toast.success('Logo uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error('Failed to upload logo');
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!companySettings?.logo_url) return;
+
+    try {
+      const oldPath = companySettings.logo_url.split('/').pop();
+      if (oldPath) {
+        await supabase.storage.from('company-logos').remove([oldPath]);
+      }
+
+      const { error } = await supabase
+        .from('company_settings')
+        .update({ logo_url: null })
+        .eq('id', companySettings.id);
+
+      if (error) throw error;
+
+      setCompanySettings({ ...companySettings, logo_url: null });
+      toast.success('Logo removed successfully');
+    } catch (error) {
+      console.error('Error removing logo:', error);
+      toast.error('Failed to remove logo');
     }
   };
 
@@ -332,6 +424,65 @@ const Settings = () => {
                     <div>
                       <h3 className="text-lg font-semibold mb-4">Receipt Customization</h3>
                       <div className="space-y-4">
+                        {/* Logo Upload */}
+                        <div className="space-y-2">
+                          <Label>Company Logo</Label>
+                          <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                              {companySettings.logo_url ? (
+                                <div className="relative">
+                                  <img
+                                    src={companySettings.logo_url}
+                                    alt="Company Logo"
+                                    className="w-24 h-24 object-contain border rounded-lg bg-muted"
+                                  />
+                                  <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute -top-2 -right-2 w-6 h-6"
+                                    onClick={handleRemoveLogo}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/50">
+                                  <Image className="w-8 h-8 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <input
+                                type="file"
+                                ref={fileInputRef}
+                                accept="image/*"
+                                onChange={handleLogoUpload}
+                                className="hidden"
+                              />
+                              <Button
+                                variant="outline"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploadingLogo}
+                              >
+                                {uploadingLogo ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Uploading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    Upload Logo
+                                  </>
+                                )}
+                              </Button>
+                              <p className="text-xs text-muted-foreground">
+                                Recommended: Square image, max 2MB. Will appear on receipts.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="space-y-2">
                           <Label htmlFor="receipt_watermark">Receipt Watermark Text</Label>
                           <Input
