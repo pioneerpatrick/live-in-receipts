@@ -34,12 +34,13 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
   const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'completed'>('all');
 
   const filteredClients = clients.filter(client => {
-    // Text search filter
+    // Text search filter - add null safety for optional fields
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone.includes(searchTerm) ||
-      client.plot_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.project_name.toLowerCase().includes(searchTerm.toLowerCase());
+      (client.name || '').toLowerCase().includes(searchLower) ||
+      (client.phone || '').includes(searchTerm) ||
+      (client.plot_number || '').toLowerCase().includes(searchLower) ||
+      (client.project_name || '').toLowerCase().includes(searchLower);
 
     if (!matchesSearch) return false;
 
