@@ -49,7 +49,7 @@ export function InventoryDashboard() {
   useEffect(() => {
     fetchStats();
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates for plots, projects, and clients
     const channel = supabase
       .channel('inventory-updates')
       .on(
@@ -60,6 +60,11 @@ export function InventoryDashboard() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'projects' },
+        () => fetchStats()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'clients' },
         () => fetchStats()
       )
       .subscribe();
