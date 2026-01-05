@@ -60,6 +60,8 @@ export type Database = {
           created_at: string
           discount: number
           id: string
+          initial_payment_method: string | null
+          installment_months: number | null
           name: string
           next_payment_date: string | null
           notes: string | null
@@ -87,6 +89,8 @@ export type Database = {
           created_at?: string
           discount?: number
           id?: string
+          initial_payment_method?: string | null
+          installment_months?: number | null
           name: string
           next_payment_date?: string | null
           notes?: string | null
@@ -114,6 +118,8 @@ export type Database = {
           created_at?: string
           discount?: number
           id?: string
+          initial_payment_method?: string | null
+          installment_months?: number | null
           name?: string
           next_payment_date?: string | null
           notes?: string | null

@@ -15,6 +15,8 @@ export interface Client {
   sales_agent: string;
   payment_type: string; // 'installments' or 'cash'
   payment_period: string;
+  installment_months: number | null;
+  initial_payment_method: string;
   completion_date: string | null;
   next_payment_date: string | null;
   notes: string;
