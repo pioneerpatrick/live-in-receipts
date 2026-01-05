@@ -11,7 +11,6 @@ import { ExcelUploadDialog } from '@/components/ExcelUploadDialog';
 import { PaymentHistoryImportDialog } from '@/components/PaymentHistoryImportDialog';
 import { PaymentReminders } from '@/components/PaymentReminders';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
-import { AccountingDashboard } from '@/components/accounting/AccountingDashboard';
 import { Client, Payment, ReceiptData } from '@/types/client';
 import {
   getClients,
@@ -26,7 +25,7 @@ import {
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
 import { logActivity } from '@/lib/activityLogger';
-import { LayoutDashboard, FileText, Users, TrendingUp, Wallet, BadgeDollarSign } from 'lucide-react';
+import { LayoutDashboard, FileText, Users } from 'lucide-react';
 
 const Index = () => {
   const { role } = useAuth();
@@ -42,7 +41,6 @@ const Index = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('all');
 
   useEffect(() => {
     loadData();
@@ -266,12 +264,6 @@ const Index = () => {
   const totalClients = clients.length;
   const totalReceivables = clients.reduce((sum, c) => sum + c.balance, 0);
   const totalCollected = clients.reduce((sum, c) => sum + c.total_paid, 0);
-  
-  // Accounting summary (YTD totals)
-  const totalSalesValue = clients.reduce((sum, c) => sum + c.total_price, 0);
-  const totalDiscount = clients.reduce((sum, c) => sum + c.discount, 0);
-  const completedClients = clients.filter(c => c.status === 'completed' || c.balance === 0).length;
-  const ongoingClients = clients.filter(c => c.status === 'ongoing' && c.balance > 0).length;
 
   return (
     <div className="min-h-screen min-h-[100dvh] flex flex-col bg-background">
@@ -321,18 +313,6 @@ const Index = () => {
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Full Accounting Dashboard - Admin Only */}
-        {isAdmin && (
-          <div className="mb-6 sm:mb-8 animate-fade-in">
-            <AccountingDashboard 
-              clients={clients}
-              payments={payments}
-              timeRange={timeRange}
-              onTimeRangeChange={setTimeRange}
-            />
           </div>
         )}
 

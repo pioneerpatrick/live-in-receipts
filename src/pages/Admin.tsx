@@ -12,9 +12,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { UserProfile } from '@/types/client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AccountingDashboard } from '@/components/accounting/AccountingDashboard';
+import { UserProfile, Client, Payment } from '@/types/client';
+import { getClients, getPayments } from '@/lib/supabaseStorage';
 import { logActivity } from '@/lib/activityLogger';
-import { Shield, UserCog, Search, Crown, UserMinus, Trash2 } from 'lucide-react';
+import { Shield, UserCog, Search, Crown, UserMinus, Trash2, BarChart3 } from 'lucide-react';
 
 interface UserWithRole extends UserProfile {
   role?: 'admin' | 'staff';
@@ -23,6 +26,8 @@ interface UserWithRole extends UserProfile {
 const Admin = () => {
   const { role, user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
@@ -30,12 +35,27 @@ const Admin = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [newRole, setNewRole] = useState<'admin' | 'staff'>('staff');
+  const [timeRange, setTimeRange] = useState('all');
 
   useEffect(() => {
     if (role === 'admin') {
       fetchUsers();
+      loadAccountingData();
     }
   }, [role]);
+
+  const loadAccountingData = async () => {
+    try {
+      const [clientsData, paymentsData] = await Promise.all([
+        getClients(),
+        getPayments()
+      ]);
+      setClients(clientsData);
+      setPayments(paymentsData);
+    } catch (error) {
+      console.error('Error loading accounting data:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -177,11 +197,33 @@ const Admin = () => {
           <Shield className="w-8 h-8 text-primary" />
           <div>
             <h1 className="text-3xl font-heading font-bold text-foreground">Admin Panel</h1>
-            <p className="text-muted-foreground">Manage staff accounts</p>
+            <p className="text-muted-foreground">Manage users and view accounting</p>
           </div>
         </div>
 
-        <Card>
+        <Tabs defaultValue="accounting" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="accounting" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Accounting
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <UserCog className="w-4 h-4" />
+              User Management
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="accounting">
+            <AccountingDashboard 
+              clients={clients}
+              payments={payments}
+              timeRange={timeRange}
+              onTimeRangeChange={setTimeRange}
+            />
+          </TabsContent>
+
+          <TabsContent value="users">
+            <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserCog className="w-5 h-5" />
@@ -280,7 +322,9 @@ const Admin = () => {
               </Table>
             )}
           </CardContent>
-        </Card>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
 
       <Footer />
