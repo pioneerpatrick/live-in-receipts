@@ -103,6 +103,7 @@ export function ProjectsManager() {
     location: string; 
     description: string | null; 
     capacity: number;
+    buying_price: number;
     plotNumbers?: string[];
     plotSize?: string;
     plotPrice?: number;
@@ -113,7 +114,8 @@ export function ProjectsManager() {
         name: data.name,
         location: data.location,
         description: data.description,
-        capacity: data.capacity
+        capacity: data.capacity,
+        buying_price: data.buying_price
       });
       
       if (data.plotNumbers && data.plotNumbers.length > 0) {
