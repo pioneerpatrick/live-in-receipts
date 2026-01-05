@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Client, Payment, ReceiptData } from '@/types/client';
-import { getClientPayments, formatCurrency, updatePayment, deletePayment, updateClient } from '@/lib/supabaseStorage';
+import { getClientPayments, formatCurrency, updatePayment, deletePayment, updateClient, returnPlotToStock } from '@/lib/supabaseStorage';
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
 import { EditPaymentDialog } from '@/components/EditPaymentDialog';
 import { useAuth } from '@/hooks/useAuth';
@@ -140,9 +140,22 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
         balance: newBalance,
       });
       
+      // Check if this was the last payment - if so, return plot to stock
+      const remainingPayments = payments.filter(p => p.id !== deletingPayment.id);
+      if (remainingPayments.length === 0) {
+        try {
+          await returnPlotToStock(client.id);
+          toast.success('Payment deleted and plot returned to available stock!');
+        } catch (plotError) {
+          console.error('Error returning plot to stock:', plotError);
+          toast.success('Payment deleted! (Note: Could not update plot status)');
+        }
+      } else {
+        toast.success('Payment deleted successfully!');
+      }
+      
       await loadPayments();
       onClientUpdated?.();
-      toast.success('Payment deleted successfully!');
       setDeletingPayment(null);
     } catch (error) {
       console.error('Error deleting payment:', error);

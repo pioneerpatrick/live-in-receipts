@@ -48,6 +48,22 @@ export const updateClient = async (id: string, updates: Partial<Client>): Promis
 };
 
 export const deleteClient = async (id: string): Promise<void> => {
+  // First, return any plots associated with this client back to available
+  const { error: plotError } = await supabase
+    .from('plots')
+    .update({ 
+      status: 'available', 
+      client_id: null, 
+      sold_at: null 
+    })
+    .eq('client_id', id);
+
+  if (plotError) {
+    console.error('Error returning plot to stock:', plotError);
+    // Continue with client deletion even if plot update fails
+  }
+
+  // Then delete the client
   const { error } = await supabase
     .from('clients')
     .delete()
@@ -141,6 +157,23 @@ export const getClientPayments = async (clientId: string): Promise<Payment[]> =>
   }
   
   return data || [];
+};
+
+// Return plot to available status when client has no payments
+export const returnPlotToStock = async (clientId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('plots')
+    .update({ 
+      status: 'available', 
+      client_id: null, 
+      sold_at: null 
+    })
+    .eq('client_id', clientId);
+
+  if (error) {
+    console.error('Error returning plot to stock:', error);
+    throw error;
+  }
 };
 
 // Utility functions
