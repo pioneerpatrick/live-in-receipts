@@ -74,10 +74,16 @@ export const getPayments = async (): Promise<Payment[]> => {
   return data || [];
 };
 
-export const addPayment = async (payment: Omit<Payment, 'id' | 'created_at'>): Promise<Payment> => {
+export const addPayment = async (payment: Omit<Payment, 'id' | 'created_at' | 'created_by'>): Promise<Payment> => {
+  // Get current user to set created_by
+  const { data: { user } } = await supabase.auth.getUser();
+  
   const { data, error } = await supabase
     .from('payments')
-    .insert(payment)
+    .insert({
+      ...payment,
+      created_by: user?.id,
+    })
     .select()
     .single();
   

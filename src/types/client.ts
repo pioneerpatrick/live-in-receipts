@@ -36,6 +36,7 @@ export interface Payment {
   agent_name: string;
   authorized_by?: string;
   notes?: string;
+  created_by?: string;
   created_at: string;
 }
 

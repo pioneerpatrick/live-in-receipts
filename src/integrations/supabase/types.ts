@@ -195,6 +195,7 @@ export type Database = {
           authorized_by: string | null
           client_id: string
           created_at: string
+          created_by: string | null
           id: string
           new_balance: number
           notes: string | null
@@ -209,6 +210,7 @@ export type Database = {
           authorized_by?: string | null
           client_id: string
           created_at?: string
+          created_by?: string | null
           id?: string
           new_balance?: number
           notes?: string | null
@@ -223,6 +225,7 @@ export type Database = {
           authorized_by?: string | null
           client_id?: string
           created_at?: string
+          created_by?: string | null
           id?: string
           new_balance?: number
           notes?: string | null
