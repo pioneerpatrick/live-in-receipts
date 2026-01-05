@@ -194,6 +194,122 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_deductions: {
+        Row: {
+          amount: number
+          created_at: string
+          deduction_name: string
+          deduction_type: string
+          employee_id: string
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          is_recurring: boolean | null
+          start_date: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          deduction_name: string
+          deduction_type: string
+          employee_id: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_recurring?: boolean | null
+          start_date?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          deduction_name?: string
+          deduction_type?: string
+          employee_id?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_recurring?: boolean | null
+          start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_deductions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          bank_account: string | null
+          bank_name: string | null
+          basic_salary: number
+          created_at: string
+          employee_id: string
+          employment_type: string
+          full_name: string
+          hire_date: string | null
+          housing_allowance: number | null
+          id: string
+          is_active: boolean | null
+          job_title: string
+          kra_pin: string
+          national_id: string
+          non_taxable_allowances: number | null
+          nssf_number: string | null
+          other_taxable_allowances: number | null
+          sha_number: string | null
+          transport_allowance: number | null
+          updated_at: string
+        }
+        Insert: {
+          bank_account?: string | null
+          bank_name?: string | null
+          basic_salary?: number
+          created_at?: string
+          employee_id: string
+          employment_type?: string
+          full_name: string
+          hire_date?: string | null
+          housing_allowance?: number | null
+          id?: string
+          is_active?: boolean | null
+          job_title: string
+          kra_pin: string
+          national_id: string
+          non_taxable_allowances?: number | null
+          nssf_number?: string | null
+          other_taxable_allowances?: number | null
+          sha_number?: string | null
+          transport_allowance?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bank_account?: string | null
+          bank_name?: string | null
+          basic_salary?: number
+          created_at?: string
+          employee_id?: string
+          employment_type?: string
+          full_name?: string
+          hire_date?: string | null
+          housing_allowance?: number | null
+          id?: string
+          is_active?: boolean | null
+          job_title?: string
+          kra_pin?: string
+          national_id?: string
+          non_taxable_allowances?: number | null
+          nssf_number?: string | null
+          other_taxable_allowances?: number | null
+          sha_number?: string | null
+          transport_allowance?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           agent_id: string | null
@@ -312,6 +428,113 @@ export type Database = {
           },
         ]
       }
+      payroll_records: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          basic_salary: number
+          bonus: number | null
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          gross_pay: number
+          housing_allowance: number | null
+          housing_levy_employee: number | null
+          housing_levy_employer: number | null
+          id: string
+          insurance_relief: number | null
+          is_locked: boolean | null
+          net_pay: number
+          non_taxable_allowances: number | null
+          nssf_employee: number
+          nssf_employer: number
+          other_deductions: number | null
+          other_taxable_allowances: number | null
+          overtime_pay: number | null
+          pay_period_month: number
+          pay_period_year: number
+          paye: number
+          personal_relief: number | null
+          sha_deduction: number
+          taxable_income: number
+          total_deductions: number
+          transport_allowance: number | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          basic_salary: number
+          bonus?: number | null
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          gross_pay: number
+          housing_allowance?: number | null
+          housing_levy_employee?: number | null
+          housing_levy_employer?: number | null
+          id?: string
+          insurance_relief?: number | null
+          is_locked?: boolean | null
+          net_pay: number
+          non_taxable_allowances?: number | null
+          nssf_employee?: number
+          nssf_employer?: number
+          other_deductions?: number | null
+          other_taxable_allowances?: number | null
+          overtime_pay?: number | null
+          pay_period_month: number
+          pay_period_year: number
+          paye?: number
+          personal_relief?: number | null
+          sha_deduction?: number
+          taxable_income: number
+          total_deductions: number
+          transport_allowance?: number | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          basic_salary?: number
+          bonus?: number | null
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          gross_pay?: number
+          housing_allowance?: number | null
+          housing_levy_employee?: number | null
+          housing_levy_employer?: number | null
+          id?: string
+          insurance_relief?: number | null
+          is_locked?: boolean | null
+          net_pay?: number
+          non_taxable_allowances?: number | null
+          nssf_employee?: number
+          nssf_employer?: number
+          other_deductions?: number | null
+          other_taxable_allowances?: number | null
+          overtime_pay?: number | null
+          pay_period_month?: number
+          pay_period_year?: number
+          paye?: number
+          personal_relief?: number | null
+          sha_deduction?: number
+          taxable_income?: number
+          total_deductions?: number
+          transport_allowance?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plots: {
         Row: {
           client_id: string | null
@@ -422,6 +645,48 @@ export type Database = {
           location?: string
           name?: string
           total_plots?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      statutory_rates: {
+        Row: {
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          is_active: boolean | null
+          max_amount: number | null
+          min_amount: number | null
+          rate_name: string
+          rate_type: string
+          rate_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from: string
+          effective_to?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_amount?: number | null
+          min_amount?: number | null
+          rate_name: string
+          rate_type: string
+          rate_value: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_amount?: number | null
+          min_amount?: number | null
+          rate_name?: string
+          rate_type?: string
+          rate_value?: number
           updated_at?: string
         }
         Relationships: []

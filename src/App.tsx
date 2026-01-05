@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import ClientPaymentHistory from "./pages/ClientPaymentHistory";
 import Projects from "./pages/Projects";
+import Payroll from "./pages/Payroll";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="admin">
                   <Projects />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/payroll" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Payroll />
                 </ProtectedRoute>
               } 
             />
