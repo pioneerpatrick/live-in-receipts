@@ -9,13 +9,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { getProjects, getPlots } from '@/lib/projectStorage';
+import { formatCurrency } from '@/lib/supabaseStorage';
 
 const clientSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   phone: z.string().min(10, 'Phone must be at least 10 characters'),
   projectName: z.string().min(1, 'Project name is required'),
-  plotNumber: z.string().min(1, 'Plot number is required'),
+  selectedPlots: z.array(z.string()).min(1, 'At least one plot must be selected'),
   totalPrice: z.coerce.number().min(1, 'Total price must be greater than 0'),
   discount: z.coerce.number().min(0, 'Discount cannot be negative'),
   initialPayment: z.coerce.number().min(0, 'Initial payment cannot be negative'),
@@ -31,7 +34,7 @@ type ClientFormData = z.infer<typeof clientSchema>;
 interface ClientFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: ClientFormData) => void;
+  onSubmit: (data: ClientFormData & { plotDetails: Plot[] }) => void;
   client?: Client | null;
 }
 
@@ -48,7 +51,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
       name: '',
       phone: '',
       projectName: '',
-      plotNumber: '',
+      selectedPlots: [],
       totalPrice: 0,
       discount: 0,
       initialPayment: 0,
@@ -62,7 +65,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
 
   const paymentType = form.watch('paymentType');
   const selectedProjectName = form.watch('projectName');
-  const selectedPlotNumber = form.watch('plotNumber');
+  const selectedPlots = form.watch('selectedPlots');
 
   // Fetch projects when dialog opens
   useEffect(() => {
@@ -94,23 +97,28 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
     }
   }, [selectedProjectName, projects, client]);
 
-  // Auto-populate price when plot is selected
+  // Auto-calculate total price when plots selection changes
   useEffect(() => {
-    if (selectedPlotNumber && !client) {
-      const selectedPlot = plots.find(p => p.plot_number === selectedPlotNumber);
-      if (selectedPlot) {
-        form.setValue('totalPrice', selectedPlot.price);
-      }
+    if (selectedPlots.length > 0 && !client) {
+      const totalPrice = selectedPlots.reduce((sum, plotNumber) => {
+        const plot = plots.find(p => p.plot_number === plotNumber);
+        return sum + (plot?.price || 0);
+      }, 0);
+      form.setValue('totalPrice', totalPrice);
+    } else if (selectedPlots.length === 0 && !client) {
+      form.setValue('totalPrice', 0);
     }
-  }, [selectedPlotNumber, plots, form, client]);
+  }, [selectedPlots, plots, form, client]);
 
   useEffect(() => {
     if (client) {
+      // Parse plot numbers from comma-separated string
+      const plotNumbers = client.plot_number.split(', ').filter(p => p.trim());
       form.reset({
         name: client.name,
         phone: client.phone,
         projectName: client.project_name,
-        plotNumber: client.plot_number,
+        selectedPlots: plotNumbers,
         totalPrice: client.total_price,
         discount: client.discount,
         initialPayment: client.total_paid,
@@ -125,7 +133,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
         name: '',
         phone: '',
         projectName: '',
-        plotNumber: '',
+        selectedPlots: [],
         totalPrice: 0,
         discount: 0,
         initialPayment: 0,
@@ -140,8 +148,22 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
     }
   }, [client, form]);
 
+  const handlePlotToggle = (plotNumber: string, checked: boolean) => {
+    const currentPlots = form.getValues('selectedPlots');
+    if (checked) {
+      form.setValue('selectedPlots', [...currentPlots, plotNumber]);
+    } else {
+      form.setValue('selectedPlots', currentPlots.filter(p => p !== plotNumber));
+    }
+  };
+
   const handleSubmit = (data: ClientFormData) => {
-    onSubmit(data);
+    // Get the full plot details for selected plots
+    const plotDetails = data.selectedPlots
+      .map(plotNumber => plots.find(p => p.plot_number === plotNumber))
+      .filter((p): p is Plot => p !== undefined);
+    
+    onSubmit({ ...data, plotDetails });
     form.reset();
   };
 
@@ -186,86 +208,96 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="projectName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Name</FormLabel>
-                    {client ? (
+            <FormField
+              control={form.control}
+              name="projectName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Name</FormLabel>
+                  {client ? (
+                    <FormControl>
+                      <Input {...field} disabled />
+                    </FormControl>
+                  ) : (
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        form.setValue('selectedPlots', []);
+                        form.setValue('totalPrice', 0);
+                      }} 
+                      value={field.value}
+                      disabled={isLoadingProjects}
+                    >
                       <FormControl>
-                        <Input {...field} disabled />
+                        <SelectTrigger>
+                          <SelectValue placeholder={isLoadingProjects ? "Loading..." : "Select project"} />
+                        </SelectTrigger>
                       </FormControl>
-                    ) : (
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          form.setValue('plotNumber', '');
-                          form.setValue('totalPrice', 0);
-                        }} 
-                        value={field.value}
-                        disabled={isLoadingProjects}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={isLoadingProjects ? "Loading..." : "Select project"} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {projects.map((project) => (
-                            <SelectItem key={project.id} value={project.name}>
-                              {project.name} ({project.location})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.name}>
+                            {project.name} ({project.location})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="plotNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Plot Number</FormLabel>
-                    {client ? (
-                      <FormControl>
-                        <Input {...field} disabled />
-                      </FormControl>
-                    ) : (
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                        disabled={!selectedProjectName || isLoadingPlots}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={
-                              isLoadingPlots ? "Loading..." : 
-                              !selectedProjectName ? "Select project first" : 
-                              availablePlots.length === 0 ? "No plots available" :
-                              "Select plot"
-                            } />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {availablePlots.map((plot) => (
-                            <SelectItem key={plot.id} value={plot.plot_number}>
-                              {plot.plot_number} - {plot.size} (KES {plot.price.toLocaleString()})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="selectedPlots"
+              render={() => (
+                <FormItem>
+                  <FormLabel>
+                    Select Plots {selectedPlots.length > 0 && `(${selectedPlots.length} selected)`}
+                  </FormLabel>
+                  {client ? (
+                    <FormControl>
+                      <Input value={selectedPlots.join(', ')} disabled />
+                    </FormControl>
+                  ) : (
+                    <div className="border rounded-md">
+                      {!selectedProjectName ? (
+                        <p className="text-sm text-muted-foreground p-3">Select a project first</p>
+                      ) : isLoadingPlots ? (
+                        <p className="text-sm text-muted-foreground p-3">Loading plots...</p>
+                      ) : availablePlots.length === 0 ? (
+                        <p className="text-sm text-muted-foreground p-3">No available plots in this project</p>
+                      ) : (
+                        <ScrollArea className="h-[150px] p-3">
+                          <div className="space-y-2">
+                            {availablePlots.map((plot) => (
+                              <div key={plot.id} className="flex items-center space-x-3 p-2 rounded hover:bg-muted/50">
+                                <Checkbox
+                                  id={plot.id}
+                                  checked={selectedPlots.includes(plot.plot_number)}
+                                  onCheckedChange={(checked) => 
+                                    handlePlotToggle(plot.plot_number, checked as boolean)
+                                  }
+                                />
+                                <label
+                                  htmlFor={plot.id}
+                                  className="flex-1 text-sm cursor-pointer"
+                                >
+                                  <span className="font-medium">{plot.plot_number}</span>
+                                  <span className="text-muted-foreground"> - {plot.size}</span>
+                                  <span className="text-primary ml-2">({formatCurrency(plot.price)})</span>
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      )}
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <FormField

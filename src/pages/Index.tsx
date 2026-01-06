@@ -98,7 +98,7 @@ const Index = () => {
           name: data.name,
           phone: data.phone,
           project_name: data.projectName,
-          plot_number: data.plotNumber,
+          plot_number: data.selectedPlots.join(', '),
           total_price: data.totalPrice,
           discount: data.discount,
           sales_agent: data.salesAgent,
@@ -118,14 +118,19 @@ const Index = () => {
       } else {
         const discountedPrice = data.totalPrice - data.discount;
         const initialBalance = discountedPrice - data.initialPayment;
+        const numberOfPlots = data.selectedPlots.length;
+        const plotNumbersString = data.selectedPlots.join(', ');
+        
+        // Calculate unit price as average per plot
+        const unitPrice = Math.round(data.totalPrice / numberOfPlots);
         
         const newClient = await addClient({
           name: data.name,
           phone: data.phone,
           project_name: data.projectName,
-          plot_number: data.plotNumber,
-          unit_price: data.totalPrice,
-          number_of_plots: 1,
+          plot_number: plotNumbersString,
+          unit_price: unitPrice,
+          number_of_plots: numberOfPlots,
           total_price: data.totalPrice,
           discount: data.discount,
           total_paid: data.initialPayment,
@@ -147,20 +152,16 @@ const Index = () => {
           commission_balance: data.commission || null,
         });
 
-        // Mark the plot as sold
-        try {
-          const projects = await getProjects();
-          const project = projects.find(p => p.name === data.projectName);
-          if (project) {
-            const plots = await getPlots(project.id);
-            const plot = plots.find(p => p.plot_number === data.plotNumber);
-            if (plot) {
+        // Mark all selected plots as sold
+        if (data.plotDetails && data.plotDetails.length > 0) {
+          try {
+            for (const plot of data.plotDetails) {
               await sellPlot(plot.id, newClient.id);
             }
+          } catch (plotError) {
+            console.error('Error marking plots as sold:', plotError);
+            // Don't fail the whole operation if plot update fails
           }
-        } catch (plotError) {
-          console.error('Error marking plot as sold:', plotError);
-          // Don't fail the whole operation if plot update fails
         }
 
         if (data.initialPayment > 0) {
@@ -173,7 +174,7 @@ const Index = () => {
             new_balance: initialBalance,
             receipt_number: generateReceiptNumber(),
             agent_name: data.salesAgent,
-            notes: 'Initial payment at registration',
+            notes: `Initial payment at registration for ${numberOfPlots} plot(s)`,
           });
         }
 
@@ -181,10 +182,10 @@ const Index = () => {
           action: 'client_created',
           entityType: 'client',
           entityId: newClient.id,
-          details: { name: data.name, project: data.projectName },
+          details: { name: data.name, project: data.projectName, plots: plotNumbersString },
         });
 
-        toast.success('Client added successfully!');
+        toast.success(`Client added with ${numberOfPlots} plot(s) successfully!`);
       }
 
       await loadData();
@@ -243,19 +244,24 @@ const Index = () => {
     if (!selectedClient) return;
 
     try {
-      // Return the plot to available status before deleting the client
+      // Return all plots to available status before deleting the client
       try {
         const projects = await getProjects();
         const project = projects.find(p => p.name === selectedClient.project_name);
         if (project) {
-          const plots = await getPlots(project.id);
-          const plot = plots.find(p => p.plot_number === selectedClient.plot_number);
-          if (plot && plot.status === 'sold') {
-            await returnPlot(plot.id);
+          const allPlots = await getPlots(project.id);
+          // Parse plot numbers from comma-separated string
+          const clientPlotNumbers = selectedClient.plot_number.split(', ').map(p => p.trim());
+          
+          for (const plotNumber of clientPlotNumbers) {
+            const plot = allPlots.find(p => p.plot_number === plotNumber);
+            if (plot && plot.status === 'sold') {
+              await returnPlot(plot.id);
+            }
           }
         }
       } catch (plotError) {
-        console.error('Error returning plot:', plotError);
+        console.error('Error returning plots:', plotError);
         // Don't fail the whole operation if plot update fails
       }
 
@@ -268,7 +274,7 @@ const Index = () => {
         details: { name: selectedClient.name },
       });
       
-      toast.success('Client deleted and plot returned to available!');
+      toast.success('Client deleted and plots returned to available!');
       await loadData();
       setDeleteDialogOpen(false);
       setSelectedClient(null);
