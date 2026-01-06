@@ -203,10 +203,16 @@ const Index = () => {
     try {
       const newBalance = selectedClient.balance - data.amount;
       const newTotalPaid = selectedClient.total_paid + data.amount;
+      const discountedPrice = selectedClient.total_price - selectedClient.discount;
+      const newPercentPaid = discountedPrice > 0 ? Math.round((newTotalPaid / discountedPrice) * 100 * 100) / 100 : 0;
+      const newStatus = newBalance <= 0 ? 'completed' : selectedClient.status;
 
       await updateClient(selectedClient.id, {
         total_paid: newTotalPaid,
         balance: newBalance,
+        percent_paid: newPercentPaid,
+        status: newStatus,
+        completion_date: newBalance <= 0 ? new Date().toISOString().split('T')[0] : selectedClient.completion_date,
       });
 
       await addPayment({
