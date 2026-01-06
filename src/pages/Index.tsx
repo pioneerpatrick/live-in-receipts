@@ -201,9 +201,16 @@ const Index = () => {
     if (!selectedClient) return;
 
     try {
-      const newBalance = selectedClient.balance - data.amount;
-      const newTotalPaid = selectedClient.total_paid + data.amount;
-      const discountedPrice = selectedClient.total_price - selectedClient.discount;
+      // Ensure all values are parsed as numbers to prevent string concatenation
+      const currentBalance = Number(selectedClient.balance) || 0;
+      const currentTotalPaid = Number(selectedClient.total_paid) || 0;
+      const paymentAmount = Number(data.amount) || 0;
+      const totalPrice = Number(selectedClient.total_price) || 0;
+      const discount = Number(selectedClient.discount) || 0;
+
+      const newBalance = currentBalance - paymentAmount;
+      const newTotalPaid = currentTotalPaid + paymentAmount;
+      const discountedPrice = totalPrice - discount;
       const newPercentPaid = discountedPrice > 0 ? Math.round((newTotalPaid / discountedPrice) * 100 * 100) / 100 : 0;
       const newStatus = newBalance <= 0 ? 'completed' : selectedClient.status;
 
@@ -217,10 +224,10 @@ const Index = () => {
 
       await addPayment({
         client_id: selectedClient.id,
-        amount: data.amount,
+        amount: paymentAmount,
         payment_method: data.paymentMethod,
         payment_date: new Date().toISOString(),
-        previous_balance: selectedClient.balance,
+        previous_balance: currentBalance,
         new_balance: newBalance,
         receipt_number: receiptData.receiptNumber,
         agent_name: data.agentName,
@@ -231,7 +238,7 @@ const Index = () => {
         entityType: 'payment',
         details: { 
           client_name: selectedClient.name,
-          amount: data.amount,
+          amount: paymentAmount,
           receipt: receiptData.receiptNumber,
         },
       });
