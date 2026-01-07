@@ -226,7 +226,7 @@ const Index = () => {
         client_id: selectedClient.id,
         amount: paymentAmount,
         payment_method: data.paymentMethod,
-        payment_date: new Date().toISOString(),
+        payment_date: data.paymentDate ? data.paymentDate.toISOString() : new Date().toISOString(),
         previous_balance: currentBalance,
         new_balance: newBalance,
         receipt_number: receiptData.receiptNumber,

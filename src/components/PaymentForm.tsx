@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { format } from 'date-fns';
 import { Client, ReceiptData } from '@/types/client';
 import { formatCurrency, generateReceiptNumber } from '@/lib/supabaseStorage';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -10,10 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Receipt, Printer, FileText } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Receipt, Printer, FileText, CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const paymentSchema = z.object({
   amount: z.coerce.number().min(1, 'Payment amount must be greater than 0'),
+  paymentDate: z.date({ required_error: 'Payment date is required' }),
   paymentMethod: z.enum(['Cash', 'Bank Transfer', 'M-Pesa', 'Cheque']),
   agentName: z.string().min(1, 'Agent name is required'),
   projectName: z.string().min(1, 'Project name is required'),
@@ -38,6 +43,7 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       amount: 0,
+      paymentDate: new Date(),
       paymentMethod: 'M-Pesa',
       agentName: client?.sales_agent || '',
       projectName: client?.project_name || '',
@@ -63,11 +69,7 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
 
     const receipt: ReceiptData = {
       receiptNumber,
-      date: new Date().toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      }),
+      date: format(data.paymentDate, 'd MMMM yyyy'),
       clientId: client.id,
       clientName: client.name,
       clientPhone: client.phone,
@@ -158,6 +160,49 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
 
                 <FormField
                   control={form.control}
+                  name="paymentDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Payment Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date > new Date()}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
                   name="paymentMethod"
                   render={({ field }) => (
                     <FormItem>
@@ -179,9 +224,7 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="agentName"
@@ -195,7 +238,9 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
                     </FormItem>
                   )}
                 />
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="projectName"
@@ -209,21 +254,22 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="authorizedBy"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Authorized By (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Manager name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <FormField
-                control={form.control}
-                name="authorizedBy"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Authorized By (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Manager name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <div className="bg-accent/30 rounded-lg p-3 sm:p-4 mt-3 sm:mt-4">
                 <div className="flex justify-between items-center">
