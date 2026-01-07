@@ -401,6 +401,225 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   doc.save(`Receipt_${receipt.receiptNumber}.pdf`);
 };
 
+export const generatePaymentHistoryPDF = async (client: any, payments: any[]): Promise<void> => {
+  const settings = await getCompanySettings();
+  
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  
+  // Colors
+  const primaryColor: [number, number, number] = [0, 150, 136];
+  const secondaryColor: [number, number, number] = [25, 118, 210];
+  const textColor: [number, number, number] = [33, 33, 33];
+  const mutedColor: [number, number, number] = [117, 117, 117];
+  
+  let y = 20;
+  
+  // Header background
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 0, pageWidth, 45, 'F');
+  
+  // Add logo
+  if (settings.logo_url) {
+    const customLogoBase64 = await loadImageAsBase64(settings.logo_url);
+    if (customLogoBase64) {
+      doc.addImage(customLogoBase64, 'PNG', 15, 5, 22, 22);
+    } else {
+      doc.addImage(logoImage, 'JPEG', 15, 5, 22, 22);
+    }
+  } else {
+    doc.addImage(logoImage, 'JPEG', 15, 5, 22, 22);
+  }
+  
+  // Company Name
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text(settings.company_name, pageWidth / 2 + 10, y, { align: 'center' });
+  
+  y += 8;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(settings.company_tagline || '', pageWidth / 2 + 10, y, { align: 'center' });
+  
+  y += 6;
+  doc.setFontSize(7);
+  const contactLine = `${settings.phone || ''} | ${settings.email || ''} | ${settings.website || ''}`;
+  doc.text(contactLine, pageWidth / 2 + 10, y, { align: 'center' });
+  
+  // Title
+  y = 55;
+  doc.setTextColor(...secondaryColor);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PAYMENT HISTORY STATEMENT', pageWidth / 2, y, { align: 'center' });
+  
+  // Date generated
+  y += 8;
+  doc.setTextColor(...mutedColor);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth / 2, y, { align: 'center' });
+  
+  // Client Details Section
+  y += 12;
+  doc.setFillColor(240, 248, 247);
+  doc.rect(15, y - 3, pageWidth - 30, 32, 'F');
+  
+  doc.setTextColor(...secondaryColor);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CLIENT DETAILS', 20, y + 3);
+  
+  y += 12;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  
+  const leftCol = 20;
+  const rightCol = pageWidth / 2 + 10;
+  
+  doc.setTextColor(...mutedColor);
+  doc.text('Client Name:', leftCol, y);
+  doc.setTextColor(...textColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text(client.name, leftCol + 28, y);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...mutedColor);
+  doc.text('Phone:', rightCol, y);
+  doc.setTextColor(...textColor);
+  doc.text(client.phone || '', rightCol + 18, y);
+  
+  y += 7;
+  doc.setTextColor(...mutedColor);
+  doc.text('Project:', leftCol, y);
+  doc.setTextColor(...textColor);
+  doc.text(client.project_name, leftCol + 28, y);
+  
+  doc.setTextColor(...mutedColor);
+  doc.text('Plot No:', rightCol, y);
+  doc.setTextColor(...textColor);
+  doc.text(client.plot_number, rightCol + 18, y);
+  
+  y += 7;
+  doc.setTextColor(...mutedColor);
+  doc.text('Total Price:', leftCol, y);
+  doc.setTextColor(...textColor);
+  doc.text(formatCurrency(client.total_price - client.discount), leftCol + 28, y);
+  
+  doc.setTextColor(...mutedColor);
+  doc.text('Balance:', rightCol, y);
+  doc.setTextColor(...primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.text(formatCurrency(client.balance), rightCol + 18, y);
+  
+  // Payments Table Header
+  y += 18;
+  doc.setFillColor(...secondaryColor);
+  doc.rect(15, y - 4, pageWidth - 30, 10, 'F');
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Receipt No.', 20, y + 2);
+  doc.text('Date', 55, y + 2);
+  doc.text('Amount', 100, y + 2, { align: 'right' });
+  doc.text('Method', 115, y + 2);
+  doc.text('Balance After', pageWidth - 20, y + 2, { align: 'right' });
+  
+  y += 10;
+  
+  // Payment Rows
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  
+  payments.forEach((payment, index) => {
+    // Check if we need a new page
+    if (y > 260) {
+      doc.addPage();
+      y = 20;
+      
+      // Repeat header on new page
+      doc.setFillColor(...secondaryColor);
+      doc.rect(15, y - 4, pageWidth - 30, 10, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Receipt No.', 20, y + 2);
+      doc.text('Date', 55, y + 2);
+      doc.text('Amount', 100, y + 2, { align: 'right' });
+      doc.text('Method', 115, y + 2);
+      doc.text('Balance After', pageWidth - 20, y + 2, { align: 'right' });
+      y += 10;
+      doc.setFont('helvetica', 'normal');
+    }
+    
+    // Alternate row background
+    if (index % 2 === 0) {
+      doc.setFillColor(248, 250, 252);
+      doc.rect(15, y - 4, pageWidth - 30, 9, 'F');
+    }
+    
+    const paymentDate = new Date(payment.payment_date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+    
+    doc.setTextColor(...textColor);
+    doc.text(payment.receipt_number, 20, y + 1);
+    doc.text(paymentDate, 55, y + 1);
+    doc.setTextColor(...primaryColor);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatCurrency(payment.amount), 100, y + 1, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...textColor);
+    doc.text(payment.payment_method, 115, y + 1);
+    doc.text(formatCurrency(payment.new_balance), pageWidth - 20, y + 1, { align: 'right' });
+    
+    y += 9;
+  });
+  
+  // Summary Section
+  y += 5;
+  doc.setDrawColor(...primaryColor);
+  doc.setLineWidth(0.5);
+  doc.line(15, y, pageWidth - 15, y);
+  
+  y += 10;
+  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  
+  doc.setFillColor(240, 248, 247);
+  doc.rect(pageWidth - 100, y - 5, 85, 25, 'F');
+  
+  doc.setTextColor(...mutedColor);
+  doc.setFontSize(9);
+  doc.text('Total Payments:', pageWidth - 95, y + 2);
+  doc.setTextColor(...primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text(formatCurrency(totalPaid), pageWidth - 20, y + 2, { align: 'right' });
+  
+  y += 10;
+  doc.setTextColor(...mutedColor);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Current Balance:', pageWidth - 95, y + 2);
+  doc.setTextColor(client.balance === 0 ? primaryColor[0] : 185, client.balance === 0 ? primaryColor[1] : 25, client.balance === 0 ? primaryColor[2] : 25);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text(formatCurrency(client.balance), pageWidth - 20, y + 2, { align: 'right' });
+  
+  // Footer
+  const footerY = doc.internal.pageSize.getHeight() - 15;
+  doc.setTextColor(...mutedColor);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text(settings.receipt_footer_message || '', pageWidth / 2, footerY, { align: 'center' });
+  
+  // Save
+  doc.save(`Payment_History_${client.name.replace(/\s+/g, '_')}.pdf`);
+};
+
 const formatCurrency = (amount: number): string => {
   return `KES ${amount.toLocaleString()}`;
 };
