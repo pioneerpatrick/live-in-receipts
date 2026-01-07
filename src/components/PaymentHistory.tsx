@@ -8,10 +8,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Client, Payment, ReceiptData } from '@/types/client';
 import { getClientPayments, formatCurrency, updatePayment, deletePayment, updateClient, returnPlotToStock } from '@/lib/supabaseStorage';
-import { generatePDFReceipt } from '@/lib/pdfGenerator';
+import { generatePDFReceipt, generatePaymentHistoryPDF } from '@/lib/pdfGenerator';
 import { EditPaymentDialog } from '@/components/EditPaymentDialog';
 import { useAuth } from '@/hooks/useAuth';
-import { FileText, Loader2, Printer, Pencil, Trash2 } from 'lucide-react';
+import { FileText, Loader2, Printer, Pencil, Trash2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PaymentHistoryProps {
@@ -92,6 +92,13 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
 
     await generatePDFReceipt(receiptData);
     toast.success(`Receipt ${payment.receipt_number} generated!`);
+  };
+
+  const handlePrintAllHistory = async () => {
+    if (!client || payments.length === 0) return;
+    
+    await generatePaymentHistoryPDF(client, payments);
+    toast.success('Payment history PDF generated!');
   };
 
   const handleEditPayment = async (paymentId: string, updates: Partial<Payment>) => {
@@ -403,7 +410,13 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
             </div>
           )}
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end gap-2 pt-2">
+            {payments.length > 0 && (
+              <Button variant="secondary" onClick={handlePrintAllHistory} size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Print All History
+              </Button>
+            )}
             <Button variant="outline" onClick={onClose} size="sm">
               Close
             </Button>
