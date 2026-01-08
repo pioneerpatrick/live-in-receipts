@@ -64,6 +64,7 @@ export const bulkImportWithPayments = async (
         for (const payment of item.payments) {
           const previousBalance = runningBalance;
           runningBalance = Math.max(0, runningBalance - payment.amount);
+          const receiptNum = await generateReceiptNumber();
           
           const { error: paymentError } = await supabase
             .from('payments')
@@ -74,7 +75,7 @@ export const bulkImportWithPayments = async (
               payment_date: payment.payment_date || new Date().toISOString(),
               previous_balance: previousBalance,
               new_balance: runningBalance,
-              receipt_number: generateReceiptNumber(),
+              receipt_number: receiptNum,
               agent_name: item.client.sales_agent || null,
               authorized_by: null,
               notes: payment.notes || 'Imported from Excel',

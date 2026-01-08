@@ -183,12 +183,18 @@ export const returnPlotToStock = async (clientId: string): Promise<void> => {
 };
 
 // Utility functions
-export const generateReceiptNumber = (): string => {
+export const generateReceiptNumber = async (): Promise<string> => {
   const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `LIP-${year}${month}-${random}`;
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const mins = String(date.getMinutes()).padStart(2, '0');
+  const secs = String(date.getSeconds()).padStart(2, '0');
+  const ms = String(date.getMilliseconds()).padStart(3, '0');
+  
+  // Use timestamp to ensure uniqueness: YYYYMMDD-HHmmssSSS
+  return `LIP-${year}${month}${day}-${hours}${mins}${secs}${ms}`;
 };
 
 export const formatCurrency = (amount: number): string => {

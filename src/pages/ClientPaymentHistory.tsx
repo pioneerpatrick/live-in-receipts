@@ -73,31 +73,67 @@ const ClientPaymentHistory = () => {
           });
         }
 
-        // Fetch client data
-        const { data: clientData, error: clientError } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('id', clientId)
-          .single();
+        // Use the public function to fetch client and payment data (bypasses RLS)
+        const { data: historyData, error: historyError } = await supabase
+          .rpc('get_client_payment_history', { p_client_id: clientId });
 
-        if (clientError) throw clientError;
-        if (!clientData) {
+        if (historyError) throw historyError;
+        
+        if (!historyData || historyData.length === 0) {
           setError('Client not found');
           setLoading(false);
           return;
         }
 
-        setClient(clientData as Client);
+        // Extract client data from first row
+        const firstRow = historyData[0];
+        const clientData: Client = {
+          id: firstRow.client_id,
+          name: firstRow.client_name,
+          phone: firstRow.client_phone || '',
+          project_name: firstRow.project_name,
+          plot_number: firstRow.plot_number,
+          total_price: firstRow.total_price,
+          discount: firstRow.discount,
+          total_paid: firstRow.total_paid,
+          balance: firstRow.balance,
+          percent_paid: firstRow.percent_paid,
+          unit_price: 0,
+          number_of_plots: 1,
+          sales_agent: '',
+          payment_type: '',
+          payment_period: '',
+          installment_months: null,
+          initial_payment_method: '',
+          completion_date: null,
+          next_payment_date: null,
+          notes: '',
+          status: firstRow.balance === 0 ? 'completed' : 'ongoing',
+          sale_date: null,
+          commission: null,
+          commission_received: null,
+          commission_balance: null,
+          created_at: '',
+          updated_at: '',
+        };
+        setClient(clientData);
 
-        // Fetch payments
-        const { data: paymentsData, error: paymentsError } = await supabase
-          .from('payments')
-          .select('*')
-          .eq('client_id', clientId)
-          .order('payment_date', { ascending: false });
-
-        if (paymentsError) throw paymentsError;
-        setPayments((paymentsData || []) as Payment[]);
+        // Extract payments (filter out null payment_id rows which indicate no payments)
+        const paymentsData: Payment[] = historyData
+          .filter((row: any) => row.payment_id !== null)
+          .map((row: any) => ({
+            id: row.payment_id,
+            client_id: row.client_id,
+            amount: row.payment_amount,
+            payment_method: row.payment_method,
+            payment_date: row.payment_date,
+            previous_balance: row.previous_balance,
+            new_balance: row.new_balance,
+            receipt_number: row.receipt_number,
+            agent_name: '',
+            created_at: '',
+          }));
+        setPayments(paymentsData);
       } catch (err) {
         console.error('Error loading data:', err);
         setError('Failed to load payment history');

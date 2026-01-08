@@ -34,7 +34,7 @@ interface PaymentFormProps {
 
 const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: PaymentFormProps) => {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
-  const [receiptNumber] = useState(generateReceiptNumber());
+  const [receiptNumber, setReceiptNumber] = useState<string>('');
 
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
@@ -54,7 +54,11 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
       form.setValue('projectName', client.project_name);
     }
     setReceiptData(null);
-  }, [client, form]);
+    // Generate a new unique receipt number each time the dialog opens
+    if (open) {
+      generateReceiptNumber().then(setReceiptNumber);
+    }
+  }, [client, form, open]);
 
   const currentAmount = form.watch('amount') || 0;
   const discountedPrice = client ? client.total_price - client.discount : 0;
