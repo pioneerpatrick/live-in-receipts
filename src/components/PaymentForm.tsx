@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 import { Client, ReceiptData } from '@/types/client';
 import { formatCurrency, generateReceiptNumber } from '@/lib/supabaseStorage';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -11,10 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Receipt, Printer, FileText, CalendarIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Receipt, Printer, FileText } from 'lucide-react';
 
 const paymentSchema = z.object({
   amount: z.coerce.number().min(1, 'Payment amount must be greater than 0'),
@@ -162,38 +159,49 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
                   control={form.control}
                   name="paymentDate"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Payment Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date > new Date()}
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
-                          />
-                        </PopoverContent>
-                      </Popover>
+                    <FormItem>
+                      <FormLabel>Payment Date (DD/MM/YYYY)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder="e.g. 08/01/2026"
+                          defaultValue={field.value ? format(field.value, "dd/MM/yyyy") : ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Try parsing common date formats
+                            const formats = ["dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy", "yyyy-MM-dd"];
+                            for (const fmt of formats) {
+                              const parsed = parse(value, fmt, new Date());
+                              if (isValid(parsed) && parsed <= new Date()) {
+                                field.onChange(parsed);
+                                return;
+                              }
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = e.target.value;
+                            const formats = ["dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy", "yyyy-MM-dd"];
+                            let validDate = false;
+                            for (const fmt of formats) {
+                              const parsed = parse(value, fmt, new Date());
+                              if (isValid(parsed)) {
+                                if (parsed > new Date()) {
+                                  e.target.value = format(new Date(), "dd/MM/yyyy");
+                                  field.onChange(new Date());
+                                } else {
+                                  e.target.value = format(parsed, "dd/MM/yyyy");
+                                  field.onChange(parsed);
+                                }
+                                validDate = true;
+                                break;
+                              }
+                            }
+                            if (!validDate && field.value) {
+                              e.target.value = format(field.value, "dd/MM/yyyy");
+                            }
+                          }}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
