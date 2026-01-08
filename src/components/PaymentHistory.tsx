@@ -290,43 +290,47 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
 
                 {/* Desktop Table View */}
                 <div className="hidden md:block">
-                  <Table>
+                  <Table className="w-full table-fixed">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-xs">Receipt No.</TableHead>
-                        <TableHead className="text-xs">Date</TableHead>
-                        <TableHead className="text-right text-xs">Amount</TableHead>
-                        <TableHead className="text-xs">Method</TableHead>
-                        <TableHead className="text-right text-xs">Prev. Balance</TableHead>
-                        <TableHead className="text-right text-xs">New Balance</TableHead>
-                        <TableHead className="text-xs">Agent</TableHead>
-                        <TableHead className="text-center text-xs">Actions</TableHead>
+                        <TableHead className="text-xs px-2 w-24">Receipt No.</TableHead>
+                        <TableHead className="text-xs px-2">Date</TableHead>
+                        <TableHead className="text-right text-xs px-2">Amount</TableHead>
+                        <TableHead className="text-xs px-2 w-20">Method</TableHead>
+                        <TableHead className="text-right text-xs px-2 hidden lg:table-cell">Prev. Bal</TableHead>
+                        <TableHead className="text-right text-xs px-2">Balance</TableHead>
+                        <TableHead className="text-xs px-2 hidden lg:table-cell">Agent</TableHead>
+                        <TableHead className="text-center text-xs px-1 w-24">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {payments.map((payment) => (
                         <TableRow key={payment.id}>
-                          <TableCell className="font-mono text-xs">
+                          <TableCell className="font-mono text-[10px] px-2 truncate">
                             {payment.receipt_number}
                           </TableCell>
-                          <TableCell className="text-xs">
-                            {formatDate(payment.payment_date)}
+                          <TableCell className="text-xs px-2">
+                            {new Date(payment.payment_date).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: '2-digit'
+                            })}
                           </TableCell>
-                          <TableCell className="text-right font-medium text-primary text-xs">
+                          <TableCell className="text-right font-medium text-primary text-xs px-2">
                             {formatCurrency(payment.amount)}
                           </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-xs">{payment.payment_method}</Badge>
+                          <TableCell className="px-2">
+                            <Badge variant="outline" className="text-[10px] px-1">{payment.payment_method}</Badge>
                           </TableCell>
-                          <TableCell className="text-right text-muted-foreground text-xs">
+                          <TableCell className="text-right text-muted-foreground text-xs px-2 hidden lg:table-cell">
                             {formatCurrency(payment.previous_balance)}
                           </TableCell>
-                          <TableCell className="text-right text-xs">
+                          <TableCell className="text-right text-xs px-2">
                             {formatCurrency(payment.new_balance)}
                           </TableCell>
-                          <TableCell className="text-xs">{payment.agent_name || '-'}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-center gap-1">
+                          <TableCell className="text-xs px-2 truncate hidden lg:table-cell">{payment.agent_name || '-'}</TableCell>
+                          <TableCell className="px-1">
+                            <div className="flex items-center justify-center gap-0">
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -334,7 +338,7 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
                                       variant="ghost"
                                       size="icon"
                                       onClick={() => handlePrintReceipt(payment)}
-                                      className="h-7 w-7"
+                                      className="h-6 w-6"
                                     >
                                       <Printer className="h-3 w-3" />
                                     </Button>
@@ -354,7 +358,7 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
                                           variant="ghost"
                                           size="icon"
                                           onClick={() => setEditingPayment(payment)}
-                                          className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                          className="h-6 w-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                                         >
                                           <Pencil className="h-3 w-3" />
                                         </Button>
@@ -372,7 +376,7 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
                                           variant="ghost"
                                           size="icon"
                                           onClick={() => setDeletingPayment(payment)}
-                                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
                                         >
                                           <Trash2 className="h-3 w-3" />
                                         </Button>

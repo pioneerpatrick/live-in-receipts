@@ -522,31 +522,28 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto">
-        <Table>
+      <div className="hidden md:block">
+        <Table className="w-full table-fixed">
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold w-10">#</TableHead>
-              <TableHead className="font-semibold min-w-[120px]">Client Name</TableHead>
-              <TableHead className="font-semibold min-w-[100px]">Phone</TableHead>
-              <TableHead className="font-semibold min-w-[100px]">Project</TableHead>
-              <TableHead className="font-semibold min-w-[80px]">Plot No.</TableHead>
-              <TableHead className="font-semibold text-right min-w-[100px]">Total Price</TableHead>
-              <TableHead className="font-semibold text-right min-w-[80px]">Discount</TableHead>
-              <TableHead className="font-semibold text-right min-w-[100px]">Total Paid</TableHead>
-              <TableHead className="font-semibold text-right min-w-[60px]">% Paid</TableHead>
-              <TableHead className="font-semibold text-right min-w-[100px]">Balance</TableHead>
-              <TableHead className="font-semibold min-w-[80px]">Agent</TableHead>
-              <TableHead className="font-semibold text-center min-w-[80px]">Method</TableHead>
-              <TableHead className="font-semibold text-center min-w-[70px]">Period</TableHead>
-              <TableHead className="font-semibold text-right min-w-[100px]">Monthly</TableHead>
-              <TableHead className="font-semibold text-center min-w-[140px]">Actions</TableHead>
+              <TableHead className="font-semibold w-8 text-xs px-2">#</TableHead>
+              <TableHead className="font-semibold text-xs px-2">Client</TableHead>
+              <TableHead className="font-semibold text-xs px-2 hidden lg:table-cell">Phone</TableHead>
+              <TableHead className="font-semibold text-xs px-2">Project</TableHead>
+              <TableHead className="font-semibold text-xs px-2">Plot</TableHead>
+              <TableHead className="font-semibold text-right text-xs px-2 hidden xl:table-cell">Price</TableHead>
+              <TableHead className="font-semibold text-right text-xs px-2">Paid</TableHead>
+              <TableHead className="font-semibold text-right text-xs px-2 w-14">%</TableHead>
+              <TableHead className="font-semibold text-right text-xs px-2">Balance</TableHead>
+              <TableHead className="font-semibold text-xs px-2 hidden lg:table-cell">Agent</TableHead>
+              <TableHead className="font-semibold text-center text-xs px-2 hidden xl:table-cell">Period</TableHead>
+              <TableHead className="font-semibold text-center text-xs px-1 w-28">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredClients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={15} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
                   {searchTerm || hasActiveFilters ? 'No clients found matching your filters.' : 'No clients yet. Add your first client to get started.'}
                 </TableCell>
               </TableRow>
@@ -566,96 +563,81 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                     !isOverdue && !isDueToday && "hover:bg-muted/30"
                   )}
                 >
-                  <TableCell className="font-medium">{index + 1}</TableCell>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <span>{client.name}</span>
+                  <TableCell className="font-medium text-xs px-2">{index + 1}</TableCell>
+                  <TableCell className="font-medium text-xs px-2">
+                    <div className="flex flex-col">
+                      <span className="truncate">{client.name}</span>
                       {isOverdue && (
-                        <span className="flex items-center gap-1 text-[10px] text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                          <AlertTriangle className="w-3 h-3" />
+                        <span className="flex items-center gap-0.5 text-[9px] text-destructive whitespace-nowrap">
+                          <AlertTriangle className="w-2.5 h-2.5" />
                           {getDaysOverdue(client)}d late
                         </span>
                       )}
                       {isDueToday && (
-                        <span className="text-[10px] text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                        <span className="text-[9px] text-orange-600 whitespace-nowrap">
                           Due today
                         </span>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{client.phone}</TableCell>
-                  <TableCell>{client.project_name}</TableCell>
-                  <TableCell>{client.plot_number}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(client.total_price)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(client.discount)}</TableCell>
-                  <TableCell className="text-right text-primary font-medium">
+                  <TableCell className="text-xs px-2 hidden lg:table-cell truncate">{client.phone}</TableCell>
+                  <TableCell className="text-xs px-2 truncate">{client.project_name}</TableCell>
+                  <TableCell className="text-xs px-2">{client.plot_number}</TableCell>
+                  <TableCell className="text-right text-xs px-2 hidden xl:table-cell">{formatCurrency(client.total_price)}</TableCell>
+                  <TableCell className="text-right text-primary font-medium text-xs px-2">
                     {formatCurrency(Number(client.total_paid) || 0)}
                   </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {Math.min(100, Math.max(0, Number(client.percent_paid) || 0)).toFixed(1)}%
+                  <TableCell className="text-right font-medium text-xs px-2">
+                    {Math.min(100, Math.max(0, Number(client.percent_paid) || 0)).toFixed(0)}%
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant={getBalanceStatus(client.balance, client.total_price) as any}>
+                  <TableCell className="text-right text-xs px-2">
+                    <Badge variant={getBalanceStatus(client.balance, client.total_price) as any} className="text-[10px] px-1.5">
                       {formatCurrency(client.balance)}
                     </Badge>
                   </TableCell>
-                  <TableCell>{client.sales_agent}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline" className="text-xs">
-                      {client.initial_payment_method || 'Cash'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant={client.payment_type === 'cash' ? 'default' : 'secondary'} className="text-xs">
+                  <TableCell className="text-xs px-2 hidden lg:table-cell truncate">{client.sales_agent}</TableCell>
+                  <TableCell className="text-center text-xs px-2 hidden xl:table-cell">
+                    <Badge variant={client.payment_type === 'cash' ? 'default' : 'secondary'} className="text-[10px] px-1">
                       {client.payment_type === 'cash' ? 'Full' : (client.installment_months ? `${client.installment_months}mo` : 'N/A')}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    {calculateMonthlyPayment(client) ? (
-                      <span className="text-secondary font-medium text-sm">
-                        {formatCurrency(calculateMonthlyPayment(client)!)}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-center gap-1">
+                  <TableCell className="px-1">
+                    <div className="flex items-center justify-center gap-0">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => onViewHistory(client)}
                         title="View Payment History"
-                        className="hover:bg-blue-500/10 hover:text-blue-500"
+                        className="hover:bg-blue-500/10 hover:text-blue-500 h-7 w-7"
                       >
-                        <History className="w-4 h-4" />
+                        <History className="w-3.5 h-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => onAddPayment(client)}
                         title="Add Payment / Generate Receipt"
-                        className="hover:bg-primary/10 hover:text-primary"
+                        className="hover:bg-primary/10 hover:text-primary h-7 w-7"
                       >
-                        <Receipt className="w-4 h-4" />
+                        <Receipt className="w-3.5 h-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => onEdit(client)}
                         title="Edit Client"
-                        className="hover:bg-secondary/10 hover:text-secondary"
+                        className="hover:bg-secondary/10 hover:text-secondary h-7 w-7"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-3.5 h-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => onDelete(client)}
                         title="Delete Client"
-                        className="hover:bg-destructive/10 hover:text-destructive"
+                        className="hover:bg-destructive/10 hover:text-destructive h-7 w-7"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   </TableCell>
