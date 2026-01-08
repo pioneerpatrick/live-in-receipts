@@ -165,6 +165,7 @@ const Index = () => {
         }
 
         if (data.initialPayment > 0) {
+          const receiptNum = await generateReceiptNumber();
           await addPayment({
             client_id: newClient.id,
             amount: data.initialPayment,
@@ -172,7 +173,7 @@ const Index = () => {
             payment_date: new Date().toISOString(),
             previous_balance: discountedPrice,
             new_balance: initialBalance,
-            receipt_number: generateReceiptNumber(),
+            receipt_number: receiptNum,
             agent_name: data.salesAgent,
             notes: `Initial payment at registration for ${numberOfPlots} plot(s)`,
           });

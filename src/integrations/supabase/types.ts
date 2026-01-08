@@ -721,6 +721,28 @@ export type Database = {
     }
     Functions: {
       cleanup_orphaned_plots: { Args: never; Returns: number }
+      get_client_payment_history: {
+        Args: { p_client_id: string }
+        Returns: {
+          balance: number
+          client_id: string
+          client_name: string
+          client_phone: string
+          discount: number
+          new_balance: number
+          payment_amount: number
+          payment_date: string
+          payment_id: string
+          payment_method: string
+          percent_paid: number
+          plot_number: string
+          previous_balance: number
+          project_name: string
+          receipt_number: string
+          total_paid: number
+          total_price: number
+        }[]
+      }
       get_user_full_name: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
