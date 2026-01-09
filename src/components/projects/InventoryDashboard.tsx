@@ -6,6 +6,8 @@ import { Building, MapPin, CheckCircle, Package, AlertCircle } from 'lucide-reac
 import { getAllInventoryStats } from '@/lib/projectStorage';
 import { formatCurrency } from '@/lib/supabaseStorage';
 import { supabase } from '@/integrations/supabase/client';
+import { AvailablePlotsDialog } from './AvailablePlotsDialog';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ProjectStat {
   id: string;
@@ -29,10 +31,26 @@ interface OverallStats {
   fullySoldProjects: number;
 }
 
+interface DialogState {
+  open: boolean;
+  projectId: string | null;
+  projectName: string;
+  statusFilter: 'available' | 'sold' | 'reserved' | 'all';
+}
+
 export function InventoryDashboard() {
+  const { role } = useAuth();
+  const isAdmin = role === 'admin';
+  
   const [projectStats, setProjectStats] = useState<ProjectStat[]>([]);
   const [overallStats, setOverallStats] = useState<OverallStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [dialogState, setDialogState] = useState<DialogState>({
+    open: false,
+    projectId: null,
+    projectName: '',
+    statusFilter: 'available'
+  });
 
   const fetchStats = async () => {
     try {
@@ -73,6 +91,19 @@ export function InventoryDashboard() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const openPlotsDialog = (projectId: string, projectName: string, statusFilter: 'available' | 'sold' | 'reserved') => {
+    setDialogState({
+      open: true,
+      projectId,
+      projectName,
+      statusFilter
+    });
+  };
+
+  const closePlotsDialog = () => {
+    setDialogState(prev => ({ ...prev, open: false }));
+  };
 
   if (isLoading) {
     return (
@@ -181,10 +212,32 @@ export function InventoryDashboard() {
                           )}
                         </p>
                         <p className="text-muted-foreground">
-                          <span className="text-green-600 font-medium">{project.stats.available}</span> available, {' '}
-                          <span className="text-primary font-medium">{project.stats.sold}</span> sold
+                          <button
+                            onClick={() => openPlotsDialog(project.id, project.name, 'available')}
+                            className="text-green-600 font-medium hover:underline cursor-pointer"
+                            title="Click to view available plots"
+                          >
+                            {project.stats.available} available
+                          </button>
+                          , {' '}
+                          <button
+                            onClick={() => openPlotsDialog(project.id, project.name, 'sold')}
+                            className="text-primary font-medium hover:underline cursor-pointer"
+                            title="Click to view sold plots"
+                          >
+                            {project.stats.sold} sold
+                          </button>
                           {project.stats.reserved > 0 && (
-                            <>, <span className="text-yellow-600 font-medium">{project.stats.reserved}</span> reserved</>
+                            <>
+                              , {' '}
+                              <button
+                                onClick={() => openPlotsDialog(project.id, project.name, 'reserved')}
+                                className="text-yellow-600 font-medium hover:underline cursor-pointer"
+                                title="Click to view reserved plots"
+                              >
+                                {project.stats.reserved} reserved
+                              </button>
+                            </>
                           )}
                         </p>
                       </div>
@@ -203,6 +256,17 @@ export function InventoryDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Plots Dialog */}
+      <AvailablePlotsDialog
+        open={dialogState.open}
+        onClose={closePlotsDialog}
+        projectId={dialogState.projectId}
+        projectName={dialogState.projectName}
+        statusFilter={dialogState.statusFilter}
+        isAdmin={isAdmin}
+        onPlotReturned={fetchStats}
+      />
     </div>
   );
 }
