@@ -11,12 +11,13 @@ interface EditPaymentDialogProps {
   open: boolean;
   onClose: () => void;
   payment: Payment | null;
-  onSave: (paymentId: string, updates: Partial<Payment>) => Promise<void>;
+  onSave: (paymentId: string, updates: Partial<Payment>, originalAmount: number) => Promise<void>;
 }
 
 export const EditPaymentDialog = ({ open, onClose, payment, onSave }: EditPaymentDialogProps) => {
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentDate, setPaymentDate] = useState('');
   const [agentName, setAgentName] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
@@ -25,6 +26,7 @@ export const EditPaymentDialog = ({ open, onClose, payment, onSave }: EditPaymen
     if (payment) {
       setAmount(payment.amount.toString());
       setPaymentMethod(payment.payment_method);
+      setPaymentDate(new Date(payment.payment_date).toISOString().split('T')[0]);
       setAgentName(payment.agent_name || '');
       setNotes(payment.notes || '');
     }
@@ -35,12 +37,18 @@ export const EditPaymentDialog = ({ open, onClose, payment, onSave }: EditPaymen
     
     setSaving(true);
     try {
+      const newAmount = parseFloat(amount);
+      const amountDifference = newAmount - payment.amount;
+      const newBalance = payment.new_balance - amountDifference;
+      
       await onSave(payment.id, {
-        amount: parseFloat(amount),
+        amount: newAmount,
         payment_method: paymentMethod,
+        payment_date: new Date(paymentDate).toISOString(),
         agent_name: agentName || null,
         notes: notes || null,
-      });
+        new_balance: newBalance,
+      }, payment.amount);
       onClose();
     } finally {
       setSaving(false);
@@ -70,6 +78,16 @@ export const EditPaymentDialog = ({ open, onClose, payment, onSave }: EditPaymen
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Enter amount"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="paymentDate">Payment Date</Label>
+            <Input
+              id="paymentDate"
+              type="date"
+              value={paymentDate}
+              onChange={(e) => setPaymentDate(e.target.value)}
             />
           </div>
 
@@ -113,7 +131,7 @@ export const EditPaymentDialog = ({ open, onClose, payment, onSave }: EditPaymen
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving || !amount}>
+          <Button onClick={handleSave} disabled={saving || !amount || !paymentDate}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>
