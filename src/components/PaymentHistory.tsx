@@ -101,14 +101,11 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
     toast.success('Payment history PDF generated!');
   };
 
-  const handleEditPayment = async (paymentId: string, updates: Partial<Payment>) => {
+  const handleEditPayment = async (paymentId: string, updates: Partial<Payment>, originalAmount: number) => {
     if (!client) return;
     
     try {
-      const originalPayment = payments.find(p => p.id === paymentId);
-      if (!originalPayment) return;
-
-      const amountDifference = (updates.amount || originalPayment.amount) - originalPayment.amount;
+      const amountDifference = (updates.amount || originalAmount) - originalAmount;
       
       // Update payment record
       await updatePayment(paymentId, updates);
@@ -121,9 +118,9 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
           total_paid: newTotalPaid,
           balance: newBalance,
         });
-        onClientUpdated?.();
       }
-
+      
+      onClientUpdated?.();
       await loadPayments();
       toast.success('Payment updated successfully!');
     } catch (error) {
