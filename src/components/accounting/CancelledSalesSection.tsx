@@ -31,6 +31,7 @@ import {
 import { CancelledSale } from '@/types/cancelledSale';
 import { getCancelledSales, updateCancelledSale } from '@/lib/cancelledSalesStorage';
 import { formatCurrency } from '@/lib/supabaseStorage';
+import { addExpense, generateExpenseReference } from '@/lib/expenseStorage';
 import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -76,6 +77,16 @@ export const CancelledSalesSection = () => {
     const fee = parseFloat(cancellationFee) || 0;
     const netRefund = Math.max(0, refund - fee);
 
+    // Check if we need to create a new expense (status changed to completed/partial and net refund > 0)
+    const wasNotRefunded = editingSale.refund_status === 'pending' || editingSale.refund_status === 'none';
+    const isNowRefunded = refundStatus === 'completed' || refundStatus === 'partial';
+    const shouldCreateExpense = wasNotRefunded && isNowRefunded && netRefund > 0;
+
+    // Also check if refund amount increased significantly (additional refund)
+    const previousNetRefund = editingSale.net_refund || 0;
+    const additionalRefund = netRefund - previousNetRefund;
+    const hasAdditionalRefund = additionalRefund > 0 && !wasNotRefunded && isNowRefunded;
+
     try {
       await updateCancelledSale(editingSale.id, {
         refund_amount: refund,
@@ -84,7 +95,29 @@ export const CancelledSalesSection = () => {
         refund_status: refundStatus,
         notes: notes,
       });
-      toast.success('Cancelled sale updated successfully');
+
+      // Create expense entry for refund
+      if (shouldCreateExpense || hasAdditionalRefund) {
+        const expenseAmount = shouldCreateExpense ? netRefund : additionalRefund;
+        await addExpense({
+          expense_date: new Date().toISOString(),
+          category: 'Refund',
+          description: `Refund for cancelled sale - ${editingSale.client_name} (${editingSale.plot_number})`,
+          amount: expenseAmount,
+          payment_method: 'Cash',
+          recipient: editingSale.client_name,
+          reference_number: generateExpenseReference(),
+          agent_id: null,
+          client_id: editingSale.client_id,
+          is_commission_payout: false,
+          notes: `Cancelled sale refund. Project: ${editingSale.project_name}, Original sale: ${formatCurrency(editingSale.total_price)}, Was paid: ${formatCurrency(editingSale.total_paid)}, Net refund: ${formatCurrency(expenseAmount)}`,
+          created_by: null,
+        });
+        toast.success('Cancelled sale updated and refund expense recorded');
+      } else {
+        toast.success('Cancelled sale updated successfully');
+      }
+      
       setEditingSale(null);
       fetchCancelledSales();
     } catch (error) {

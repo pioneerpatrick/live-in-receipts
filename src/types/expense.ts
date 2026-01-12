@@ -26,6 +26,7 @@ export const EXPENSE_CATEGORIES = [
   'Salaries',
   'Legal Fees',
   'Maintenance',
+  'Refund',
   'Other',
 ] as const;
 

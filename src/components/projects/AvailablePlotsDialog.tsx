@@ -18,6 +18,7 @@ import { RotateCcw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/supabaseStorage';
 import { addCancelledSale } from '@/lib/cancelledSalesStorage';
+import { addExpense, generateExpenseReference } from '@/lib/expenseStorage';
 import { toast } from 'sonner';
 
 interface Plot {
@@ -163,6 +164,24 @@ export function AvailablePlotsDialog({
           cancellation_reason: cancellationReason || null,
           notes: notes || null,
         });
+
+        // Create refund expense if refund is being processed
+        if (netRefund > 0 && (refundStatus === 'completed' || refundStatus === 'partial')) {
+          await addExpense({
+            expense_date: new Date().toISOString(),
+            category: 'Refund',
+            description: `Refund for cancelled sale - ${returnPlot.client.name} (${returnPlot.plot_number})`,
+            amount: netRefund,
+            payment_method: 'Cash',
+            recipient: returnPlot.client.name,
+            reference_number: generateExpenseReference(),
+            agent_id: null,
+            client_id: returnPlot.client.id,
+            is_commission_payout: false,
+            notes: `Cancelled sale refund. Original sale: ${formatCurrency(returnPlot.client.total_price || returnPlot.price)}, Paid: ${formatCurrency(returnPlot.client.total_paid || 0)}, Refund: ${formatCurrency(refund)}, Fee: ${formatCurrency(fee)}. ${cancellationReason ? `Reason: ${cancellationReason}` : ''}`,
+            created_by: null,
+          });
+        }
       }
 
       // Update the plot status
