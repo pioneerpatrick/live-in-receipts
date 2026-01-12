@@ -50,6 +50,80 @@ export type Database = {
         }
         Relationships: []
       }
+      cancelled_sales: {
+        Row: {
+          cancellation_date: string
+          cancellation_fee: number
+          cancellation_reason: string | null
+          cancelled_by: string | null
+          client_id: string | null
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          id: string
+          net_refund: number
+          notes: string | null
+          original_sale_date: string | null
+          plot_number: string
+          project_name: string
+          refund_amount: number
+          refund_status: string
+          total_paid: number
+          total_price: number
+          updated_at: string
+        }
+        Insert: {
+          cancellation_date?: string
+          cancellation_fee?: number
+          cancellation_reason?: string | null
+          cancelled_by?: string | null
+          client_id?: string | null
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          net_refund?: number
+          notes?: string | null
+          original_sale_date?: string | null
+          plot_number: string
+          project_name: string
+          refund_amount?: number
+          refund_status?: string
+          total_paid?: number
+          total_price?: number
+          updated_at?: string
+        }
+        Update: {
+          cancellation_date?: string
+          cancellation_fee?: number
+          cancellation_reason?: string | null
+          cancelled_by?: string | null
+          client_id?: string | null
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          net_refund?: number
+          notes?: string | null
+          original_sale_date?: string | null
+          plot_number?: string
+          project_name?: string
+          refund_amount?: number
+          refund_status?: string
+          total_paid?: number
+          total_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cancelled_sales_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           balance: number
