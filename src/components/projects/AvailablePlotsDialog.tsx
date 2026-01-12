@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { RotateCcw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/supabaseStorage';
+import { addCancelledSale } from '@/lib/cancelledSalesStorage';
 import { toast } from 'sonner';
 
 interface Plot {
@@ -18,7 +28,15 @@ interface Plot {
   status: string;
   project_id: string;
   client_id: string | null;
-  client?: { name: string; phone: string | null } | null;
+  client?: { 
+    id: string;
+    name: string; 
+    phone: string | null;
+    total_price: number;
+    total_paid: number;
+    sale_date: string | null;
+    project_name: string;
+  } | null;
 }
 
 interface AvailablePlotsDialogProps {
@@ -42,8 +60,15 @@ export function AvailablePlotsDialog({
 }: AvailablePlotsDialogProps) {
   const [plots, setPlots] = useState<Plot[]>([]);
   const [loading, setLoading] = useState(false);
-  const [returnId, setReturnId] = useState<string | null>(null);
+  const [returnPlot, setReturnPlot] = useState<Plot | null>(null);
   const [returning, setReturning] = useState(false);
+  
+  // Cancellation form state
+  const [refundAmount, setRefundAmount] = useState('0');
+  const [cancellationFee, setCancellationFee] = useState('0');
+  const [refundStatus, setRefundStatus] = useState<'pending' | 'partial' | 'completed' | 'none'>('pending');
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (open && projectId) {
@@ -77,13 +102,13 @@ export function AvailablePlotsDialog({
       
       if (error) throw error;
 
-      // Fetch client names for sold/reserved plots
+      // Fetch client details for sold/reserved plots
       const plotsWithClients = await Promise.all(
         (data || []).map(async (plot) => {
           if (plot.client_id) {
             const { data: clientData } = await supabase
               .from('clients')
-              .select('name, phone')
+              .select('id, name, phone, total_price, total_paid, sale_date, project_name')
               .eq('id', plot.client_id)
               .single();
             return { ...plot, client: clientData };
@@ -101,19 +126,63 @@ export function AvailablePlotsDialog({
     }
   };
 
+  const openReturnDialog = (plot: Plot) => {
+    setReturnPlot(plot);
+    // Pre-fill with collected amount
+    setRefundAmount((plot.client?.total_paid || 0).toString());
+    setCancellationFee('0');
+    setRefundStatus('pending');
+    setCancellationReason('');
+    setNotes('');
+  };
+
   const handleReturnPlot = async () => {
-    if (!returnId) return;
+    if (!returnPlot) return;
     setReturning(true);
     try {
+      const refund = parseFloat(refundAmount) || 0;
+      const fee = parseFloat(cancellationFee) || 0;
+      const netRefund = Math.max(0, refund - fee);
+
+      // Record the cancelled sale
+      if (returnPlot.client) {
+        await addCancelledSale({
+          client_id: returnPlot.client.id,
+          client_name: returnPlot.client.name,
+          client_phone: returnPlot.client.phone,
+          project_name: returnPlot.client.project_name || projectName,
+          plot_number: returnPlot.plot_number,
+          original_sale_date: returnPlot.client.sale_date,
+          cancellation_date: new Date().toISOString(),
+          total_price: returnPlot.client.total_price || returnPlot.price,
+          total_paid: returnPlot.client.total_paid || 0,
+          refund_amount: refund,
+          refund_status: refundStatus,
+          cancellation_fee: fee,
+          net_refund: netRefund,
+          cancellation_reason: cancellationReason || null,
+          notes: notes || null,
+        });
+      }
+
+      // Update the plot status
       const { error } = await supabase
         .from('plots')
         .update({ status: 'available', client_id: null, sold_at: null })
-        .eq('id', returnId);
+        .eq('id', returnPlot.id);
 
       if (error) throw error;
 
-      toast.success('Plot returned to available status');
-      setReturnId(null);
+      // Update client status to cancelled
+      if (returnPlot.client_id) {
+        await supabase
+          .from('clients')
+          .update({ status: 'cancelled' })
+          .eq('id', returnPlot.client_id);
+      }
+
+      toast.success('Plot returned to available status and sale cancelled');
+      setReturnPlot(null);
       fetchPlots();
       onPlotReturned?.();
     } catch (error) {
@@ -206,11 +275,11 @@ export function AvailablePlotsDialog({
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => setReturnId(plot.id)}
+                              onClick={() => openReturnDialog(plot)}
                               className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                             >
                               <RotateCcw className="h-4 w-4 mr-1" />
-                              Return
+                              Cancel Sale
                             </Button>
                           )}
                         </TableCell>
@@ -228,15 +297,124 @@ export function AvailablePlotsDialog({
         </DialogContent>
       </Dialog>
 
-      <ConfirmDialog
-        open={!!returnId}
-        onOpenChange={() => setReturnId(null)}
-        onConfirm={handleReturnPlot}
-        title="Return Plot to Stock"
-        description="Are you sure you want to return this plot to available status? This will remove the client association but will NOT delete the client record or their payments."
-        confirmText={returning ? "Returning..." : "Return Plot"}
-        variant="default"
-      />
+      {/* Cancellation Dialog */}
+      <Dialog open={!!returnPlot} onOpenChange={() => setReturnPlot(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Sale & Return Plot</DialogTitle>
+            <DialogDescription>
+              Return plot {returnPlot?.plot_number} to available stock and record the cancellation details.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {returnPlot?.client && (
+              <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                <p className="font-medium">{returnPlot.client.name}</p>
+                <p className="text-sm text-muted-foreground">{returnPlot.client.phone}</p>
+                <div className="flex justify-between text-sm mt-2">
+                  <span>Sale Value:</span>
+                  <span className="font-medium">{formatCurrency(returnPlot.client.total_price || returnPlot.price)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Amount Paid:</span>
+                  <span className="font-medium text-blue-600">{formatCurrency(returnPlot.client.total_paid || 0)}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="refundAmount">Refund Amount</Label>
+                <Input
+                  id="refundAmount"
+                  type="number"
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cancellationFee">Cancellation Fee</Label>
+                <Input
+                  id="cancellationFee"
+                  type="number"
+                  value={cancellationFee}
+                  onChange={(e) => setCancellationFee(e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Net Refund:</span>
+                <span className="text-lg font-bold text-red-600">
+                  {formatCurrency(Math.max(0, (parseFloat(refundAmount) || 0) - (parseFloat(cancellationFee) || 0)))}
+                </span>
+              </div>
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-sm text-muted-foreground">Retained:</span>
+                <span className="text-lg font-bold text-green-600">
+                  {formatCurrency((returnPlot?.client?.total_paid || 0) - Math.max(0, (parseFloat(refundAmount) || 0) - (parseFloat(cancellationFee) || 0)))}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="refundStatus">Refund Status</Label>
+              <Select value={refundStatus} onValueChange={(v) => setRefundStatus(v as typeof refundStatus)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending Refund</SelectItem>
+                  <SelectItem value="partial">Partial Refund Made</SelectItem>
+                  <SelectItem value="completed">Fully Refunded</SelectItem>
+                  <SelectItem value="none">No Refund (Forfeited)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reason">Cancellation Reason</Label>
+              <Input
+                id="reason"
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                placeholder="e.g., Client request, Financial issues"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Additional Notes</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any additional details..."
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReturnPlot(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleReturnPlot} disabled={returning} variant="destructive">
+              {returning ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Confirm Cancellation'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

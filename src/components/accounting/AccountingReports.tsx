@@ -33,15 +33,20 @@ interface AccountingReportsProps {
 }
 
 export const AccountingReports = ({ clients, payments, metrics }: AccountingReportsProps) => {
-  // Client balances report
+  // Filter out cancelled clients for balance reporting
+  const activeClients = useMemo(() => {
+    return clients.filter(c => c.status !== 'cancelled');
+  }, [clients]);
+
+  // Client balances report - only active clients with balance
   const clientBalances = useMemo(() => {
-    return clients
+    return activeClients
       .filter(c => c.balance > 0)
       .sort((a, b) => b.balance - a.balance)
       .slice(0, 20);
-  }, [clients]);
+  }, [activeClients]);
 
-  // Project-wise revenue
+  // Project-wise revenue - only active clients
   const projectRevenue = useMemo(() => {
     const projectData: { [key: string]: { 
       salesValue: number; 
@@ -51,7 +56,7 @@ export const AccountingReports = ({ clients, payments, metrics }: AccountingRepo
       clients: number;
     }} = {};
     
-    clients.forEach(client => {
+    activeClients.forEach(client => {
       if (!projectData[client.project_name]) {
         projectData[client.project_name] = { 
           salesValue: 0, 
@@ -74,7 +79,7 @@ export const AccountingReports = ({ clients, payments, metrics }: AccountingRepo
         project,
         ...data,
       }));
-  }, [clients]);
+  }, [activeClients]);
 
   // Profit & Loss calculation
   const profitLoss = useMemo(() => {

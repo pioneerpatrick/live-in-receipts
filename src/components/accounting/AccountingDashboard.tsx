@@ -18,12 +18,14 @@ import {
   PieChart as PieChartIcon,
   LineChart as LineChartIcon,
   BookOpen,
-  Receipt
+  Receipt,
+  XCircle
 } from 'lucide-react';
 import { RevenueCharts } from './RevenueCharts';
 import { AccountingReports } from './AccountingReports';
 import { GeneralLedger } from './GeneralLedger';
 import { ExpensesDashboard } from '@/components/expenses/ExpensesDashboard';
+import { CancelledSalesSection } from './CancelledSalesSection';
 import { exportAccountingToPDF, exportAccountingToExcel } from '@/lib/accountingExport';
 
 interface AccountingDashboardProps {
@@ -61,16 +63,21 @@ export const AccountingDashboard = ({
     });
   }, [payments, timeRange]);
 
-  // Calculate metrics
+  // Filter out cancelled clients for metrics
+  const activeClients = useMemo(() => {
+    return clients.filter(c => c.status !== 'cancelled');
+  }, [clients]);
+
+  // Calculate metrics using active clients only
   const metrics = useMemo(() => {
     const totalRevenue = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
-    const totalSalesValue = clients.reduce((sum, c) => sum + c.total_price, 0);
-    const totalCollected = clients.reduce((sum, c) => sum + c.total_paid, 0);
-    const outstandingBalance = clients.reduce((sum, c) => sum + c.balance, 0);
-    const totalDiscount = clients.reduce((sum, c) => sum + c.discount, 0);
+    const totalSalesValue = activeClients.reduce((sum, c) => sum + c.total_price, 0);
+    const totalCollected = activeClients.reduce((sum, c) => sum + c.total_paid, 0);
+    const outstandingBalance = activeClients.reduce((sum, c) => sum + c.balance, 0);
+    const totalDiscount = activeClients.reduce((sum, c) => sum + c.discount, 0);
     const avgPayment = filteredPayments.length > 0 ? totalRevenue / filteredPayments.length : 0;
-    const completedClients = clients.filter(c => c.status === 'completed' || c.balance === 0).length;
-    const ongoingClients = clients.filter(c => c.status === 'ongoing' && c.balance > 0).length;
+    const completedClients = activeClients.filter(c => c.status === 'completed' || c.balance === 0).length;
+    const ongoingClients = activeClients.filter(c => c.status === 'ongoing' && c.balance > 0).length;
     
     // Calculate collection rate
     const collectionRate = totalSalesValue > 0 ? (totalCollected / totalSalesValue) * 100 : 0;
@@ -105,7 +112,7 @@ export const AccountingDashboard = ({
       monthlyGrowth,
       paymentCount: filteredPayments.length,
     };
-  }, [clients, filteredPayments]);
+  }, [activeClients, filteredPayments]);
 
   const handleExportPDF = () => {
     exportAccountingToPDF(clients, payments, timeRange);
@@ -241,7 +248,7 @@ export const AccountingDashboard = ({
 
       {/* Tabs for Different Views */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
           <TabsTrigger value="overview" className="flex items-center gap-1">
             <LineChartIcon className="w-4 h-4" />
             <span className="hidden sm:inline">Charts</span>
@@ -254,6 +261,10 @@ export const AccountingDashboard = ({
             <Receipt className="w-4 h-4" />
             <span className="hidden sm:inline">Expenses</span>
           </TabsTrigger>
+          <TabsTrigger value="cancelled" className="flex items-center gap-1">
+            <XCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Cancelled</span>
+          </TabsTrigger>
           <TabsTrigger value="ledger" className="flex items-center gap-1">
             <BookOpen className="w-4 h-4" />
             <span className="hidden sm:inline">Ledger</span>
@@ -262,26 +273,30 @@ export const AccountingDashboard = ({
 
         <TabsContent value="overview" className="mt-4">
           <RevenueCharts 
-            clients={clients} 
+            clients={activeClients} 
             payments={filteredPayments} 
           />
         </TabsContent>
 
         <TabsContent value="reports" className="mt-4">
           <AccountingReports 
-            clients={clients} 
+            clients={activeClients} 
             payments={filteredPayments}
             metrics={metrics}
           />
         </TabsContent>
 
         <TabsContent value="expenses" className="mt-4">
-          <ExpensesDashboard clients={clients} />
+          <ExpensesDashboard clients={activeClients} />
+        </TabsContent>
+
+        <TabsContent value="cancelled" className="mt-4">
+          <CancelledSalesSection />
         </TabsContent>
 
         <TabsContent value="ledger" className="mt-4">
           <GeneralLedger 
-            clients={clients} 
+            clients={activeClients} 
             payments={filteredPayments} 
           />
         </TabsContent>
