@@ -15,13 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RotateCcw, Loader2, ArrowRightLeft } from 'lucide-react';
+import { RotateCcw, Loader2, ArrowRightLeft, FileSpreadsheet, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, generateReceiptNumber, addPayment } from '@/lib/supabaseStorage';
 import { addCancelledSale } from '@/lib/cancelledSalesStorage';
 import { addExpense, generateExpenseReference } from '@/lib/expenseStorage';
 import { sellPlot, returnPlot as returnPlotToStock } from '@/lib/projectStorage';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Plot {
   id: string;
@@ -467,9 +470,126 @@ export function AvailablePlotsDialog({
     }
   };
 
+  const exportToExcel = () => {
+    const exportData = plots.map(plot => ({
+      'Plot Number': plot.plot_number,
+      'Size': plot.size,
+      'Price (KSH)': plot.price,
+      'Status': plot.status.charAt(0).toUpperCase() + plot.status.slice(1),
+      ...(statusFilter !== 'available' && {
+        'Client Name': plot.client?.name || '-',
+        'Client Phone': plot.client?.phone || '-',
+        'Total Paid': plot.client?.total_paid || 0,
+        'Balance': (plot.client?.total_price || plot.price) - (plot.client?.total_paid || 0),
+      }),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Plots');
+    
+    // Auto-size columns
+    const colWidths = Object.keys(exportData[0] || {}).map(key => ({
+      wch: Math.max(key.length, ...exportData.map(row => String((row as any)[key] || '').length))
+    }));
+    ws['!cols'] = colWidths;
+
+    const fileName = `${projectName.replace(/\s+/g, '_')}_${statusFilter}_plots_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    toast.success('Excel file downloaded successfully');
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFillColor(0, 150, 136);
+    doc.rect(0, 0, pageWidth, 30, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(getDialogTitle(), pageWidth / 2, 15, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 23, { align: 'center' });
+
+    // Table data
+    const headers = statusFilter === 'available' 
+      ? [['Plot Number', 'Size', 'Price', 'Status']]
+      : [['Plot No.', 'Size', 'Price', 'Status', 'Client', 'Phone', 'Paid', 'Balance']];
+
+    const body = plots.map(plot => {
+      const baseData = [
+        plot.plot_number,
+        plot.size,
+        formatCurrency(plot.price),
+        plot.status.charAt(0).toUpperCase() + plot.status.slice(1),
+      ];
+      
+      if (statusFilter !== 'available') {
+        baseData.push(
+          plot.client?.name || '-',
+          plot.client?.phone || '-',
+          formatCurrency(plot.client?.total_paid || 0),
+          formatCurrency((plot.client?.total_price || plot.price) - (plot.client?.total_paid || 0))
+        );
+      }
+      
+      return baseData;
+    });
+
+    autoTable(doc, {
+      head: headers,
+      body: body,
+      startY: 40,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [0, 150, 136],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 9,
+      },
+      bodyStyles: { 
+        fontSize: 8,
+      },
+      alternateRowStyles: { 
+        fillColor: [245, 245, 245] 
+      },
+      columnStyles: statusFilter === 'available' ? {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 30 },
+      } : {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 18 },
+        4: { cellWidth: 35 },
+        5: { cellWidth: 25 },
+        6: { cellWidth: 22 },
+        7: { cellWidth: 22 },
+      },
+    });
+
+    // Footer with summary
+    const finalY = (doc as any).lastAutoTable?.finalY || 40;
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(10);
+    doc.text(`Total: ${plots.length} plot${plots.length !== 1 ? 's' : ''}`, 14, finalY + 10);
+
+    const fileName = `${projectName.replace(/\s+/g, '_')}_${statusFilter}_plots_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+    toast.success('PDF file downloaded successfully');
+  };
+
   const selectedTransferPlot = availablePlotsForTransfer.find(p => p.id === selectedTransferPlotId);
   const amountPaid = returnPlot?.client?.total_paid || 0;
   const transferBalance = selectedTransferPlot ? amountPaid - selectedTransferPlot.price : 0;
+
 
   return (
     <>
@@ -547,8 +667,32 @@ export function AvailablePlotsDialog({
             )}
           </ScrollArea>
 
-          <div className="text-sm text-muted-foreground pt-2 border-t">
-            Total: {plots.length} plot{plots.length !== 1 ? 's' : ''}
+          <div className="flex items-center justify-between pt-2 border-t">
+            <div className="text-sm text-muted-foreground">
+              Total: {plots.length} plot{plots.length !== 1 ? 's' : ''}
+            </div>
+            {plots.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportToExcel}
+                  className="text-green-700 hover:text-green-800 hover:bg-green-50"
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-1" />
+                  Excel
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportToPDF}
+                  className="text-red-700 hover:text-red-800 hover:bg-red-50"
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  PDF
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
