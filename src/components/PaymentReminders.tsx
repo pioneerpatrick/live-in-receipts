@@ -20,6 +20,8 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
   const getReminders = (): ReminderClient[] => {
     return clients
       .filter(client => {
+        // Exclude cancelled clients from reminders
+        if (client.status === 'cancelled') return false;
         if (!client.next_payment_date || client.balance <= 0) return false;
         return true;
       })
