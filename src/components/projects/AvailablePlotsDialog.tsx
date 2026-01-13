@@ -555,225 +555,227 @@ export function AvailablePlotsDialog({
 
       {/* Cancellation / Transfer Dialog */}
       <Dialog open={!!returnPlot} onOpenChange={() => setReturnPlot(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Cancel Sale / Transfer Plot</DialogTitle>
             <DialogDescription>
               Choose to cancel the sale and return plot {returnPlot?.plot_number} to stock, or transfer the client to another plot.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {returnPlot?.client && (
-              <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                <p className="font-medium">{returnPlot.client.name}</p>
-                <p className="text-sm text-muted-foreground">{returnPlot.client.phone}</p>
-                <div className="flex justify-between text-sm mt-2">
-                  <span>Current Plot:</span>
-                  <span className="font-medium">{returnPlot.plot_number}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Sale Value:</span>
-                  <span className="font-medium">{formatCurrency(returnPlot.client.total_price || returnPlot.price)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Amount Paid:</span>
-                  <span className="font-medium text-blue-600">{formatCurrency(returnPlot.client.total_paid || 0)}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Cancellation Type Selection */}
-            <div className="space-y-3">
-              <Label>Action Type</Label>
-              <RadioGroup value={cancellationType} onValueChange={(v) => setCancellationType(v as 'cancel' | 'transfer')}>
-                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                  <RadioGroupItem value="cancel" id="cancel" />
-                  <Label htmlFor="cancel" className="flex-1 cursor-pointer">
-                    <div className="flex items-center gap-2">
-                      <RotateCcw className="h-4 w-4 text-destructive" />
-                      <span className="font-medium">Cancel Sale</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Return plot to stock and process refund if applicable</p>
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                  <RadioGroupItem value="transfer" id="transfer" />
-                  <Label htmlFor="transfer" className="flex-1 cursor-pointer">
-                    <div className="flex items-center gap-2">
-                      <ArrowRightLeft className="h-4 w-4 text-primary" />
-                      <span className="font-medium">Transfer to Another Project</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Move client to a different plot, payment transfers as initial payment</p>
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {cancellationType === 'cancel' && (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="refundAmount">Refund Amount</Label>
-                    <Input
-                      id="refundAmount"
-                      type="number"
-                      value={refundAmount}
-                      onChange={(e) => setRefundAmount(e.target.value)}
-                      placeholder="0"
-                    />
+          <ScrollArea className="flex-1 min-h-0 max-h-[65vh] pr-4">
+            <div className="space-y-4">
+              {returnPlot?.client && (
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  <p className="font-medium">{returnPlot.client.name}</p>
+                  <p className="text-sm text-muted-foreground">{returnPlot.client.phone}</p>
+                  <div className="flex justify-between text-sm mt-2">
+                    <span>Current Plot:</span>
+                    <span className="font-medium">{returnPlot.plot_number}</span>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cancellationFee">Cancellation Fee</Label>
-                    <Input
-                      id="cancellationFee"
-                      type="number"
-                      value={cancellationFee}
-                      onChange={(e) => setCancellationFee(e.target.value)}
-                      placeholder="0"
-                    />
+                  <div className="flex justify-between text-sm">
+                    <span>Sale Value:</span>
+                    <span className="font-medium">{formatCurrency(returnPlot.client.total_price || returnPlot.price)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Amount Paid:</span>
+                    <span className="font-medium text-blue-600">{formatCurrency(returnPlot.client.total_paid || 0)}</span>
                   </div>
                 </div>
+              )}
 
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Net Refund:</span>
-                    <span className="text-lg font-bold text-red-600">
-                      {formatCurrency(Math.max(0, (parseFloat(refundAmount) || 0) - (parseFloat(cancellationFee) || 0)))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center mt-1">
-                    <span className="text-sm text-muted-foreground">Retained:</span>
-                    <span className="text-lg font-bold text-green-600">
-                      {formatCurrency((returnPlot?.client?.total_paid || 0) - Math.max(0, (parseFloat(refundAmount) || 0) - (parseFloat(cancellationFee) || 0)))}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="refundStatus">Refund Status</Label>
-                  <Select value={refundStatus} onValueChange={(v) => setRefundStatus(v as typeof refundStatus)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending Refund</SelectItem>
-                      <SelectItem value="partial">Partial Refund Made</SelectItem>
-                      <SelectItem value="completed">Fully Refunded</SelectItem>
-                      <SelectItem value="none">No Refund (Forfeited)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reason">Cancellation Reason</Label>
-                  <Select value={cancellationReason} onValueChange={setCancellationReason}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select reason..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Client request">Client request</SelectItem>
-                      <SelectItem value="Financial issues">Financial issues</SelectItem>
-                      <SelectItem value="Relocation">Relocation</SelectItem>
-                      <SelectItem value="Dissatisfaction with project">Dissatisfaction with project</SelectItem>
-                      <SelectItem value="Transfer to another project">Transfer to another project</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Additional Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Any additional details..."
-                    rows={2}
-                  />
-                </div>
-              </>
-            )}
-
-            {cancellationType === 'transfer' && (
-              <>
-                <div className="space-y-2">
-                  <Label>Select Project to Transfer To</Label>
-                  <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a project..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects.map(project => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name} - {project.location}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {selectedProjectId && (
-                  <div className="space-y-2">
-                    <Label>Select Available Plot</Label>
-                    {loadingTransferPlots ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              {/* Cancellation Type Selection */}
+              <div className="space-y-3">
+                <Label>Action Type</Label>
+                <RadioGroup value={cancellationType} onValueChange={(v) => setCancellationType(v as 'cancel' | 'transfer')}>
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
+                    <RadioGroupItem value="cancel" id="cancel" />
+                    <Label htmlFor="cancel" className="flex-1 cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <RotateCcw className="h-4 w-4 text-destructive" />
+                        <span className="font-medium">Cancel Sale</span>
                       </div>
-                    ) : availablePlotsForTransfer.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-2">No available plots in this project</p>
-                    ) : (
-                      <Select value={selectedTransferPlotId} onValueChange={setSelectedTransferPlotId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose a plot..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availablePlotsForTransfer.map(plot => (
-                            <SelectItem key={plot.id} value={plot.id}>
-                              Plot {plot.plot_number} - {plot.size} - {formatCurrency(plot.price)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
+                      <p className="text-xs text-muted-foreground mt-1">Return plot to stock and process refund if applicable</p>
+                    </Label>
                   </div>
-                )}
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
+                    <RadioGroupItem value="transfer" id="transfer" />
+                    <Label htmlFor="transfer" className="flex-1 cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <ArrowRightLeft className="h-4 w-4 text-primary" />
+                        <span className="font-medium">Transfer to Another Project</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Move client to a different plot, payment transfers as initial payment</p>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
 
-                {selectedTransferPlot && (
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>New Plot Price:</span>
-                      <span className="font-medium">{formatCurrency(selectedTransferPlot.price)}</span>
+              {cancellationType === 'cancel' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="refundAmount">Refund Amount</Label>
+                      <Input
+                        id="refundAmount"
+                        type="number"
+                        value={refundAmount}
+                        onChange={(e) => setRefundAmount(e.target.value)}
+                        placeholder="0"
+                      />
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Amount to Transfer:</span>
-                      <span className="font-medium text-blue-600">{formatCurrency(amountPaid)}</span>
+                    <div className="space-y-2">
+                      <Label htmlFor="cancellationFee">Cancellation Fee</Label>
+                      <Input
+                        id="cancellationFee"
+                        type="number"
+                        value={cancellationFee}
+                        onChange={(e) => setCancellationFee(e.target.value)}
+                        placeholder="0"
+                      />
                     </div>
-                    <div className="border-t pt-2 mt-2">
-                      {transferBalance > 0 ? (
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">Overpayment (Refund):</span>
-                          <span className="text-lg font-bold text-red-600">{formatCurrency(transferBalance)}</span>
+                  </div>
+
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Net Refund:</span>
+                      <span className="text-lg font-bold text-red-600">
+                        {formatCurrency(Math.max(0, (parseFloat(refundAmount) || 0) - (parseFloat(cancellationFee) || 0)))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-sm text-muted-foreground">Retained:</span>
+                      <span className="text-lg font-bold text-green-600">
+                        {formatCurrency((returnPlot?.client?.total_paid || 0) - Math.max(0, (parseFloat(refundAmount) || 0) - (parseFloat(cancellationFee) || 0)))}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="refundStatus">Refund Status</Label>
+                    <Select value={refundStatus} onValueChange={(v) => setRefundStatus(v as typeof refundStatus)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending Refund</SelectItem>
+                        <SelectItem value="partial">Partial Refund Made</SelectItem>
+                        <SelectItem value="completed">Fully Refunded</SelectItem>
+                        <SelectItem value="none">No Refund (Forfeited)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="reason">Cancellation Reason</Label>
+                    <Select value={cancellationReason} onValueChange={setCancellationReason}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select reason..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Client request">Client request</SelectItem>
+                        <SelectItem value="Financial issues">Financial issues</SelectItem>
+                        <SelectItem value="Relocation">Relocation</SelectItem>
+                        <SelectItem value="Dissatisfaction with project">Dissatisfaction with project</SelectItem>
+                        <SelectItem value="Transfer to another project">Transfer to another project</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Additional Notes</Label>
+                    <Textarea
+                      id="notes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Any additional details..."
+                      rows={2}
+                    />
+                  </div>
+                </>
+              )}
+
+              {cancellationType === 'transfer' && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Select Project to Transfer To</Label>
+                    <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a project..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map(project => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name} - {project.location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedProjectId && (
+                    <div className="space-y-2">
+                      <Label>Select Available Plot</Label>
+                      {loadingTransferPlots ? (
+                        <div className="flex items-center justify-center py-4">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                         </div>
-                      ) : transferBalance < 0 ? (
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">New Balance Due:</span>
-                          <span className="text-lg font-bold text-amber-600">{formatCurrency(Math.abs(transferBalance))}</span>
-                        </div>
+                      ) : availablePlotsForTransfer.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-2">No available plots in this project</p>
                       ) : (
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">Status:</span>
-                          <span className="text-lg font-bold text-green-600">Fully Paid</span>
-                        </div>
+                        <Select value={selectedTransferPlotId} onValueChange={setSelectedTransferPlotId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a plot..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availablePlotsForTransfer.map(plot => (
+                              <SelectItem key={plot.id} value={plot.id}>
+                                Plot {plot.plot_number} - {plot.size} - {formatCurrency(plot.price)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                     </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+                  )}
 
-          <DialogFooter className="flex-shrink-0 pt-4">
+                  {selectedTransferPlot && (
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>New Plot Price:</span>
+                        <span className="font-medium">{formatCurrency(selectedTransferPlot.price)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Amount to Transfer:</span>
+                        <span className="font-medium text-blue-600">{formatCurrency(amountPaid)}</span>
+                      </div>
+                      <div className="border-t pt-2 mt-2">
+                        {transferBalance > 0 ? (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Overpayment (Refund):</span>
+                            <span className="text-lg font-bold text-red-600">{formatCurrency(transferBalance)}</span>
+                          </div>
+                        ) : transferBalance < 0 ? (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">New Balance Due:</span>
+                            <span className="text-lg font-bold text-amber-600">{formatCurrency(Math.abs(transferBalance))}</span>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Status:</span>
+                            <span className="text-lg font-bold text-green-600">Fully Paid</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
             <Button variant="outline" onClick={() => setReturnPlot(null)}>
               Cancel
             </Button>
