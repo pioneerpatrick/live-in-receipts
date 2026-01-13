@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import signatureImage from '@/assets/signature.png';
 import logoImage from '@/assets/logo.jpg';
 
-const APP_BASE_URL = window.location.origin;
+// Get base URL dynamically at runtime to ensure correct URL in production
+const getAppBaseUrl = () => window.location.origin;
 
 interface CompanySettings {
   company_name: string;
@@ -357,7 +358,7 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   
   // QR Code on the left
   try {
-    const paymentHistoryUrl = `${APP_BASE_URL}/payments/${receipt.clientId}`;
+    const paymentHistoryUrl = `${getAppBaseUrl()}/payments/${receipt.clientId}`;
     const qrCodeDataUrl = await QRCode.toDataURL(paymentHistoryUrl, {
       width: 100,
       margin: 1,
