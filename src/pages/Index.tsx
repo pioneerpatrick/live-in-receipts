@@ -313,10 +313,11 @@ const Index = () => {
     toast.success('PDF receipt generated!');
   };
 
-  // Dashboard summary calculations
-  const totalClients = clients.length;
-  const totalReceivables = clients.reduce((sum, c) => sum + c.balance, 0);
-  const totalCollected = clients.reduce((sum, c) => sum + c.total_paid, 0);
+  // Dashboard summary calculations - exclude cancelled clients
+  const activeClients = clients.filter(c => c.status !== 'cancelled');
+  const totalClients = activeClients.length;
+  const totalReceivables = activeClients.reduce((sum, c) => sum + c.balance, 0);
+  const totalCollected = activeClients.reduce((sum, c) => sum + c.total_paid, 0);
 
   return (
     <div className="min-h-screen min-h-[100dvh] flex flex-col bg-background">
@@ -372,7 +373,7 @@ const Index = () => {
         {/* Payment Reminders Section */}
         <div className="mb-6 sm:mb-8">
           <PaymentReminders 
-            clients={clients} 
+            clients={activeClients}
             onSelectClient={(client) => {
               setSelectedClient(client);
               setPaymentFormOpen(true);

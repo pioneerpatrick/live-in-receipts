@@ -519,11 +519,11 @@ export const generatePaymentHistoryPDF = async (client: any, payments: any[]): P
   doc.rect(15, y - 4, pageWidth - 30, 10, 'F');
   
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.text('Receipt No.', 20, y + 2);
-  doc.text('Date', 55, y + 2);
-  doc.text('Amount', 100, y + 2, { align: 'right' });
+  doc.text('Receipt No.', 18, y + 2);
+  doc.text('Date', 60, y + 2);
+  doc.text('Amount', 105, y + 2, { align: 'right' });
   doc.text('Method', 115, y + 2);
   doc.text('Balance After', pageWidth - 20, y + 2, { align: 'right' });
   
@@ -543,10 +543,11 @@ export const generatePaymentHistoryPDF = async (client: any, payments: any[]): P
       doc.setFillColor(...secondaryColor);
       doc.rect(15, y - 4, pageWidth - 30, 10, 'F');
       doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
-      doc.text('Receipt No.', 20, y + 2);
-      doc.text('Date', 55, y + 2);
-      doc.text('Amount', 100, y + 2, { align: 'right' });
+      doc.text('Receipt No.', 18, y + 2);
+      doc.text('Date', 60, y + 2);
+      doc.text('Amount', 105, y + 2, { align: 'right' });
       doc.text('Method', 115, y + 2);
       doc.text('Balance After', pageWidth - 20, y + 2, { align: 'right' });
       y += 10;
@@ -566,11 +567,12 @@ export const generatePaymentHistoryPDF = async (client: any, payments: any[]): P
     });
     
     doc.setTextColor(...textColor);
-    doc.text(payment.receipt_number, 20, y + 1);
-    doc.text(paymentDate, 55, y + 1);
+    doc.setFontSize(7);
+    doc.text(payment.receipt_number, 18, y + 1);
+    doc.text(paymentDate, 60, y + 1);
     doc.setTextColor(...primaryColor);
     doc.setFont('helvetica', 'bold');
-    doc.text(formatCurrency(payment.amount), 100, y + 1, { align: 'right' });
+    doc.text(formatCurrency(payment.amount), 105, y + 1, { align: 'right' });
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...textColor);
     doc.text(payment.payment_method, 115, y + 1);
