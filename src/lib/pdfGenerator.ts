@@ -537,6 +537,12 @@ export const generatePaymentHistoryPDF = async (client: any, payments: any[]): P
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   
+  // Helper function to truncate receipt number to fit column width
+  const truncateReceiptNumber = (receiptNo: string, maxLength: number = 22): string => {
+    if (receiptNo.length <= maxLength) return receiptNo;
+    return receiptNo.substring(0, maxLength - 2) + '..';
+  };
+  
   payments.forEach((payment, index) => {
     // Check if we need a new page
     if (y > 260) {
@@ -570,9 +576,12 @@ export const generatePaymentHistoryPDF = async (client: any, payments: any[]): P
       year: 'numeric'
     });
     
+    // Truncate long receipt numbers to prevent overflow
+    const displayReceiptNumber = truncateReceiptNumber(payment.receipt_number);
+    
     doc.setTextColor(...textColor);
     doc.setFontSize(7);
-    doc.text(payment.receipt_number, 18, y + 1);
+    doc.text(displayReceiptNumber, 18, y + 1);
     doc.text(paymentDate, 60, y + 1);
     doc.setTextColor(...primaryColor);
     doc.setFont('helvetica', 'bold');
