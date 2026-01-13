@@ -293,7 +293,7 @@ const ClientPaymentHistory = () => {
             {payments.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No payments recorded yet.</p>
             ) : (
-              <ScrollArea className="max-h-[400px]">
+              <ScrollArea className="max-h-[50vh] [&>[data-radix-scroll-area-viewport]]:max-h-[50vh]">
                 {/* Mobile Card View */}
                 <div className="block md:hidden space-y-3">
                   {payments.map((payment) => (
