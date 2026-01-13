@@ -479,7 +479,7 @@ export function AvailablePlotsDialog({
             <DialogTitle>{getDialogTitle()}</DialogTitle>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 min-h-0 max-h-[60vh]">
+          <ScrollArea className="flex-1 min-h-0 max-h-[55vh] [&>[data-radix-scroll-area-viewport]]:max-h-[55vh]">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -555,7 +555,7 @@ export function AvailablePlotsDialog({
 
       {/* Cancellation / Transfer Dialog */}
       <Dialog open={!!returnPlot} onOpenChange={() => setReturnPlot(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Cancel Sale / Transfer Plot</DialogTitle>
             <DialogDescription>
@@ -563,7 +563,7 @@ export function AvailablePlotsDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 min-h-0 max-h-[65vh] pr-4">
+          <ScrollArea className="flex-1 min-h-0 max-h-[50vh] [&>[data-radix-scroll-area-viewport]]:max-h-[50vh] pr-4">
             <div className="space-y-4">
               {returnPlot?.client && (
                 <div className="bg-muted/50 rounded-lg p-3 space-y-1">
