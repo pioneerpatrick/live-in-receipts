@@ -53,6 +53,7 @@ interface CompanySettings {
   receipt_footer_message: string | null;
   receipt_watermark: string | null;
   logo_url: string | null;
+  production_url: string | null;
 }
 
 const Settings = () => {
@@ -195,6 +196,7 @@ const Settings = () => {
           receipt_footer_message: companySettings.receipt_footer_message,
           receipt_watermark: companySettings.receipt_watermark,
           logo_url: companySettings.logo_url,
+          production_url: companySettings.production_url,
         })
         .eq('id', companySettings.id);
 
@@ -660,6 +662,18 @@ const Settings = () => {
                     <div>
                       <h3 className="text-lg font-semibold mb-4">Receipt Customization</h3>
                       <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="production_url">Production URL (for QR Codes)</Label>
+                          <Input
+                            id="production_url"
+                            placeholder="https://your-app.lovable.app"
+                            value={companySettings.production_url || ''}
+                            onChange={(e) => updateSetting('production_url', e.target.value)}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            The URL clients will be directed to when scanning receipt QR codes
+                          </p>
+                        </div>
                         <div className="space-y-2">
                           <Label htmlFor="receipt_footer_message">Footer Message</Label>
                           <Textarea

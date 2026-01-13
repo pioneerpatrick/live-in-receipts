@@ -5,8 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import signatureImage from '@/assets/signature.png';
 import logoImage from '@/assets/logo.jpg';
 
-// Production URL for QR codes
-const APP_BASE_URL = 'https://live-inreciepts.lovable.app';
+// Fallback production URL for QR codes (used if not configured in settings)
+const DEFAULT_APP_BASE_URL = 'https://live-inreciepts.lovable.app';
 
 interface CompanySettings {
   company_name: string;
@@ -21,6 +21,7 @@ interface CompanySettings {
   receipt_footer_message: string | null;
   receipt_watermark: string | null;
   logo_url: string | null;
+  production_url: string | null;
 }
 
 const getCompanySettings = async (): Promise<CompanySettings> => {
@@ -42,6 +43,7 @@ const getCompanySettings = async (): Promise<CompanySettings> => {
     receipt_footer_message: 'Thank you for choosing Live-IN Properties. We Secure your Future.',
     receipt_watermark: 'LIVE-IN PROPERTIES',
     logo_url: null,
+    production_url: null,
   };
 };
 
@@ -358,7 +360,8 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
   
   // QR Code on the left
   try {
-    const paymentHistoryUrl = `${APP_BASE_URL}/payments/${receipt.clientId}`;
+    const baseUrl = settings.production_url || DEFAULT_APP_BASE_URL;
+    const paymentHistoryUrl = `${baseUrl}/payments/${receipt.clientId}`;
     const qrCodeDataUrl = await QRCode.toDataURL(paymentHistoryUrl, {
       width: 100,
       margin: 1,

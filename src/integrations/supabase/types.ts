@@ -229,6 +229,7 @@ export type Database = {
           logo_url: string | null
           phone: string | null
           po_box: string | null
+          production_url: string | null
           receipt_footer_message: string | null
           receipt_watermark: string | null
           social_handle: string | null
@@ -246,6 +247,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           po_box?: string | null
+          production_url?: string | null
           receipt_footer_message?: string | null
           receipt_watermark?: string | null
           social_handle?: string | null
@@ -263,6 +265,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           po_box?: string | null
+          production_url?: string | null
           receipt_footer_message?: string | null
           receipt_watermark?: string | null
           social_handle?: string | null
