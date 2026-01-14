@@ -16,7 +16,7 @@ export const getCancelledSales = async (): Promise<CancelledSale[]> => {
 };
 
 export const addCancelledSale = async (
-  sale: Omit<CancelledSale, 'id' | 'created_at' | 'updated_at' | 'cancelled_by'>
+  sale: Omit<CancelledSale, 'id' | 'created_at' | 'updated_at' | 'cancelled_by' | 'outcome_type' | 'transferred_to_client_id' | 'transferred_to_project' | 'transferred_to_plot' | 'audit_notes' | 'income_retained' | 'expense_recorded' | 'processed_date' | 'processed_by'>
 ): Promise<CancelledSale> => {
   const { data: { user } } = await supabase.auth.getUser();
   
