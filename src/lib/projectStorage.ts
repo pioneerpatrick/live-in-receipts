@@ -73,7 +73,58 @@ export const addPlot = async (plot: Omit<Plot, 'id' | 'created_at' | 'updated_at
     .single();
 
   if (error) throw error;
+  
+  // Auto-update project capacity if total plots exceed it
+  await updateProjectCapacityIfNeeded(plot.project_id);
+  
   return data as Plot;
+};
+
+// Helper function to update project capacity if plots exceed it
+const updateProjectCapacityIfNeeded = async (projectId: string): Promise<void> => {
+  // Get current plot count for this project
+  const { count, error: countError } = await supabase
+    .from('plots')
+    .select('*', { count: 'exact', head: true })
+    .eq('project_id', projectId);
+    
+  if (countError) {
+    console.error('Error counting plots:', countError);
+    return;
+  }
+  
+  // Get current project capacity
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .select('capacity, total_plots')
+    .eq('id', projectId)
+    .single();
+    
+  if (projectError) {
+    console.error('Error fetching project:', projectError);
+    return;
+  }
+  
+  const plotCount = count || 0;
+  
+  // Update both total_plots and capacity if needed
+  const updates: { total_plots: number; capacity?: number } = {
+    total_plots: plotCount
+  };
+  
+  // If plot count exceeds capacity, update capacity to match
+  if (plotCount > (project.capacity || 0)) {
+    updates.capacity = plotCount;
+  }
+  
+  const { error: updateError } = await supabase
+    .from('projects')
+    .update(updates)
+    .eq('id', projectId);
+    
+  if (updateError) {
+    console.error('Error updating project:', updateError);
+  }
 };
 
 export const addBulkPlots = async (plots: Omit<Plot, 'id' | 'created_at' | 'updated_at' | 'project' | 'client'>[]): Promise<Plot[]> => {
@@ -83,6 +134,13 @@ export const addBulkPlots = async (plots: Omit<Plot, 'id' | 'created_at' | 'upda
     .select();
 
   if (error) throw error;
+  
+  // Auto-update project capacity if total plots exceed it
+  if (plots.length > 0) {
+    const projectId = plots[0].project_id;
+    await updateProjectCapacityIfNeeded(projectId);
+  }
+  
   return data as Plot[];
 };
 
@@ -178,10 +236,15 @@ export const getAllInventoryStats = async () => {
 
   const projectStats = projects.map(project => {
     const projectPlots = plots.filter(p => p.project_id === project.id);
+    const actualPlotCount = projectPlots.length;
+    // Use the greater of capacity or actual plot count for display
+    const effectiveCapacity = Math.max(project.capacity || 0, actualPlotCount);
+    
     return {
       ...project,
+      capacity: effectiveCapacity, // Override with effective capacity
       stats: {
-        total: projectPlots.length,
+        total: actualPlotCount,
         available: projectPlots.filter(p => p.status === 'available').length,
         sold: projectPlots.filter(p => p.status === 'sold').length,
         reserved: projectPlots.filter(p => p.status === 'reserved').length
