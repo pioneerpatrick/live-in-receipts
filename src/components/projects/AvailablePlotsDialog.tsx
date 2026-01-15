@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -15,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RotateCcw, Loader2, ArrowRightLeft, FileSpreadsheet, FileText } from 'lucide-react';
+import { RotateCcw, Loader2, ArrowRightLeft, FileSpreadsheet, FileText, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, generateReceiptNumber, addPayment } from '@/lib/supabaseStorage';
 import { addCancelledSale } from '@/lib/cancelledSalesStorage';
@@ -101,6 +102,12 @@ export function AvailablePlotsDialog({
   const [availablePlotsForTransfer, setAvailablePlotsForTransfer] = useState<AvailablePlotForTransfer[]>([]);
   const [selectedTransferPlotId, setSelectedTransferPlotId] = useState<string>('');
   const [loadingTransferPlots, setLoadingTransferPlots] = useState(false);
+  
+  // Date and plot selection state
+  const [actionDate, setActionDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [clientPlots, setClientPlots] = useState<Plot[]>([]);
+  const [selectedPlotIds, setSelectedPlotIds] = useState<string[]>([]);
+  const [loadingClientPlots, setLoadingClientPlots] = useState(false);
 
   useEffect(() => {
     if (open && projectId) {
@@ -111,6 +118,10 @@ export function AvailablePlotsDialog({
   useEffect(() => {
     if (returnPlot) {
       fetchProjects();
+      // Fetch all plots owned by this client
+      if (returnPlot.client_id) {
+        fetchClientPlots(returnPlot.client_id);
+      }
     }
   }, [returnPlot]);
 
@@ -224,6 +235,39 @@ export function AvailablePlotsDialog({
     }
   };
 
+  const fetchClientPlots = async (clientId: string) => {
+    setLoadingClientPlots(true);
+    try {
+      const { data, error } = await supabase
+        .from('plots')
+        .select(`
+          id,
+          plot_number,
+          size,
+          price,
+          status,
+          project_id,
+          client_id
+        `)
+        .eq('client_id', clientId)
+        .eq('status', 'sold')
+        .order('plot_number');
+      
+      if (error) throw error;
+      
+      const plotsData = data || [];
+      setClientPlots(plotsData);
+      // Pre-select the plot that was clicked
+      if (plotsData.length > 0) {
+        setSelectedPlotIds([plotsData.find(p => p.plot_number === returnPlot?.plot_number)?.id || plotsData[0].id]);
+      }
+    } catch (error) {
+      console.error('Error fetching client plots:', error);
+    } finally {
+      setLoadingClientPlots(false);
+    }
+  };
+
   const openReturnDialog = (plot: Plot) => {
     setReturnPlot(plot);
     // Pre-fill with collected amount
@@ -235,6 +279,9 @@ export function AvailablePlotsDialog({
     setNotes('');
     setSelectedProjectId('');
     setSelectedTransferPlotId('');
+    setActionDate(new Date().toISOString().split('T')[0]);
+    setClientPlots([]);
+    setSelectedPlotIds([]);
   };
 
   const handleReturnPlot = async () => {
@@ -258,21 +305,35 @@ export function AvailablePlotsDialog({
   const handleCancellation = async () => {
     if (!returnPlot) return;
     
+    // Use selected plots or just the current plot
+    const plotsToCancel = selectedPlotIds.length > 0 
+      ? clientPlots.filter(p => selectedPlotIds.includes(p.id))
+      : [returnPlot];
+    
     const refund = parseFloat(refundAmount) || 0;
     const fee = parseFloat(cancellationFee) || 0;
     const netRefund = Math.max(0, refund - fee);
 
-    // Record the cancelled sale
+    // Calculate per-plot amounts
+    const plotCount = plotsToCancel.length;
+    const perPlotRefund = refund / plotCount;
+    const perPlotFee = fee / plotCount;
+    const perPlotNetRefund = netRefund / plotCount;
+
+    // Record the cancelled sale(s)
     if (returnPlot.client) {
+      const cancelledPlotNumbers = plotsToCancel.map(p => p.plot_number).join(', ');
+      const totalPlotPrice = plotsToCancel.reduce((sum, p) => sum + p.price, 0);
+      
       await addCancelledSale({
         client_id: returnPlot.client.id,
         client_name: returnPlot.client.name,
         client_phone: returnPlot.client.phone,
         project_name: returnPlot.client.project_name || projectName,
-        plot_number: returnPlot.plot_number,
+        plot_number: cancelledPlotNumbers,
         original_sale_date: returnPlot.client.sale_date,
-        cancellation_date: new Date().toISOString(),
-        total_price: returnPlot.client.total_price || returnPlot.price,
+        cancellation_date: new Date(actionDate).toISOString(),
+        total_price: totalPlotPrice,
         total_paid: returnPlot.client.total_paid || 0,
         refund_amount: refund,
         refund_status: refundStatus,
@@ -285,9 +346,9 @@ export function AvailablePlotsDialog({
       // Create refund expense if refund is being processed
       if (netRefund > 0 && (refundStatus === 'completed' || refundStatus === 'partial')) {
         await addExpense({
-          expense_date: new Date().toISOString(),
+          expense_date: new Date(actionDate).toISOString(),
           category: 'Refund',
-          description: `Refund for cancelled sale - ${returnPlot.client.name} (${returnPlot.plot_number})`,
+          description: `Refund for cancelled sale - ${returnPlot.client.name} (${cancelledPlotNumbers})`,
           amount: netRefund,
           payment_method: 'Cash',
           recipient: returnPlot.client.name,
@@ -295,22 +356,25 @@ export function AvailablePlotsDialog({
           agent_id: null,
           client_id: returnPlot.client.id,
           is_commission_payout: false,
-          notes: `Cancelled sale refund. Original sale: ${formatCurrency(returnPlot.client.total_price || returnPlot.price)}, Paid: ${formatCurrency(returnPlot.client.total_paid || 0)}, Refund: ${formatCurrency(refund)}, Fee: ${formatCurrency(fee)}. ${cancellationReason ? `Reason: ${cancellationReason}` : ''}`,
+          notes: `Cancelled sale refund. Original sale: ${formatCurrency(totalPlotPrice)}, Paid: ${formatCurrency(returnPlot.client.total_paid || 0)}, Refund: ${formatCurrency(refund)}, Fee: ${formatCurrency(fee)}. ${cancellationReason ? `Reason: ${cancellationReason}` : ''}`,
           created_by: null,
         });
       }
     }
 
-    // Update the plot status
-    const { error } = await supabase
-      .from('plots')
-      .update({ status: 'available', client_id: null, sold_at: null })
-      .eq('id', returnPlot.id);
+    // Update all selected plots to available
+    for (const plot of plotsToCancel) {
+      const { error } = await supabase
+        .from('plots')
+        .update({ status: 'available', client_id: null, sold_at: null })
+        .eq('id', plot.id);
 
-    if (error) throw error;
+      if (error) throw error;
+    }
 
-    // Update client status to cancelled
-    if (returnPlot.client_id) {
+    // If all client's plots are cancelled, update client status to cancelled
+    const remainingPlots = clientPlots.filter(p => !selectedPlotIds.includes(p.id));
+    if (remainingPlots.length === 0 && returnPlot.client_id) {
       await supabase
         .from('clients')
         .update({ status: 'cancelled' })
@@ -329,6 +393,11 @@ export function AvailablePlotsDialog({
       return;
     }
 
+    // Use selected plots or just the current plot
+    const plotsToTransfer = selectedPlotIds.length > 0 
+      ? clientPlots.filter(p => selectedPlotIds.includes(p.id))
+      : [returnPlot];
+
     const selectedPlot = availablePlotsForTransfer.find(p => p.id === selectedTransferPlotId);
     if (!selectedPlot) {
       toast.error('Selected plot not found');
@@ -345,6 +414,8 @@ export function AvailablePlotsDialog({
     const isOverpayment = remainingAfterTransfer > 0;
     const newClientBalance = isOverpayment ? 0 : Math.abs(remainingAfterTransfer);
     const refundFromTransfer = isOverpayment ? remainingAfterTransfer : 0;
+
+    const transferredPlotNumbers = plotsToTransfer.map(p => p.plot_number).join(', ');
 
     // Create new client for the new plot
     const { data: newClient, error: newClientError } = await supabase
@@ -366,8 +437,8 @@ export function AvailablePlotsDialog({
         installment_months: null,
         initial_payment_method: 'Transfer',
         status: newClientBalance === 0 ? 'completed' : 'ongoing',
-        sale_date: new Date().toISOString().split('T')[0],
-        notes: `Transferred from ${oldClient.project_name} - ${returnPlot.plot_number}. Original amount paid: ${formatCurrency(amountPaid)}`,
+        sale_date: actionDate,
+        notes: `Transferred from ${oldClient.project_name} - ${transferredPlotNumbers}. Original amount paid: ${formatCurrency(amountPaid)}`,
       })
       .select()
       .single();
@@ -383,22 +454,28 @@ export function AvailablePlotsDialog({
       client_id: newClient.id,
       amount: Math.min(amountPaid, newPlotPrice),
       payment_method: 'Transfer',
-      payment_date: new Date().toISOString(),
+      payment_date: new Date(actionDate).toISOString(),
       previous_balance: newPlotPrice,
       new_balance: newClientBalance,
       receipt_number: receiptNum,
       agent_name: oldClient.sales_agent || 'System',
-      notes: `Transfer from cancelled sale: ${oldClient.project_name} - ${returnPlot.plot_number}`,
+      notes: `Transfer from cancelled sale: ${oldClient.project_name} - ${transferredPlotNumbers}`,
     });
 
-    // Return old plot to available
-    await returnPlotToStock(returnPlot.id);
+    // Return old plots to available
+    for (const plot of plotsToTransfer) {
+      await returnPlotToStock(plot.id);
+    }
 
-    // Mark old client as cancelled
-    await supabase
-      .from('clients')
-      .update({ status: 'cancelled' })
-      .eq('id', oldClient.id);
+    // Check if all client's plots are being transferred
+    const remainingPlots = clientPlots.filter(p => !selectedPlotIds.includes(p.id));
+    if (remainingPlots.length === 0) {
+      // Mark old client as cancelled
+      await supabase
+        .from('clients')
+        .update({ status: 'cancelled' })
+        .eq('id', oldClient.id);
+    }
 
     // Record in cancelled sales with transfer info
     const transferRefundStatus = refundFromTransfer > 0 ? 'pending' : 'none';
@@ -407,9 +484,9 @@ export function AvailablePlotsDialog({
       client_name: oldClient.name,
       client_phone: oldClient.phone,
       project_name: oldClient.project_name || projectName,
-      plot_number: returnPlot.plot_number,
+      plot_number: transferredPlotNumbers,
       original_sale_date: oldClient.sale_date,
-      cancellation_date: new Date().toISOString(),
+      cancellation_date: new Date(actionDate).toISOString(),
       total_price: oldClient.total_price || returnPlot.price,
       total_paid: amountPaid,
       refund_amount: refundFromTransfer,
@@ -423,7 +500,7 @@ export function AvailablePlotsDialog({
     // Create refund expense if there's overpayment
     if (refundFromTransfer > 0) {
       await addExpense({
-        expense_date: new Date().toISOString(),
+        expense_date: new Date(actionDate).toISOString(),
         category: 'Refund',
         description: `Overpayment refund from transfer - ${oldClient.name}`,
         amount: refundFromTransfer,
@@ -433,7 +510,7 @@ export function AvailablePlotsDialog({
         agent_id: null,
         client_id: oldClient.id,
         is_commission_payout: false,
-        notes: `Transfer overpayment. Old plot: ${returnPlot.plot_number} (${formatCurrency(oldClient.total_price)}). New plot: ${selectedPlot.plot_number} (${formatCurrency(newPlotPrice)}). Paid: ${formatCurrency(amountPaid)}. Refund: ${formatCurrency(refundFromTransfer)}`,
+        notes: `Transfer overpayment. Old plots: ${transferredPlotNumbers} (${formatCurrency(oldClient.total_price)}). New plot: ${selectedPlot.plot_number} (${formatCurrency(newPlotPrice)}). Paid: ${formatCurrency(amountPaid)}. Refund: ${formatCurrency(refundFromTransfer)}`,
         created_by: null,
       });
     }
@@ -707,17 +784,13 @@ export function AvailablePlotsDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 min-h-0 max-h-[50vh] [&>[data-radix-scroll-area-viewport]]:max-h-[50vh] pr-4">
+          <ScrollArea className="flex-1 min-h-0 max-h-[55vh] [&>[data-radix-scroll-area-viewport]]:max-h-[55vh] pr-4">
             <div className="space-y-4">
               {returnPlot?.client && (
                 <div className="bg-muted/50 rounded-lg p-3 space-y-1">
                   <p className="font-medium">{returnPlot.client.name}</p>
                   <p className="text-sm text-muted-foreground">{returnPlot.client.phone}</p>
                   <div className="flex justify-between text-sm mt-2">
-                    <span>Current Plot:</span>
-                    <span className="font-medium">{returnPlot.plot_number}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
                     <span>Sale Value:</span>
                     <span className="font-medium">{formatCurrency(returnPlot.client.total_price || returnPlot.price)}</span>
                   </div>
@@ -727,6 +800,83 @@ export function AvailablePlotsDialog({
                   </div>
                 </div>
               )}
+
+              {/* Client's Plots Selection */}
+              <div className="space-y-2">
+                <Label>Select Plot(s) to {cancellationType === 'cancel' ? 'Cancel' : 'Transfer'}</Label>
+                {loadingClientPlots ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : clientPlots.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">Loading client plots...</p>
+                ) : (
+                  <div className="space-y-2 border rounded-lg p-3 bg-background">
+                    {clientPlots.map((plot) => (
+                      <div key={plot.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`plot-${plot.id}`}
+                          checked={selectedPlotIds.includes(plot.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedPlotIds([...selectedPlotIds, plot.id]);
+                            } else {
+                              setSelectedPlotIds(selectedPlotIds.filter(id => id !== plot.id));
+                            }
+                          }}
+                        />
+                        <Label 
+                          htmlFor={`plot-${plot.id}`} 
+                          className="flex-1 cursor-pointer flex justify-between items-center"
+                        >
+                          <span>Plot {plot.plot_number} ({plot.size})</span>
+                          <span className="text-muted-foreground">{formatCurrency(plot.price)}</span>
+                        </Label>
+                      </div>
+                    ))}
+                    {clientPlots.length > 1 && (
+                      <div className="flex gap-2 mt-2 pt-2 border-t">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedPlotIds(clientPlots.map(p => p.id))}
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedPlotIds([])}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {selectedPlotIds.length === 0 && clientPlots.length > 0 && (
+                  <p className="text-xs text-destructive">Please select at least one plot</p>
+                )}
+              </div>
+
+              {/* Action Date */}
+              <div className="space-y-2">
+                <Label htmlFor="actionDate">
+                  {cancellationType === 'cancel' ? 'Cancellation Date' : 'Transfer Date'}
+                </Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="actionDate"
+                    type="date"
+                    value={actionDate}
+                    onChange={(e) => setActionDate(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
 
               {/* Cancellation Type Selection */}
               <div className="space-y-3">
@@ -925,7 +1075,7 @@ export function AvailablePlotsDialog({
             </Button>
             <Button 
               onClick={handleReturnPlot} 
-              disabled={returning || (cancellationType === 'transfer' && !selectedTransferPlotId)} 
+              disabled={returning || (selectedPlotIds.length === 0 && clientPlots.length > 0) || (cancellationType === 'transfer' && !selectedTransferPlotId)} 
               variant={cancellationType === 'cancel' ? 'destructive' : 'default'}
             >
               {returning ? (
