@@ -395,7 +395,7 @@ export function ProjectsManager() {
                               {project.location}
                             </p>
                           </div>
-                          <Badge variant="secondary">{project.total_plots} / {project.capacity}</Badge>
+                          <Badge variant="secondary" className="text-xs">Capacity: {project.capacity}</Badge>
                         </div>
                         <div className="mt-2">
                           <div className="flex justify-between text-xs text-muted-foreground mb-1">
@@ -408,6 +408,9 @@ export function ProjectsManager() {
                               style={{ width: `${project.capacity > 0 ? (project.total_plots / project.capacity) * 100 : 0}%` }}
                             />
                           </div>
+                          <p className="text-xs text-primary mt-1 hover:underline cursor-pointer">
+                            Click to edit plots →
+                          </p>
                         </div>
                       </CardHeader>
                       <CardContent>
