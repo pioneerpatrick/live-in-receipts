@@ -315,6 +315,7 @@ export const CancelledSalesSection = () => {
                         <TableHead>Client</TableHead>
                         <TableHead>Project/Plot</TableHead>
                         <TableHead>Cancel Date</TableHead>
+                        <TableHead>Refund Date</TableHead>
                         <TableHead className="text-right">Was Collected</TableHead>
                         <TableHead className="text-right">Net Refund</TableHead>
                         <TableHead className="text-right">Retained</TableHead>
@@ -340,6 +341,9 @@ export const CancelledSalesSection = () => {
                           </TableCell>
                           <TableCell className="text-sm">
                             {format(new Date(sale.cancellation_date), 'dd/MM/yyyy')}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {sale.processed_date ? format(new Date(sale.processed_date), 'dd/MM/yyyy') : '-'}
                           </TableCell>
                           <TableCell className="text-right font-medium">
                             {formatCurrency(sale.total_paid)}
@@ -381,8 +385,8 @@ export const CancelledSalesSection = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingSale} onOpenChange={(open) => !open && setEditingSale(null)}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="sticky top-0 bg-background pb-4 border-b">
             <DialogTitle>Update Refund Details</DialogTitle>
             <DialogDescription>
               Update refund status and amounts for {editingSale?.client_name}

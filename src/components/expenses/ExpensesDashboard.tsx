@@ -29,6 +29,11 @@ export const ExpensesDashboard = ({ clients }: ExpensesDashboardProps) => {
     return Array.from(agentSet).sort();
   }, [clients]);
 
+  // Get commission payout expenses
+  const commissionExpenses = useMemo(() => {
+    return expenses.filter(e => e.is_commission_payout);
+  }, [expenses]);
+
   useEffect(() => {
     loadExpenses();
   }, []);
@@ -134,6 +139,7 @@ export const ExpensesDashboard = ({ clients }: ExpensesDashboardProps) => {
         expense={editingExpense}
         clients={clients}
         agents={agents}
+        commissionExpenses={commissionExpenses}
       />
     </div>
   );

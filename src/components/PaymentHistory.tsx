@@ -174,7 +174,7 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col mx-3 sm:mx-auto">
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col mx-3 sm:mx-auto">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
               <FileText className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
@@ -219,7 +219,7 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
           </div>
 
           {/* Payments List */}
-          <ScrollArea className="flex-1 min-h-0">
+          <ScrollArea className="flex-1 min-h-[200px] max-h-[400px]">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

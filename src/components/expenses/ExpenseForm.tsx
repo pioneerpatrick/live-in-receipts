@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,10 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Expense, EXPENSE_CATEGORIES } from '@/types/expense';
 import { Client } from '@/types/client';
 import { generateExpenseReference } from '@/lib/expenseStorage';
+import { formatCurrency } from '@/lib/supabaseStorage';
 import { format } from 'date-fns';
+import { User, DollarSign, CheckCircle } from 'lucide-react';
 
 interface ExpenseFormProps {
   open: boolean;
@@ -18,11 +23,20 @@ interface ExpenseFormProps {
   expense?: Expense | null;
   clients: Client[];
   agents: string[];
+  commissionExpenses?: Expense[];
 }
 
 const PAYMENT_METHODS = ['Cash', 'M-Pesa', 'Bank Transfer', 'Cheque'];
 
-export const ExpenseForm = ({ open, onClose, onSubmit, expense, clients, agents }: ExpenseFormProps) => {
+interface AgentCommissionData {
+  agent: string;
+  earned: number;
+  paid: number;
+  pending: number;
+  clientCount: number;
+}
+
+export const ExpenseForm = ({ open, onClose, onSubmit, expense, clients, agents, commissionExpenses = [] }: ExpenseFormProps) => {
   const [formData, setFormData] = useState({
     expense_date: format(new Date(), 'yyyy-MM-dd'),
     category: '',
@@ -36,6 +50,41 @@ export const ExpenseForm = ({ open, onClose, onSubmit, expense, clients, agents 
     is_commission_payout: false,
     notes: '',
   });
+
+  // Calculate agent commission data
+  const agentCommissionData = useMemo((): AgentCommissionData[] => {
+    const agentData: { [key: string]: { earned: number; paid: number; clientCount: number } } = {};
+
+    // Calculate earned commissions from clients
+    clients.forEach(client => {
+      const agent = client.sales_agent || 'Unknown';
+      if (!agentData[agent]) {
+        agentData[agent] = { earned: 0, paid: 0, clientCount: 0 };
+      }
+      agentData[agent].earned += client.commission || 0;
+      agentData[agent].clientCount += 1;
+    });
+
+    // Calculate paid commissions from expenses
+    commissionExpenses.forEach(payout => {
+      const agent = payout.agent_id || payout.recipient || 'Unknown';
+      if (!agentData[agent]) {
+        agentData[agent] = { earned: 0, paid: 0, clientCount: 0 };
+      }
+      agentData[agent].paid += payout.amount;
+    });
+
+    return Object.entries(agentData)
+      .filter(([, data]) => data.earned > 0 || data.paid > 0)
+      .sort(([, a], [, b]) => (b.earned - b.paid) - (a.earned - a.paid))
+      .map(([agent, data]) => ({
+        agent,
+        earned: data.earned,
+        paid: data.paid,
+        pending: Math.max(0, data.earned - data.paid),
+        clientCount: data.clientCount,
+      }));
+  }, [clients, commissionExpenses]);
 
   useEffect(() => {
     if (expense) {
@@ -77,11 +126,24 @@ export const ExpenseForm = ({ open, onClose, onSubmit, expense, clients, agents 
     }));
   };
 
+  const handleAgentSelect = (agent: string, pendingAmount: number) => {
+    setFormData(prev => ({
+      ...prev,
+      agent_id: agent,
+      recipient: agent,
+      amount: pendingAmount.toString(),
+      description: `Commission payout to ${agent}`,
+    }));
+  };
+
   const handleAgentChange = (value: string) => {
+    const agentData = agentCommissionData.find(a => a.agent === value);
     setFormData(prev => ({
       ...prev,
       agent_id: value,
       recipient: value,
+      amount: agentData ? agentData.pending.toString() : prev.amount,
+      description: `Commission payout to ${value}`,
     }));
   };
 
@@ -159,16 +221,93 @@ export const ExpenseForm = ({ open, onClose, onSubmit, expense, clients, agents 
                 <Label>Mark as Commission Payout</Label>
               </div>
               
+              {/* Agent Commission Summary - Quick Select */}
+              {agentCommissionData.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Quick Select Agent (with pending commission)</Label>
+                  <ScrollArea className="h-[180px] border rounded-lg bg-background">
+                    <div className="p-2 space-y-2">
+                      {agentCommissionData.map((agent) => (
+                        <Card 
+                          key={agent.agent}
+                          className={`p-3 cursor-pointer transition-all hover:border-primary ${
+                            formData.agent_id === agent.agent ? 'border-primary bg-primary/5' : ''
+                          }`}
+                          onClick={() => handleAgentSelect(agent.agent, agent.pending)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-primary/10 rounded-full">
+                                <User className="h-4 w-4 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{agent.agent}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {agent.clientCount} client{agent.clientCount !== 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="h-3 w-3 text-amber-600" />
+                                <span className={`font-bold text-sm ${agent.pending > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                                  {formatCurrency(agent.pending)}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground">
+                                {agent.pending > 0 ? 'pending' : (
+                                  <span className="flex items-center gap-0.5 text-green-600">
+                                    <CheckCircle className="h-3 w-3" /> Paid
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                          {agent.pending > 0 && (
+                            <div className="mt-2 pt-2 border-t border-dashed">
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Earned: {formatCurrency(agent.earned)}</span>
+                                <span>Paid: {formatCurrency(agent.paid)}</span>
+                              </div>
+                            </div>
+                          )}
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+
+              {agentCommissionData.length === 0 && (
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  No agents with pending commissions found.
+                  <br />
+                  <span className="text-xs">Commission is calculated from client sales.</span>
+                </div>
+              )}
+              
               <div>
-                <Label>Select Agent *</Label>
+                <Label>Or Select Agent Manually *</Label>
                 <Select value={formData.agent_id} onValueChange={handleAgentChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select agent" />
                   </SelectTrigger>
                   <SelectContent>
-                    {agents.map((agent) => (
-                      <SelectItem key={agent} value={agent}>{agent}</SelectItem>
-                    ))}
+                    {agents.map((agent) => {
+                      const agentData = agentCommissionData.find(a => a.agent === agent);
+                      return (
+                        <SelectItem key={agent} value={agent}>
+                          <div className="flex items-center gap-2">
+                            <span>{agent}</span>
+                            {agentData && agentData.pending > 0 && (
+                              <Badge variant="outline" className="text-xs ml-2">
+                                {formatCurrency(agentData.pending)} pending
+                              </Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

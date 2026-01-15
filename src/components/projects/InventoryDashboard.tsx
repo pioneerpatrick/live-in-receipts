@@ -206,9 +206,9 @@ export function InventoryDashboard() {
                       </div>
                       <div className="text-right text-sm">
                         <p>
-                          <span className="font-medium">{project.stats.total}</span> / {project.capacity} plots
+                          <span className="font-medium">Total plots: {project.capacity}</span>
                           {remainingCapacity > 0 && (
-                            <span className="text-muted-foreground ml-1">({remainingCapacity} slots left)</span>
+                            <span className="text-muted-foreground ml-1">(+{remainingCapacity} to add)</span>
                           )}
                         </p>
                         <p className="text-muted-foreground">
@@ -245,8 +245,8 @@ export function InventoryDashboard() {
                     <div className="space-y-1">
                       <Progress value={soldPercentage} className="h-2" />
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Inventory: {project.stats.total} added</span>
-                        <span>{soldPercentage}% sold</span>
+                        <span>{project.stats.total} plots added to inventory</span>
+                        <span>{soldPercentage}% sold ({project.stats.sold} of {project.stats.total})</span>
                       </div>
                     </div>
                   </div>

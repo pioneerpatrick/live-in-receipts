@@ -69,6 +69,38 @@ export const deleteClient = async (id: string): Promise<void> => {
     // Continue with client deletion even if plot update fails
   }
 
+  // Delete related cancelled sales records
+  const { error: cancelledSalesError } = await supabase
+    .from('cancelled_sales')
+    .delete()
+    .eq('client_id', id);
+
+  if (cancelledSalesError) {
+    console.error('Error deleting cancelled sales:', cancelledSalesError);
+    // Continue with client deletion even if cancelled sales deletion fails
+  }
+
+  // Delete related payments (should cascade automatically but explicit is safer)
+  const { error: paymentsError } = await supabase
+    .from('payments')
+    .delete()
+    .eq('client_id', id);
+
+  if (paymentsError) {
+    console.error('Error deleting payments:', paymentsError);
+    // Continue with client deletion
+  }
+
+  // Update expenses to unlink from client (don't delete, keep for accounting)
+  const { error: expensesError } = await supabase
+    .from('expenses')
+    .update({ client_id: null })
+    .eq('client_id', id);
+
+  if (expensesError) {
+    console.error('Error unlinking expenses:', expensesError);
+  }
+
   // Then delete the client
   const { error } = await supabase
     .from('clients')
