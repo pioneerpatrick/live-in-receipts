@@ -34,6 +34,9 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
   const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'completed'>('all');
 
   const filteredClients = clients.filter(client => {
+    // Hide cancelled clients from active list
+    if (client.status?.toLowerCase() === 'cancelled') return false;
+
     // Text search filter - add null safety for optional fields
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
