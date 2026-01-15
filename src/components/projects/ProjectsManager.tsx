@@ -33,11 +33,25 @@ export function ProjectsManager() {
   const [showBulkForm, setShowBulkForm] = useState(false);
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [plotCounts, setPlotCounts] = useState<Record<string, number>>({});
 
   const fetchProjects = async () => {
     try {
       const data = await getProjects();
       setProjects(data);
+      
+      // Fetch actual plot counts for each project
+      const { data: plots } = await supabase
+        .from('plots')
+        .select('project_id');
+      
+      if (plots) {
+        const counts: Record<string, number> = {};
+        plots.forEach(p => {
+          counts[p.project_id] = (counts[p.project_id] || 0) + 1;
+        });
+        setPlotCounts(counts);
+      }
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');
@@ -380,7 +394,11 @@ export function ProjectsManager() {
                 </Card>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {projects.map((project) => (
+                  {projects.map((project) => {
+                    const actualPlotCount = plotCounts[project.id] || project.total_plots;
+                    const effectiveCapacity = Math.max(project.capacity, actualPlotCount);
+                    
+                    return (
                     <Card 
                       key={project.id} 
                       className="cursor-pointer hover:shadow-md transition-shadow"
@@ -395,17 +413,17 @@ export function ProjectsManager() {
                               {project.location}
                             </p>
                           </div>
-                          <Badge variant="secondary" className="text-xs">Capacity: {project.capacity}</Badge>
+                          <Badge variant="secondary" className="text-xs">Total Plots: {effectiveCapacity}</Badge>
                         </div>
                         <div className="mt-2">
                           <div className="flex justify-between text-xs text-muted-foreground mb-1">
                             <span>Inventory</span>
-                            <span>{project.total_plots} of {project.capacity} plots added</span>
+                            <span>{actualPlotCount} plots in system</span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-1.5">
                             <div 
                               className="bg-primary h-1.5 rounded-full" 
-                              style={{ width: `${project.capacity > 0 ? (project.total_plots / project.capacity) * 100 : 0}%` }}
+                              style={{ width: `${effectiveCapacity > 0 ? (actualPlotCount / effectiveCapacity) * 100 : 0}%` }}
                             />
                           </div>
                           <p className="text-xs text-primary mt-1 hover:underline cursor-pointer">
@@ -439,7 +457,8 @@ export function ProjectsManager() {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

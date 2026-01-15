@@ -31,14 +31,15 @@ import {
 } from '@/components/ui/select';
 import { CancelledSale, CancelledSaleOutcome } from '@/types/cancelledSale';
 import { Expense } from '@/types/expense';
-import { getCancelledSales, updateCancelledSale } from '@/lib/cancelledSalesStorage';
+import { getCancelledSales, updateCancelledSale, deleteCancelledSale } from '@/lib/cancelledSalesStorage';
 import { formatCurrency } from '@/lib/supabaseStorage';
 import { addExpense, generateExpenseReference, getExpenses } from '@/lib/expenseStorage';
-import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2, FileText, ArrowRight } from 'lucide-react';
+import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2, FileText, ArrowRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { CancelledSalesAuditReport } from './CancelledSalesAuditReport';
 import { supabase } from '@/integrations/supabase/client';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 export const CancelledSalesSection = () => {
   const [cancelledSales, setCancelledSales] = useState<CancelledSale[]>([]);
@@ -56,6 +57,7 @@ export const CancelledSalesSection = () => {
   const [notes, setNotes] = useState('');
   const [cancellationDate, setCancellationDate] = useState('');
   const [refundDate, setRefundDate] = useState('');
+  const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -169,6 +171,19 @@ export const CancelledSalesSection = () => {
     }
   };
 
+  const handleDeleteCancelledSale = async () => {
+    if (!deletingSaleId) return;
+    try {
+      await deleteCancelledSale(deletingSaleId);
+      toast.success('Cancelled sale record deleted successfully');
+      setDeletingSaleId(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting cancelled sale:', error);
+      toast.error('Failed to delete cancelled sale');
+    }
+  };
+
   // Calculate summary statistics
   const summary = useMemo(() => {
     const totalCancelled = cancelledSales.length;
@@ -258,35 +273,35 @@ export const CancelledSalesSection = () => {
             <Card>
               <CardContent className="p-3 text-center">
                 <DollarSign className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-                <p className="text-lg font-bold">{formatCurrency(summary.totalSaleValue)}</p>
+                <p className="text-base font-bold truncate" title={formatCurrency(summary.totalSaleValue)}>{formatCurrency(summary.totalSaleValue)}</p>
                 <p className="text-xs text-muted-foreground">Original Value</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
                 <DollarSign className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-                <p className="text-lg font-bold text-blue-600">{formatCurrency(summary.totalCollectedBeforeCancel)}</p>
+                <p className="text-base font-bold text-blue-600 truncate" title={formatCurrency(summary.totalCollectedBeforeCancel)}>{formatCurrency(summary.totalCollectedBeforeCancel)}</p>
                 <p className="text-xs text-muted-foreground">Was Collected</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
                 <RefreshCw className="w-5 h-5 text-orange-500 mx-auto mb-1" />
-                <p className="text-lg font-bold text-orange-600">{formatCurrency(summary.totalRefunded)}</p>
+                <p className="text-base font-bold text-orange-600 truncate" title={formatCurrency(summary.totalRefunded)}>{formatCurrency(summary.totalRefunded)}</p>
                 <p className="text-xs text-muted-foreground">Refunded</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
                 <AlertTriangle className="w-5 h-5 text-amber-500 mx-auto mb-1" />
-                <p className="text-lg font-bold text-amber-600">{formatCurrency(summary.totalFees)}</p>
+                <p className="text-base font-bold text-amber-600 truncate" title={formatCurrency(summary.totalFees)}>{formatCurrency(summary.totalFees)}</p>
                 <p className="text-xs text-muted-foreground">Cancel Fees</p>
               </CardContent>
             </Card>
             <Card className="bg-green-500/10 border-green-200">
               <CardContent className="p-3 text-center">
                 <CheckCircle2 className="w-5 h-5 text-green-500 mx-auto mb-1" />
-                <p className="text-lg font-bold text-green-600">{formatCurrency(summary.retainedAmount)}</p>
+                <p className="text-base font-bold text-green-600 truncate" title={formatCurrency(summary.retainedAmount)}>{formatCurrency(summary.retainedAmount)}</p>
                 <p className="text-xs text-muted-foreground">Retained</p>
               </CardContent>
             </Card>
@@ -326,7 +341,7 @@ export const CancelledSalesSection = () => {
                         <TableHead className="text-right">Retained</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Outcome</TableHead>
-                        <TableHead></TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -362,13 +377,25 @@ export const CancelledSalesSection = () => {
                           <TableCell>{getStatusBadge(sale.refund_status)}</TableCell>
                           <TableCell>{getOutcomeBadge(sale.outcome_type || 'pending')}</TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(sale)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditDialog(sale)}
+                                title="Edit refund status"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeletingSaleId(sale.id)}
+                                title="Delete cancelled sale record"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -561,6 +588,16 @@ export const CancelledSalesSection = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deletingSaleId}
+        onOpenChange={() => setDeletingSaleId(null)}
+        onConfirm={handleDeleteCancelledSale}
+        title="Delete Cancelled Sale Record"
+        description="Are you sure you want to permanently delete this cancelled sale record? This will remove all associated data from the system. This action cannot be undone."
+        confirmText="Delete"
+      />
     </div>
   );
 };
