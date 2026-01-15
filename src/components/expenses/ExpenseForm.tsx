@@ -315,14 +315,14 @@ export const ExpenseForm = ({ open, onClose, onSubmit, expense, clients, agents,
               <div>
                 <Label>Related Client (Optional)</Label>
                 <Select 
-                  value={formData.client_id} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value }))}
+                  value={formData.client_id || "none"} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value === "none" ? "" : value }))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {clients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name} - {client.project_name}
