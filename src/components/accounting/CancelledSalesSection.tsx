@@ -54,6 +54,8 @@ export const CancelledSalesSection = () => {
   const [transferredPlot, setTransferredPlot] = useState('');
   const [auditNotes, setAuditNotes] = useState('');
   const [notes, setNotes] = useState('');
+  const [cancellationDate, setCancellationDate] = useState('');
+  const [refundDate, setRefundDate] = useState('');
 
   const fetchData = async () => {
     try {
@@ -86,6 +88,8 @@ export const CancelledSalesSection = () => {
     setTransferredPlot(sale.transferred_to_plot || '');
     setAuditNotes(sale.audit_notes || '');
     setNotes(sale.notes || '');
+    setCancellationDate(sale.cancellation_date ? sale.cancellation_date.split('T')[0] : '');
+    setRefundDate(sale.processed_date ? sale.processed_date.split('T')[0] : '');
   };
 
   const handleUpdateRefund = async () => {
@@ -129,7 +133,8 @@ export const CancelledSalesSection = () => {
         audit_notes: auditNotes || null,
         income_retained: incomeRetained,
         expense_recorded: netRefund,
-        processed_date: (shouldCreateExpense || hasAdditionalRefund || finalOutcome !== 'pending') ? new Date().toISOString() : null,
+        cancellation_date: cancellationDate ? new Date(cancellationDate).toISOString() : editingSale.cancellation_date,
+        processed_date: refundDate ? new Date(refundDate).toISOString() : ((shouldCreateExpense || hasAdditionalRefund || finalOutcome !== 'pending') ? new Date().toISOString() : null),
         processed_by: user?.id || null,
         notes: notes,
       });
@@ -501,6 +506,27 @@ export const CancelledSalesSection = () => {
                 </div>
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cancellationDate">Cancellation Date</Label>
+                <Input
+                  id="cancellationDate"
+                  type="date"
+                  value={cancellationDate}
+                  onChange={(e) => setCancellationDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="refundDate">Refund Date</Label>
+                <Input
+                  id="refundDate"
+                  type="date"
+                  value={refundDate}
+                  onChange={(e) => setRefundDate(e.target.value)}
+                />
+              </div>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="auditNotes">Audit Notes (for accounting records)</Label>

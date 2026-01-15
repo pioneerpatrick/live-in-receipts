@@ -28,6 +28,7 @@ import { GeneralLedger } from './GeneralLedger';
 import { ExpensesDashboard } from '@/components/expenses/ExpensesDashboard';
 import { CancelledSalesSection } from './CancelledSalesSection';
 import { ProfitLossStatement } from './ProfitLossStatement';
+import { MasterClientTable } from './MasterClientTable';
 import { exportAccountingToPDF, exportAccountingToExcel } from '@/lib/accountingExport';
 
 interface AccountingDashboardProps {
@@ -250,7 +251,7 @@ export const AccountingDashboard = ({
 
       {/* Tabs for Different Views */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-flex">
+        <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-flex">
           <TabsTrigger value="overview" className="flex items-center gap-1">
             <LineChartIcon className="w-4 h-4" />
             <span className="hidden sm:inline">Charts</span>
@@ -258,6 +259,10 @@ export const AccountingDashboard = ({
           <TabsTrigger value="pnl" className="flex items-center gap-1">
             <FileText className="w-4 h-4" />
             <span className="hidden sm:inline">P&L</span>
+          </TabsTrigger>
+          <TabsTrigger value="clients" className="flex items-center gap-1">
+            <Users className="w-4 h-4" />
+            <span className="hidden sm:inline">Clients</span>
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-1">
             <PieChartIcon className="w-4 h-4" />
@@ -290,6 +295,10 @@ export const AccountingDashboard = ({
             payments={payments}
             timeRange={timeRange}
           />
+        </TabsContent>
+
+        <TabsContent value="clients" className="mt-4">
+          <MasterClientTable clients={clients} />
         </TabsContent>
 
         <TabsContent value="reports" className="mt-4">

@@ -219,7 +219,7 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
           </div>
 
           {/* Payments List */}
-          <ScrollArea className="flex-1 min-h-[200px] max-h-[400px]">
+          <div className="flex-1 overflow-auto min-h-[200px] max-h-[400px] border rounded-lg">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -394,7 +394,7 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
                 </div>
               </>
             )}
-          </ScrollArea>
+          </div>
 
           {/* Summary Footer */}
           {payments.length > 0 && (
