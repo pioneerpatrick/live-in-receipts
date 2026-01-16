@@ -1,6 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   Table, 
   TableBody, 
@@ -11,7 +13,8 @@ import {
 } from '@/components/ui/table';
 import { CancelledSale } from '@/types/cancelledSale';
 import { Expense } from '@/types/expense';
-import { formatCurrency } from '@/lib/supabaseStorage';
+import { Client } from '@/types/client';
+import { formatCurrency, getClients } from '@/lib/supabaseStorage';
 import { 
   FileText, 
   TrendingUp, 
@@ -21,7 +24,9 @@ import {
   Clock,
   RefreshCw,
   Ban,
-  DollarSign
+  DollarSign,
+  ExternalLink,
+  User
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -31,7 +36,41 @@ interface CancelledSalesAuditReportProps {
 }
 
 export const CancelledSalesAuditReport = ({ cancelledSales, expenses }: CancelledSalesAuditReportProps) => {
-  // Calculate audit summary
+  const navigate = useNavigate();
+  const [clients, setClients] = useState<Client[]>([]);
+
+  // Fetch clients to get transferred client details
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const clientsData = await getClients();
+        setClients(clientsData);
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+      }
+    };
+    fetchClients();
+  }, []);
+
+  // Get transferred client details
+  const getTransferredClient = (sale: CancelledSale): Client | undefined => {
+    if (sale.transferred_to_client_id) {
+      return clients.find(c => c.id === sale.transferred_to_client_id);
+    }
+    // Fallback: find by project and plot if client_id not set
+    if (sale.transferred_to_project && sale.transferred_to_plot) {
+      return clients.find(
+        c => c.project_name === sale.transferred_to_project && 
+             c.plot_number === sale.transferred_to_plot &&
+             c.name === sale.client_name
+      );
+    }
+    return undefined;
+  };
+
+  const handleViewClient = (clientId: string) => {
+    navigate(`/client/${clientId}/history`);
+  };
   const auditSummary = useMemo(() => {
     const refundExpenses = expenses.filter(e => e.category === 'Refund');
     const totalRefundExpenses = refundExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -368,11 +407,47 @@ export const CancelledSalesAuditReport = ({ cancelledSales, expenses }: Cancelle
                     </TableCell>
                     <TableCell>{getOutcomeBadge(sale.outcome_type || 'pending')}</TableCell>
                     <TableCell>
-                      {sale.transferred_to_project ? (
-                        <div className="text-sm">
-                          <p className="font-medium">{sale.transferred_to_project}</p>
-                          <p className="text-xs text-muted-foreground">{sale.transferred_to_plot}</p>
-                        </div>
+                      {sale.outcome_type === 'transferred' && sale.transferred_to_project ? (
+                        (() => {
+                          const transferredClient = getTransferredClient(sale);
+                          return (
+                            <div className="space-y-1">
+                              <div className="text-sm">
+                                <p className="font-medium">{sale.transferred_to_project}</p>
+                                <p className="text-xs text-muted-foreground">{sale.transferred_to_plot}</p>
+                              </div>
+                              {transferredClient ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 text-xs gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                  onClick={() => handleViewClient(transferredClient.id)}
+                                >
+                                  <User className="w-3 h-3" />
+                                  View Client
+                                  <ExternalLink className="w-3 h-3" />
+                                </Button>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Client pending
+                                </Badge>
+                              )}
+                              {transferredClient && (
+                                <div className="text-xs text-muted-foreground">
+                                  <span className="text-green-600 font-medium">
+                                    Initial: {formatCurrency(transferredClient.total_paid)}
+                                  </span>
+                                  {transferredClient.balance > 0 && (
+                                    <span className="ml-2">
+                                      Bal: {formatCurrency(transferredClient.balance)}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
