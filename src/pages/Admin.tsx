@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AccountingDashboard } from '@/components/accounting/AccountingDashboard';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
+import { PaymentRequisitions } from '@/components/accounting/PaymentRequisitions';
 import { Client, Payment } from '@/types/client';
 import { getClients, getPayments, formatCurrency } from '@/lib/supabaseStorage';
-import { BarChart3, RefreshCw, TrendingUp, DollarSign, Users, Wallet } from 'lucide-react';
+import { BarChart3, RefreshCw, TrendingUp, DollarSign, Users, Wallet, FileCheck } from 'lucide-react';
 
 const Admin = () => {
   const { role } = useAuth();
@@ -125,6 +126,10 @@ const Admin = () => {
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Accounting</span>
             </TabsTrigger>
+            <TabsTrigger value="requisitions" className="flex items-center gap-2">
+              <FileCheck className="w-4 h-4" />
+              <span className="hidden sm:inline">Requisitions</span>
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
@@ -138,6 +143,15 @@ const Admin = () => {
               payments={payments}
               timeRange={timeRange}
               onTimeRangeChange={setTimeRange}
+            />
+          </TabsContent>
+
+          {/* Payment Requisitions Tab */}
+          <TabsContent value="requisitions">
+            <PaymentRequisitions 
+              payments={payments}
+              clients={clients}
+              onRefresh={loadAllData}
             />
           </TabsContent>
 

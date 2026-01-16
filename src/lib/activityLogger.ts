@@ -12,6 +12,7 @@ export type ActivityAction =
   | 'receipt_generated'
   | 'user_role_changed'
   | 'user_deleted'
+  | 'password_reset'
   | 'excel_import';
 
 export type EntityType = 'client' | 'payment' | 'user' | 'receipt';
@@ -76,6 +77,7 @@ export const getActionLabel = (action: ActivityAction): string => {
     receipt_generated: 'Generated receipt',
     user_role_changed: 'Changed user role',
     user_deleted: 'Deleted user',
+    password_reset: 'Reset password',
     excel_import: 'Imported from Excel',
   };
   return labels[action] || action;
