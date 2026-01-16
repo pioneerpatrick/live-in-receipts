@@ -20,7 +20,7 @@ import { logActivity, getActionLabel, ActivityAction } from '@/lib/activityLogge
 import { format } from 'date-fns';
 import { 
   Settings as SettingsIcon, Save, Loader2, Upload, X, Image, 
-  UserCog, Activity, Crown, UserMinus, Trash2, Search, Filter, RefreshCw, Building, Users, Calculator
+  UserCog, Activity, Crown, UserMinus, Trash2, Search, Filter, RefreshCw, Building, Users, Calculator, KeyRound
 } from 'lucide-react';
 import StatutoryRatesManager from '@/components/payroll/StatutoryRatesManager';
 
@@ -72,7 +72,11 @@ const Settings = () => {
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [passwordResetDialogOpen, setPasswordResetDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [newRole, setNewRole] = useState<'admin' | 'staff'>('staff');
   const [userStats, setUserStats] = useState({ total: 0, admins: 0, staff: 0 });
 
@@ -376,6 +380,53 @@ const Settings = () => {
       toast.error(error.message || 'Failed to delete user');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!selectedUser) return;
+    
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setResettingPassword(true);
+    try {
+      const response = await supabase.functions.invoke('reset-user-password', {
+        body: { userId: selectedUser.user_id, newPassword },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      await logActivity({
+        action: 'password_reset',
+        entityType: 'user',
+        entityId: selectedUser.user_id,
+        details: { user_name: selectedUser.full_name },
+      });
+
+      toast.success(`Password reset successfully for ${selectedUser.full_name}`);
+      setPasswordResetDialogOpen(false);
+      setSelectedUser(null);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast.error(error.message || 'Failed to reset password');
+    } finally {
+      setResettingPassword(false);
     }
   };
 
@@ -786,16 +837,31 @@ const Settings = () => {
                                     )}
                                   </Button>
                                   {user.user_id !== currentUser?.id && (
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => {
-                                        setSelectedUser(user);
-                                        setDeleteDialogOpen(true);
-                                      }}
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
+                                    <>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          setSelectedUser(user);
+                                          setNewPassword('');
+                                          setConfirmPassword('');
+                                          setPasswordResetDialogOpen(true);
+                                        }}
+                                        title="Reset Password"
+                                      >
+                                        <KeyRound className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => {
+                                          setSelectedUser(user);
+                                          setDeleteDialogOpen(true);
+                                        }}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </>
                                   )}
                                 </div>
                               </TableCell>
@@ -955,6 +1021,67 @@ const Settings = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Password Reset Dialog */}
+      <Dialog open={passwordResetDialogOpen} onOpenChange={setPasswordResetDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5" />
+              Reset Password
+            </DialogTitle>
+            <DialogDescription>
+              Set a new password for <span className="font-semibold">{selectedUser?.full_name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 6 characters)"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+              />
+            </div>
+            {newPassword && confirmPassword && newPassword !== confirmPassword && (
+              <p className="text-sm text-destructive">Passwords do not match</p>
+            )}
+            {newPassword && newPassword.length < 6 && (
+              <p className="text-sm text-destructive">Password must be at least 6 characters</p>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasswordResetDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePasswordReset}
+              disabled={resettingPassword || !newPassword || newPassword.length < 6 || newPassword !== confirmPassword}
+            >
+              {resettingPassword ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <KeyRound className="w-4 h-4 mr-2" />
+              )}
+              Reset Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
