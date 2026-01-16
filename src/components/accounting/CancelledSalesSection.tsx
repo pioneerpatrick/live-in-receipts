@@ -31,10 +31,12 @@ import {
 } from '@/components/ui/select';
 import { CancelledSale, CancelledSaleOutcome } from '@/types/cancelledSale';
 import { Expense } from '@/types/expense';
+import { Project, Plot } from '@/types/project';
 import { getCancelledSales, updateCancelledSale, deleteCancelledSale } from '@/lib/cancelledSalesStorage';
-import { formatCurrency } from '@/lib/supabaseStorage';
+import { formatCurrency, addClient } from '@/lib/supabaseStorage';
 import { addExpense, generateExpenseReference, getExpenses } from '@/lib/expenseStorage';
-import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2, FileText, ArrowRight, Trash2 } from 'lucide-react';
+import { getProjects, getPlots, sellPlot } from '@/lib/projectStorage';
+import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2, FileText, ArrowRight, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { CancelledSalesAuditReport } from './CancelledSalesAuditReport';
@@ -44,13 +46,19 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 export const CancelledSalesSection = () => {
   const [cancelledSales, setCancelledSales] = useState<CancelledSale[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [availablePlots, setAvailablePlots] = useState<Plot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPlots, setLoadingPlots] = useState(false);
+  const [transferring, setTransferring] = useState(false);
   const [activeTab, setActiveTab] = useState('manage');
   const [editingSale, setEditingSale] = useState<CancelledSale | null>(null);
   const [refundAmount, setRefundAmount] = useState('0');
   const [cancellationFee, setCancellationFee] = useState('0');
   const [refundStatus, setRefundStatus] = useState<CancelledSale['refund_status']>('pending');
   const [outcomeType, setOutcomeType] = useState<CancelledSaleOutcome>('pending');
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [selectedPlotId, setSelectedPlotId] = useState('');
   const [transferredProject, setTransferredProject] = useState('');
   const [transferredPlot, setTransferredPlot] = useState('');
   const [auditNotes, setAuditNotes] = useState('');
@@ -62,12 +70,14 @@ export const CancelledSalesSection = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [salesData, expensesData] = await Promise.all([
+      const [salesData, expensesData, projectsData] = await Promise.all([
         getCancelledSales(),
         getExpenses(),
+        getProjects(),
       ]);
       setCancelledSales(salesData);
       setExpenses(expensesData);
+      setProjects(projectsData);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load data');
@@ -76,9 +86,44 @@ export const CancelledSalesSection = () => {
     }
   };
 
+  // Fetch available plots when project is selected
+  const fetchAvailablePlots = async (projectId: string) => {
+    if (!projectId) {
+      setAvailablePlots([]);
+      return;
+    }
+    try {
+      setLoadingPlots(true);
+      const plots = await getPlots(projectId);
+      const available = plots.filter(p => p.status === 'available');
+      setAvailablePlots(available);
+    } catch (error) {
+      console.error('Error fetching plots:', error);
+      toast.error('Failed to load available plots');
+    } finally {
+      setLoadingPlots(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  // When project selection changes, fetch available plots
+  useEffect(() => {
+    if (selectedProjectId) {
+      fetchAvailablePlots(selectedProjectId);
+      const project = projects.find(p => p.id === selectedProjectId);
+      if (project) {
+        setTransferredProject(project.name);
+      }
+    } else {
+      setAvailablePlots([]);
+      setTransferredProject('');
+    }
+    setSelectedPlotId('');
+    setTransferredPlot('');
+  }, [selectedProjectId, projects]);
 
   const openEditDialog = (sale: CancelledSale) => {
     setEditingSale(sale);
@@ -86,12 +131,15 @@ export const CancelledSalesSection = () => {
     setCancellationFee(sale.cancellation_fee.toString());
     setRefundStatus(sale.refund_status);
     setOutcomeType(sale.outcome_type || 'pending');
+    setSelectedProjectId('');
+    setSelectedPlotId('');
     setTransferredProject(sale.transferred_to_project || '');
     setTransferredPlot(sale.transferred_to_plot || '');
     setAuditNotes(sale.audit_notes || '');
     setNotes(sale.notes || '');
     setCancellationDate(sale.cancellation_date ? sale.cancellation_date.split('T')[0] : '');
     setRefundDate(sale.processed_date ? sale.processed_date.split('T')[0] : '');
+    setAvailablePlots([]);
   };
 
   const handleUpdateRefund = async () => {
@@ -101,6 +149,9 @@ export const CancelledSalesSection = () => {
     const fee = parseFloat(cancellationFee) || 0;
     const netRefund = Math.max(0, refund - fee);
     const incomeRetained = editingSale.total_paid - netRefund;
+
+    // For transfer: calculate transferred amount (total paid minus any refund)
+    const transferredAmount = outcomeType === 'transferred' ? (editingSale.total_paid - netRefund) : 0;
 
     // Check if we need to create a new expense (status changed to completed/partial and net refund > 0)
     const wasNotRefunded = editingSale.refund_status === 'pending' || editingSale.refund_status === 'none';
@@ -112,10 +163,20 @@ export const CancelledSalesSection = () => {
     const additionalRefund = netRefund - previousNetRefund;
     const hasAdditionalRefund = additionalRefund > 0 && !wasNotRefunded && isNowRefunded;
 
+    // Validate transfer requirements
+    if (outcomeType === 'transferred') {
+      if (!selectedProjectId || !selectedPlotId) {
+        toast.error('Please select both a project and a plot for the transfer');
+        return;
+      }
+    }
+
     // Get current user for audit trail
     const { data: { user } } = await supabase.auth.getUser();
 
     try {
+      setTransferring(true);
+
       // Determine outcome type based on refund status if not explicitly set
       let finalOutcome = outcomeType;
       if (outcomeType === 'pending') {
@@ -124,12 +185,57 @@ export const CancelledSalesSection = () => {
         else if (refundStatus === 'none') finalOutcome = 'retained';
       }
 
+      let newClientId: string | null = null;
+
+      // If transferring, create new client entry with transferred amount as initial payment
+      if (outcomeType === 'transferred' && selectedProjectId && selectedPlotId) {
+        const selectedProject = projects.find(p => p.id === selectedProjectId);
+        const selectedPlot = availablePlots.find(p => p.id === selectedPlotId);
+
+        if (selectedProject && selectedPlot) {
+          // Create new client with the transferred amount as initial payment
+          const newClient = await addClient({
+            name: editingSale.client_name,
+            phone: editingSale.client_phone || '',
+            project_name: selectedProject.name,
+            plot_number: selectedPlot.plot_number,
+            unit_price: selectedPlot.price,
+            number_of_plots: 1,
+            total_price: selectedPlot.price,
+            discount: 0,
+            total_paid: transferredAmount,
+            balance: selectedPlot.price - transferredAmount,
+            sales_agent: '',
+            payment_type: 'installments',
+            payment_period: 'monthly',
+            installment_months: null,
+            initial_payment_method: 'Transfer',
+            completion_date: null,
+            next_payment_date: null,
+            notes: `Transferred from cancelled sale. Original project: ${editingSale.project_name}, Plot: ${editingSale.plot_number}. Transferred amount: ${formatCurrency(transferredAmount)}`,
+            status: 'ongoing',
+            sale_date: new Date().toISOString().split('T')[0],
+            commission: null,
+            commission_received: null,
+            commission_balance: null,
+          });
+
+          newClientId = newClient.id;
+
+          // Mark the plot as sold to the new client
+          await sellPlot(selectedPlotId, newClient.id);
+
+          toast.success(`Client transferred to ${selectedProject.name} - ${selectedPlot.plot_number} with ${formatCurrency(transferredAmount)} as initial payment`);
+        }
+      }
+
       await updateCancelledSale(editingSale.id, {
         refund_amount: refund,
         cancellation_fee: fee,
         net_refund: netRefund,
         refund_status: refundStatus,
         outcome_type: finalOutcome,
+        transferred_to_client_id: newClientId,
         transferred_to_project: outcomeType === 'transferred' ? transferredProject : null,
         transferred_to_plot: outcomeType === 'transferred' ? transferredPlot : null,
         audit_notes: auditNotes || null,
@@ -141,8 +247,8 @@ export const CancelledSalesSection = () => {
         notes: notes,
       });
 
-      // Create expense entry for refund
-      if (shouldCreateExpense || hasAdditionalRefund) {
+      // Create expense entry for refund - only if actually refunded (not for transfer without refund)
+      if ((shouldCreateExpense || hasAdditionalRefund) && outcomeType !== 'transferred') {
         const expenseAmount = shouldCreateExpense ? netRefund : additionalRefund;
         await addExpense({
           expense_date: new Date().toISOString(),
@@ -159,7 +265,7 @@ export const CancelledSalesSection = () => {
           created_by: null,
         });
         toast.success('Cancelled sale updated and refund expense recorded');
-      } else {
+      } else if (outcomeType !== 'transferred') {
         toast.success('Cancelled sale updated successfully');
       }
       
@@ -168,6 +274,8 @@ export const CancelledSalesSection = () => {
     } catch (error) {
       console.error('Error updating cancelled sale:', error);
       toast.error('Failed to update cancelled sale');
+    } finally {
+      setTransferring(false);
     }
   };
 
@@ -512,25 +620,93 @@ export const CancelledSalesSection = () => {
             </div>
 
             {outcomeType === 'transferred' && (
-              <div className="grid grid-cols-2 gap-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
-                <div className="space-y-2">
-                  <Label htmlFor="transferredProject">New Project</Label>
-                  <Input
-                    id="transferredProject"
-                    value={transferredProject}
-                    onChange={(e) => setTransferredProject(e.target.value)}
-                    placeholder="Enter project name"
-                  />
+              <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                  <ArrowRight className="w-4 h-4" />
+                  <span className="font-medium">Transfer to New Project</span>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="transferredPlot">New Plot Number</Label>
-                  <Input
-                    id="transferredPlot"
-                    value={transferredPlot}
-                    onChange={(e) => setTransferredPlot(e.target.value)}
-                    placeholder="Enter plot number"
-                  />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="selectProject">Select Project</Label>
+                    <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name} - {project.location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="selectPlot">Select Available Plot</Label>
+                    <Select 
+                      value={selectedPlotId} 
+                      onValueChange={(value) => {
+                        setSelectedPlotId(value);
+                        const plot = availablePlots.find(p => p.id === value);
+                        if (plot) {
+                          setTransferredPlot(plot.plot_number);
+                        }
+                      }}
+                      disabled={!selectedProjectId || loadingPlots}
+                    >
+                      <SelectTrigger>
+                        {loadingPlots ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Loading plots...
+                          </div>
+                        ) : (
+                          <SelectValue placeholder={selectedProjectId ? "Select a plot" : "Select project first"} />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availablePlots.length === 0 ? (
+                          <SelectItem value="none" disabled>No available plots</SelectItem>
+                        ) : (
+                          availablePlots.map((plot) => (
+                            <SelectItem key={plot.id} value={plot.id}>
+                              {plot.plot_number} - {plot.size} ({formatCurrency(plot.price)})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+
+                {/* Transfer Amount Summary */}
+                {selectedProjectId && selectedPlotId && (
+                  <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Amount Collected:</span>
+                        <p className="font-bold text-blue-600">{formatCurrency(editingSale?.total_paid || 0)}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Net Refund (if any):</span>
+                        <p className="font-bold text-orange-600">
+                          {formatCurrency(Math.max(0, (parseFloat(refundAmount) || 0) - (parseFloat(cancellationFee) || 0)))}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">New Plot Price:</span>
+                        <p className="font-bold">{formatCurrency(availablePlots.find(p => p.id === selectedPlotId)?.price || 0)}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Transfer as Initial Payment:</span>
+                        <p className="font-bold text-green-600">
+                          {formatCurrency((editingSale?.total_paid || 0) - Math.max(0, (parseFloat(refundAmount) || 0) - (parseFloat(cancellationFee) || 0)))}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -579,11 +755,20 @@ export const CancelledSalesSection = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingSale(null)}>
+            <Button variant="outline" onClick={() => setEditingSale(null)} disabled={transferring}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateRefund}>
-              Update Refund
+            <Button onClick={handleUpdateRefund} disabled={transferring}>
+              {transferring ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : outcomeType === 'transferred' ? (
+                'Transfer & Create Client'
+              ) : (
+                'Update Refund'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
