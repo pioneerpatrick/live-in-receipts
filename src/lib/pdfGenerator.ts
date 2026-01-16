@@ -211,12 +211,14 @@ export const generatePDFReceipt = async (receipt: ReceiptData): Promise<void> =>
     ['Previous Balance:', formatCurrency(receipt.previousBalance)],
     ['Amount Paid Now:', formatCurrency(receipt.currentPayment)],
     ['Payment Method:', receipt.paymentMethod],
+    ...(receipt.referenceNumber ? [['Reference Number:', receipt.referenceNumber]] : []),
     ['Total Paid to Date:', formatCurrency(receipt.totalPaid)],
     ['Remaining Balance:', formatCurrency(receipt.remainingBalance)],
   ];
   
   tableData.forEach((row, index) => {
-    const isHighlight = index === 4 || index === 7; // Amount Paid and Remaining Balance
+    const highlightIndices = [4, tableData.length - 1]; // Amount Paid and Remaining Balance
+    const isHighlight = highlightIndices.includes(index);
     
     if (index % 2 === 0) {
       doc.setFillColor(248, 250, 252);

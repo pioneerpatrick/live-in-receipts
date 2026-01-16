@@ -501,6 +501,7 @@ export type Database = {
           payment_method: string
           previous_balance: number
           receipt_number: string
+          reference_number: string | null
         }
         Insert: {
           agent_name?: string | null
@@ -516,6 +517,7 @@ export type Database = {
           payment_method?: string
           previous_balance?: number
           receipt_number: string
+          reference_number?: string | null
         }
         Update: {
           agent_name?: string | null
@@ -531,6 +533,7 @@ export type Database = {
           payment_method?: string
           previous_balance?: number
           receipt_number?: string
+          reference_number?: string | null
         }
         Relationships: [
           {

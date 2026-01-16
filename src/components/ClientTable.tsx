@@ -31,12 +31,9 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [showFilters, setShowFilters] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'completed'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'completed' | 'cancelled'>('all');
 
   const filteredClients = clients.filter(client => {
-    // Hide cancelled clients from active list
-    if (client.status?.toLowerCase() === 'cancelled') return false;
-
     // Text search filter - add null safety for optional fields
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
@@ -47,11 +44,15 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
 
     if (!matchesSearch) return false;
 
-    // Status filter
+    // Status filter - now includes cancelled
     if (statusFilter !== 'all') {
       const clientStatus = client.status?.toLowerCase() || 'ongoing';
       if (statusFilter === 'completed' && clientStatus !== 'completed') return false;
       if (statusFilter === 'ongoing' && clientStatus !== 'ongoing') return false;
+      if (statusFilter === 'cancelled' && clientStatus !== 'cancelled') return false;
+    } else {
+      // By default (status = 'all'), hide cancelled clients
+      if (client.status?.toLowerCase() === 'cancelled') return false;
     }
 
     // Date range filter
@@ -260,14 +261,15 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                   className="pl-10 w-full"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={(value: 'all' | 'ongoing' | 'completed') => setStatusFilter(value)}>
-                <SelectTrigger className="w-full sm:w-32">
+              <Select value={statusFilter} onValueChange={(value: 'all' | 'ongoing' | 'completed' | 'cancelled') => setStatusFilter(value)}>
+                <SelectTrigger className="w-full sm:w-36">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="all">Active Only</SelectItem>
                   <SelectItem value="ongoing">Ongoing</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -414,28 +416,33 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
               const paymentStatus = getPaymentStatus(client);
               const isOverdue = paymentStatus === 'overdue';
               const isDueToday = paymentStatus === 'due-today';
+              const isCancelled = client.status?.toLowerCase() === 'cancelled';
               
               return (
               <div 
                 key={client.id} 
                 className={cn(
                   "p-3 sm:p-4 transition-colors",
-                  isOverdue && "bg-destructive/5 border-l-4 border-l-destructive",
-                  isDueToday && "bg-orange-500/5 border-l-4 border-l-orange-500",
-                  !isOverdue && !isDueToday && "hover:bg-muted/30"
+                  isCancelled && "bg-red-500/10 border-l-4 border-l-red-500 opacity-75",
+                  !isCancelled && isOverdue && "bg-destructive/5 border-l-4 border-l-destructive",
+                  !isCancelled && isDueToday && "bg-orange-500/5 border-l-4 border-l-orange-500",
+                  !isCancelled && !isOverdue && !isDueToday && "hover:bg-muted/30"
                 )}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground truncate">{client.name}</p>
-                      {isOverdue && (
+                      <p className={cn("font-medium truncate", isCancelled ? "text-red-600 line-through" : "text-foreground")}>{client.name}</p>
+                      {isCancelled && (
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">Cancelled</Badge>
+                      )}
+                      {!isCancelled && isOverdue && (
                         <span className="flex items-center gap-1 text-[10px] text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
                           <AlertTriangle className="w-3 h-3" />
                           {getDaysOverdue(client)}d late
                         </span>
                       )}
-                      {isDueToday && (
+                      {!isCancelled && isDueToday && (
                         <span className="text-[10px] text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded-full">
                           Due today
                         </span>
@@ -443,7 +450,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                     </div>
                     <p className="text-xs text-muted-foreground">{client.phone}</p>
                   </div>
-                  <Badge variant={getBalanceStatus(client.balance, client.total_price) as any} className="flex-shrink-0 text-xs">
+                  <Badge variant={isCancelled ? "destructive" : getBalanceStatus(client.balance, client.total_price) as any} className="flex-shrink-0 text-xs">
                     {formatCurrency(client.balance)}
                   </Badge>
                 </div>
@@ -451,31 +458,31 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                 <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                   <div>
                     <span className="text-muted-foreground">Project: </span>
-                    <span className="text-foreground">{client.project_name}</span>
+                    <span className={isCancelled ? "text-red-600" : "text-foreground"}>{client.project_name}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Plot: </span>
-                    <span className="text-foreground">{client.plot_number}</span>
+                    <span className={isCancelled ? "text-red-600" : "text-foreground"}>{client.plot_number}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Paid: </span>
-                    <span className="text-primary font-medium">{formatCurrency(Number(client.total_paid) || 0)}</span>
+                    <span className={isCancelled ? "text-red-600 font-medium" : "text-primary font-medium"}>{formatCurrency(Number(client.total_paid) || 0)}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Progress: </span>
-                    <span className="text-foreground font-medium">{Math.min(100, Math.max(0, Number(client.percent_paid) || 0)).toFixed(1)}%</span>
+                    <span className={cn("font-medium", isCancelled ? "text-red-600" : "text-foreground")}>{Math.min(100, Math.max(0, Number(client.percent_paid) || 0)).toFixed(1)}%</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <CreditCard className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-foreground">{client.initial_payment_method || 'Cash'}</span>
+                    <span className={isCancelled ? "text-red-600" : "text-foreground"}>{client.initial_payment_method || 'Cash'}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-foreground">
+                    <span className={isCancelled ? "text-red-600" : "text-foreground"}>
                       {client.payment_type === 'cash' ? 'Full' : (client.installment_months ? `${client.installment_months}mo` : 'N/A')}
                     </span>
                   </div>
-                  {calculateMonthlyPayment(client) && (
+                  {!isCancelled && calculateMonthlyPayment(client) && (
                     <div className="col-span-2">
                       <span className="text-muted-foreground">Monthly: </span>
                       <span className="text-secondary font-medium">{formatCurrency(calculateMonthlyPayment(client)!)}/mo</span>
@@ -492,30 +499,34 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                   >
                     <History className="w-4 h-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onAddPayment(client)}
-                    className="h-8 px-2 hover:bg-primary/10 hover:text-primary"
-                  >
-                    <Receipt className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onEdit(client)}
-                    className="h-8 px-2 hover:bg-secondary/10 hover:text-secondary"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(client)}
-                    className="h-8 px-2 hover:bg-destructive/10 hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {!isCancelled && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onAddPayment(client)}
+                        className="h-8 px-2 hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Receipt className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(client)}
+                        className="h-8 px-2 hover:bg-secondary/10 hover:text-secondary"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDelete(client)}
+                        className="h-8 px-2 hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
               );
@@ -555,53 +566,58 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                 const paymentStatus = getPaymentStatus(client);
                 const isOverdue = paymentStatus === 'overdue';
                 const isDueToday = paymentStatus === 'due-today';
+                const isCancelled = client.status?.toLowerCase() === 'cancelled';
                 
                 return (
                 <TableRow 
                   key={client.id} 
                   className={cn(
                     "transition-colors",
-                    isOverdue && "bg-destructive/5 border-l-4 border-l-destructive",
-                    isDueToday && "bg-orange-500/5 border-l-4 border-l-orange-500",
-                    !isOverdue && !isDueToday && "hover:bg-muted/30"
+                    isCancelled && "bg-red-500/10 border-l-4 border-l-red-500 opacity-75",
+                    !isCancelled && isOverdue && "bg-destructive/5 border-l-4 border-l-destructive",
+                    !isCancelled && isDueToday && "bg-orange-500/5 border-l-4 border-l-orange-500",
+                    !isCancelled && !isOverdue && !isDueToday && "hover:bg-muted/30"
                   )}
                 >
                   <TableCell className="font-medium text-xs px-2">{index + 1}</TableCell>
                   <TableCell className="font-medium text-xs px-2">
                     <div className="flex flex-col">
-                      <span className="truncate">{client.name}</span>
-                      {isOverdue && (
+                      <span className={cn("truncate", isCancelled && "text-red-600 line-through")}>{client.name}</span>
+                      {isCancelled && (
+                        <Badge variant="destructive" className="text-[9px] px-1 w-fit mt-0.5">Cancelled</Badge>
+                      )}
+                      {!isCancelled && isOverdue && (
                         <span className="flex items-center gap-0.5 text-[9px] text-destructive whitespace-nowrap">
                           <AlertTriangle className="w-2.5 h-2.5" />
                           {getDaysOverdue(client)}d late
                         </span>
                       )}
-                      {isDueToday && (
+                      {!isCancelled && isDueToday && (
                         <span className="text-[9px] text-orange-600 whitespace-nowrap">
                           Due today
                         </span>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-xs px-2 hidden lg:table-cell truncate">{client.phone}</TableCell>
-                  <TableCell className="text-xs px-2 truncate">{client.project_name}</TableCell>
-                  <TableCell className="text-xs px-2">{client.plot_number}</TableCell>
-                  <TableCell className="text-right text-xs px-2 hidden xl:table-cell">{formatCurrency(client.total_price)}</TableCell>
-                  <TableCell className="text-right text-primary font-medium text-xs px-2">
+                  <TableCell className={cn("text-xs px-2 hidden lg:table-cell truncate", isCancelled && "text-red-600")}>{client.phone}</TableCell>
+                  <TableCell className={cn("text-xs px-2 truncate", isCancelled && "text-red-600")}>{client.project_name}</TableCell>
+                  <TableCell className={cn("text-xs px-2", isCancelled && "text-red-600")}>{client.plot_number}</TableCell>
+                  <TableCell className={cn("text-right text-xs px-2 hidden xl:table-cell", isCancelled && "text-red-600")}>{formatCurrency(client.total_price)}</TableCell>
+                  <TableCell className={cn("text-right font-medium text-xs px-2", isCancelled ? "text-red-600" : "text-primary")}>
                     {formatCurrency(Number(client.total_paid) || 0)}
                   </TableCell>
-                  <TableCell className="text-right font-medium text-xs px-2">
+                  <TableCell className={cn("text-right font-medium text-xs px-2", isCancelled && "text-red-600")}>
                     {Math.min(100, Math.max(0, Number(client.percent_paid) || 0)).toFixed(0)}%
                   </TableCell>
                   <TableCell className="text-right text-xs px-2">
-                    <Badge variant={getBalanceStatus(client.balance, client.total_price) as any} className="text-[10px] px-1.5">
+                    <Badge variant={isCancelled ? "destructive" : getBalanceStatus(client.balance, client.total_price) as any} className="text-[10px] px-1.5">
                       {formatCurrency(client.balance)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-xs px-2 hidden lg:table-cell truncate">{client.sales_agent}</TableCell>
+                  <TableCell className={cn("text-xs px-2 hidden lg:table-cell truncate", isCancelled && "text-red-600")}>{client.sales_agent}</TableCell>
                   <TableCell className="text-center text-xs px-2 hidden xl:table-cell">
-                    <Badge variant={client.payment_type === 'cash' ? 'default' : 'secondary'} className="text-[10px] px-1">
-                      {client.payment_type === 'cash' ? 'Full' : (client.installment_months ? `${client.installment_months}mo` : 'N/A')}
+                    <Badge variant={isCancelled ? "destructive" : client.payment_type === 'cash' ? 'default' : 'secondary'} className="text-[10px] px-1">
+                      {isCancelled ? 'Cancelled' : client.payment_type === 'cash' ? 'Full' : (client.installment_months ? `${client.installment_months}mo` : 'N/A')}
                     </Badge>
                   </TableCell>
                   <TableCell className="px-1">
@@ -615,33 +631,37 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                       >
                         <History className="w-3.5 h-3.5" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onAddPayment(client)}
-                        title="Add Payment / Generate Receipt"
-                        className="hover:bg-primary/10 hover:text-primary h-7 w-7"
-                      >
-                        <Receipt className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEdit(client)}
-                        title="Edit Client"
-                        className="hover:bg-secondary/10 hover:text-secondary h-7 w-7"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(client)}
-                        title="Delete Client"
-                        className="hover:bg-destructive/10 hover:text-destructive h-7 w-7"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                      {!isCancelled && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onAddPayment(client)}
+                            title="Add Payment / Generate Receipt"
+                            className="hover:bg-primary/10 hover:text-primary h-7 w-7"
+                          >
+                            <Receipt className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onEdit(client)}
+                            title="Edit Client"
+                            className="hover:bg-secondary/10 hover:text-secondary h-7 w-7"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onDelete(client)}
+                            title="Delete Client"
+                            className="hover:bg-destructive/10 hover:text-destructive h-7 w-7"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

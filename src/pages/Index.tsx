@@ -232,6 +232,7 @@ const Index = () => {
         new_balance: newBalance,
         receipt_number: receiptData.receiptNumber,
         agent_name: data.agentName,
+        reference_number: data.referenceNumber || null,
       });
 
       await logActivity({
