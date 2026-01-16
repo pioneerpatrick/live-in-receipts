@@ -10,6 +10,7 @@ import { Client } from '@/types/client';
 import { formatCurrency } from '@/lib/supabaseStorage';
 import { Printer, Search, Users, Filter } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface MasterClientTableProps {
   clients: Client[];
@@ -229,41 +230,49 @@ export const MasterClientTable = ({ clients }: MasterClientTableProps) => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredClients.map((client, index) => (
-                    <TableRow key={client.id} className={client.status === 'cancelled' ? 'opacity-60' : ''}>
-                      <TableCell className="text-muted-foreground text-xs">{index + 1}</TableCell>
+                  filteredClients.map((client, index) => {
+                    const isCancelled = client.status === 'cancelled';
+                    return (
+                    <TableRow 
+                      key={client.id} 
+                      className={cn(
+                        isCancelled && "bg-red-500/10 border-l-4 border-l-red-500"
+                      )}
+                    >
+                      <TableCell className={cn("text-muted-foreground text-xs", isCancelled && "text-red-600")}>{index + 1}</TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-sm">{client.name}</p>
-                          <p className="text-xs text-muted-foreground">{client.phone || '-'}</p>
+                          <p className={cn("font-medium text-sm", isCancelled && "text-red-600 line-through")}>{client.name}</p>
+                          <p className={cn("text-xs text-muted-foreground", isCancelled && "text-red-500")}>{client.phone || '-'}</p>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-sm">{client.project_name}</p>
-                          <p className="text-xs text-muted-foreground">Plot: {client.plot_number}</p>
+                          <p className={cn("font-medium text-sm", isCancelled && "text-red-600")}>{client.project_name}</p>
+                          <p className={cn("text-xs text-muted-foreground", isCancelled && "text-red-500")}>Plot: {client.plot_number}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-medium text-sm">
+                      <TableCell className={cn("text-right font-medium text-sm", isCancelled && "text-red-600")}>
                         {formatCurrency(client.total_price - client.discount)}
                       </TableCell>
-                      <TableCell className="text-right text-sm text-green-600">
+                      <TableCell className={cn("text-right text-sm", isCancelled ? "text-red-600" : "text-green-600")}>
                         {formatCurrency(client.total_paid)}
                       </TableCell>
-                      <TableCell className="text-right text-sm text-amber-600">
+                      <TableCell className={cn("text-right text-sm", isCancelled ? "text-red-600" : "text-amber-600")}>
                         {formatCurrency(client.balance)}
                       </TableCell>
-                      <TableCell className="text-right text-sm">
+                      <TableCell className={cn("text-right text-sm", isCancelled && "text-red-600")}>
                         {(client.percent_paid ?? 0).toFixed(1)}%
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(client.status, client.balance)}
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
+                      <TableCell className={cn("hidden lg:table-cell text-xs text-muted-foreground", isCancelled && "text-red-500")}>
                         {client.sales_agent || '-'}
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

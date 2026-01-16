@@ -42,6 +42,7 @@ export interface Payment {
   agent_name: string;
   authorized_by?: string;
   notes?: string;
+  reference_number?: string;
   created_by?: string;
   created_at: string;
 }
@@ -65,6 +66,7 @@ export interface ReceiptData {
   agentName: string;
   authorizedBy?: string;
   paymentType?: string;
+  referenceNumber?: string;
 }
 
 export interface UserProfile {

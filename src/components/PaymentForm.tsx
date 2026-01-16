@@ -17,6 +17,7 @@ const paymentSchema = z.object({
   amount: z.coerce.number().min(1, 'Payment amount must be greater than 0'),
   paymentDate: z.date({ required_error: 'Payment date is required' }),
   paymentMethod: z.enum(['Cash', 'Bank Transfer', 'M-Pesa', 'Cheque']),
+  referenceNumber: z.string().optional(),
   agentName: z.string().min(1, 'Agent name is required'),
   projectName: z.string().min(1, 'Project name is required'),
   authorizedBy: z.string().optional(),
@@ -42,6 +43,7 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
       amount: 0,
       paymentDate: new Date(),
       paymentMethod: 'M-Pesa',
+      referenceNumber: '',
       agentName: client?.sales_agent || '',
       projectName: client?.project_name || '',
       authorizedBy: '',
@@ -86,6 +88,7 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
       totalPaid: newTotalPaid,
       agentName: data.agentName,
       authorizedBy: data.authorizedBy,
+      referenceNumber: data.referenceNumber,
     };
 
     setReceiptData(receipt);
@@ -269,18 +272,32 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
 
                 <FormField
                   control={form.control}
-                  name="authorizedBy"
+                  name="referenceNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Authorized By (Optional)</FormLabel>
+                      <FormLabel>Reference Number (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Manager name" {...field} />
+                        <Input placeholder="M-Pesa/Bank ref" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="authorizedBy"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Authorized By (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Manager name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
 
               <div className="bg-accent/30 rounded-lg p-3 sm:p-4 mt-3 sm:mt-4">
@@ -354,6 +371,12 @@ const PaymentForm = ({ open, onClose, client, onSubmit, onGeneratePDF }: Payment
                   <span className="font-bold text-primary">{formatCurrency(receiptData.currentPayment)}</span>
                   <span className="text-muted-foreground">Payment Method:</span>
                   <span>{receiptData.paymentMethod}</span>
+                  {receiptData.referenceNumber && (
+                    <>
+                      <span className="text-muted-foreground">Reference No:</span>
+                      <span className="font-mono">{receiptData.referenceNumber}</span>
+                    </>
+                  )}
                   <span className="text-muted-foreground">Total Paid to Date:</span>
                   <span>{formatCurrency(receiptData.totalPaid)}</span>
                   <span className="text-muted-foreground">Remaining Balance:</span>
