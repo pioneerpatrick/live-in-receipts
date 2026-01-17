@@ -36,7 +36,7 @@ import { getCancelledSales, updateCancelledSale, deleteCancelledSale } from '@/l
 import { formatCurrency, addClient } from '@/lib/supabaseStorage';
 import { addExpense, generateExpenseReference, getExpenses } from '@/lib/expenseStorage';
 import { getProjects, getPlots, sellPlot } from '@/lib/projectStorage';
-import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2, FileText, ArrowRight, Trash2, Loader2 } from 'lucide-react';
+import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2, FileText, ArrowRight, Trash2, Loader2, Search as SearchIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { CancelledSalesAuditReport } from './CancelledSalesAuditReport';
@@ -66,6 +66,7 @@ export const CancelledSalesSection = () => {
   const [cancellationDate, setCancellationDate] = useState('');
   const [refundDate, setRefundDate] = useState('');
   const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchData = async () => {
     try {
@@ -313,6 +314,20 @@ export const CancelledSalesSection = () => {
     };
   }, [cancelledSales]);
 
+  // Filter cancelled sales based on search query
+  const filteredCancelledSales = useMemo(() => {
+    if (!searchQuery.trim()) return cancelledSales;
+    const query = searchQuery.toLowerCase();
+    return cancelledSales.filter(sale =>
+      sale.client_name.toLowerCase().includes(query) ||
+      sale.client_phone?.toLowerCase().includes(query) ||
+      sale.project_name.toLowerCase().includes(query) ||
+      sale.plot_number.toLowerCase().includes(query) ||
+      sale.refund_status?.toLowerCase().includes(query) ||
+      sale.outcome_type?.toLowerCase().includes(query)
+    );
+  }, [cancelledSales, searchQuery]);
+
   const getStatusBadge = (status: CancelledSale['refund_status']) => {
     switch (status) {
       case 'completed':
@@ -425,15 +440,30 @@ export const CancelledSalesSection = () => {
           {/* Cancelled Sales Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <XCircle className="w-5 h-5 text-red-500" />
-                Cancelled Sales Details
-              </CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  Cancelled Sales Details
+                </CardTitle>
+                <div className="relative w-full sm:w-64">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, phone, project..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {cancelledSales.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
                   No cancelled sales recorded
+                </div>
+              ) : filteredCancelledSales.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  No results found for "{searchQuery}"
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -453,7 +483,7 @@ export const CancelledSalesSection = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {cancelledSales.map((sale) => (
+                      {filteredCancelledSales.map((sale) => (
                         <TableRow key={sale.id}>
                           <TableCell>
                             <div>
