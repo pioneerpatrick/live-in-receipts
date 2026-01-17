@@ -41,6 +41,11 @@ const ClientPaymentHistory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Scroll to top when component mounts to ensure page is fully visible
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
       if (!clientId) {
