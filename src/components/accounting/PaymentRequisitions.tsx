@@ -328,7 +328,41 @@ export const PaymentRequisitions = ({ payments, clients, onRefresh }: PaymentReq
               No payments found matching your filters
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-2 px-4">
+                {filteredPayments.map((payment) => (
+                  <div key={payment.id} className={`rounded-lg p-3 space-y-2 ${payment.isReconciled ? 'bg-green-50 dark:bg-green-950/30' : 'bg-muted/30'}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm">{payment.clientName}</p>
+                        <p className="text-xs text-muted-foreground">{payment.projectName}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary text-sm">{formatCurrency(payment.amount)}</p>
+                        <Badge variant="secondary" className="text-xs">{payment.payment_method}</Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-border/50">
+                      <div className="space-y-1">
+                        <p className="font-mono text-muted-foreground">{payment.receipt_number}</p>
+                        <p>{format(new Date(payment.payment_date), 'dd/MM/yyyy')}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={payment.isReconciled} onCheckedChange={() => toggleReconciled(payment.id)} />
+                        {payment.isReconciled ? (
+                          <Badge className="bg-green-500/20 text-green-700 border-green-300 text-xs">Reconciled</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">Pending</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block px-4 sm:px-0">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -394,6 +428,7 @@ export const PaymentRequisitions = ({ payments, clients, onRefresh }: PaymentReq
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
           )}
         </CardContent>

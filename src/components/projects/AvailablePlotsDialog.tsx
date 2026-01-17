@@ -671,9 +671,9 @@ export function AvailablePlotsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] flex flex-col overflow-hidden mx-2 sm:mx-auto">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle>{getDialogTitle()}</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">{getDialogTitle()}</DialogTitle>
           </DialogHeader>
 
           <ScrollArea className="flex-1 min-h-0 max-h-[55vh] [&>[data-radix-scroll-area-viewport]]:max-h-[55vh]">
@@ -686,75 +686,115 @@ export function AvailablePlotsDialog({
                 No {statusFilter !== 'all' ? statusFilter : ''} plots found in this project.
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Plot Number</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Status</TableHead>
-                    {(statusFilter === 'sold' || statusFilter === 'reserved' || statusFilter === 'all') && (
-                      <TableHead>Client</TableHead>
-                    )}
-                    {isAdmin && (statusFilter === 'sold' || statusFilter === 'reserved' || statusFilter === 'all') && (
-                      <TableHead className="text-right">Actions</TableHead>
-                    )}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Mobile Card View */}
+                <div className="block md:hidden space-y-2 p-2">
                   {plots.map((plot) => (
-                    <TableRow key={plot.id}>
-                      <TableCell className="font-medium">{plot.plot_number}</TableCell>
-                      <TableCell>{plot.size}</TableCell>
-                      <TableCell>{formatCurrency(plot.price)}</TableCell>
-                      <TableCell>{getStatusBadge(plot.status)}</TableCell>
-                      {(statusFilter === 'sold' || statusFilter === 'reserved' || statusFilter === 'all') && (
-                        <TableCell>
-                          {plot.client ? (
-                            <div>
-                              <p className="font-medium text-sm">{plot.client.name}</p>
-                              {plot.client.phone && (
-                                <p className="text-xs text-muted-foreground">{plot.client.phone}</p>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
+                    <div key={plot.id} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm">{plot.plot_number}</p>
+                          <p className="text-xs text-muted-foreground">{plot.size}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-sm text-primary">{formatCurrency(plot.price)}</p>
+                          {getStatusBadge(plot.status)}
+                        </div>
+                      </div>
+                      {plot.client && (
+                        <div className="pt-2 border-t border-border/50">
+                          <p className="text-sm font-medium">{plot.client.name}</p>
+                          <p className="text-xs text-muted-foreground">{plot.client.phone}</p>
+                        </div>
                       )}
-                      {isAdmin && (statusFilter === 'sold' || statusFilter === 'reserved' || statusFilter === 'all') && (
-                        <TableCell className="text-right">
-                          {(plot.status === 'sold' || plot.status === 'reserved') && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => openReturnDialog(plot)}
-                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                            >
-                              <RotateCcw className="h-4 w-4 mr-1" />
-                              Cancel Sale
-                            </Button>
-                          )}
-                        </TableCell>
+                      {isAdmin && (plot.status === 'sold' || plot.status === 'reserved') && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openReturnDialog(plot)}
+                          className="w-full text-orange-600 hover:text-orange-700 hover:bg-orange-50 mt-2"
+                        >
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          Cancel Sale
+                        </Button>
                       )}
-                    </TableRow>
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Plot Number</TableHead>
+                        <TableHead>Size</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Status</TableHead>
+                        {(statusFilter === 'sold' || statusFilter === 'reserved' || statusFilter === 'all') && (
+                          <TableHead>Client</TableHead>
+                        )}
+                        {isAdmin && (statusFilter === 'sold' || statusFilter === 'reserved' || statusFilter === 'all') && (
+                          <TableHead className="text-right">Actions</TableHead>
+                        )}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {plots.map((plot) => (
+                        <TableRow key={plot.id}>
+                          <TableCell className="font-medium">{plot.plot_number}</TableCell>
+                          <TableCell>{plot.size}</TableCell>
+                          <TableCell>{formatCurrency(plot.price)}</TableCell>
+                          <TableCell>{getStatusBadge(plot.status)}</TableCell>
+                          {(statusFilter === 'sold' || statusFilter === 'reserved' || statusFilter === 'all') && (
+                            <TableCell>
+                              {plot.client ? (
+                                <div>
+                                  <p className="font-medium text-sm">{plot.client.name}</p>
+                                  {plot.client.phone && (
+                                    <p className="text-xs text-muted-foreground">{plot.client.phone}</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                          )}
+                          {isAdmin && (statusFilter === 'sold' || statusFilter === 'reserved' || statusFilter === 'all') && (
+                            <TableCell className="text-right">
+                              {(plot.status === 'sold' || plot.status === 'reserved') && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => openReturnDialog(plot)}
+                                  className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                >
+                                  <RotateCcw className="h-4 w-4 mr-1" />
+                                  Cancel Sale
+                                </Button>
+                              )}
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </ScrollArea>
 
-          <div className="flex items-center justify-between pt-2 border-t">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 border-t">
             <div className="text-sm text-muted-foreground">
               Total: {plots.length} plot{plots.length !== 1 ? 's' : ''}
             </div>
             {plots.length > 0 && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={exportToExcel}
-                  className="text-green-700 hover:text-green-800 hover:bg-green-50"
+                  className="flex-1 sm:flex-none text-green-700 hover:text-green-800 hover:bg-green-50"
                 >
                   <FileSpreadsheet className="h-4 w-4 mr-1" />
                   Excel
@@ -763,7 +803,7 @@ export function AvailablePlotsDialog({
                   variant="outline"
                   size="sm"
                   onClick={exportToPDF}
-                  className="text-red-700 hover:text-red-800 hover:bg-red-50"
+                  className="flex-1 sm:flex-none text-red-700 hover:text-red-800 hover:bg-red-50"
                 >
                   <FileText className="h-4 w-4 mr-1" />
                   PDF
@@ -776,7 +816,7 @@ export function AvailablePlotsDialog({
 
       {/* Cancellation / Transfer Dialog */}
       <Dialog open={!!returnPlot} onOpenChange={() => setReturnPlot(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogContent className="w-[95vw] max-w-lg max-h-[85vh] flex flex-col overflow-hidden mx-2 sm:mx-auto">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Cancel Sale / Transfer Plot</DialogTitle>
             <DialogDescription>

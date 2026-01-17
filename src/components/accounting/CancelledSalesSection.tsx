@@ -466,79 +466,131 @@ export const CancelledSalesSection = () => {
                   No results found for "{searchQuery}"
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Project/Plot</TableHead>
-                        <TableHead>Cancel Date</TableHead>
-                        <TableHead>Refund Date</TableHead>
-                        <TableHead className="text-right">Was Collected</TableHead>
-                        <TableHead className="text-right">Net Refund</TableHead>
-                        <TableHead className="text-right">Retained</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Outcome</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredCancelledSales.map((sale) => (
-                        <TableRow key={sale.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{sale.client_name}</p>
-                              <p className="text-xs text-muted-foreground">{sale.client_phone}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{sale.project_name}</p>
-                              <p className="text-xs text-muted-foreground">{sale.plot_number}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {format(new Date(sale.cancellation_date), 'dd/MM/yyyy')}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {sale.processed_date ? format(new Date(sale.processed_date), 'dd/MM/yyyy') : '-'}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(sale.total_paid)}
-                          </TableCell>
-                          <TableCell className="text-right text-orange-600">
-                            {formatCurrency(sale.net_refund)}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold text-green-600">
-                            {formatCurrency(sale.total_paid - sale.net_refund)}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(sale.refund_status)}</TableCell>
-                          <TableCell>{getOutcomeBadge(sale.outcome_type || 'pending')}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openEditDialog(sale)}
-                                title="Edit refund status"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setDeletingSaleId(sale.id)}
-                                title="Delete cancelled sale record"
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                  {/* Mobile Card View */}
+                  <div className="block md:hidden space-y-2 px-4">
+                    {filteredCancelledSales.map((sale) => (
+                      <div key={sale.id} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm">{sale.client_name}</p>
+                            <p className="text-xs text-muted-foreground">{sale.client_phone}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            {getStatusBadge(sale.refund_status)}
+                            {getOutcomeBadge(sale.outcome_type || 'pending')}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-border/50">
+                          <div>
+                            <p className="text-muted-foreground">Project/Plot</p>
+                            <p className="font-medium">{sale.project_name} - {sale.plot_number}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Cancel Date</p>
+                            <p className="font-medium">{format(new Date(sale.cancellation_date), 'dd/MM/yyyy')}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Was Collected</p>
+                            <p className="font-medium">{formatCurrency(sale.total_paid)}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Net Refund</p>
+                            <p className="font-medium text-orange-600">{formatCurrency(sale.net_refund)}</p>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-1 pt-2 border-t border-border/50">
+                          <Button variant="ghost" size="sm" onClick={() => openEditDialog(sale)}>
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setDeletingSaleId(sale.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block px-4 sm:px-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Client</TableHead>
+                          <TableHead>Project/Plot</TableHead>
+                          <TableHead>Cancel Date</TableHead>
+                          <TableHead>Refund Date</TableHead>
+                          <TableHead className="text-right">Was Collected</TableHead>
+                          <TableHead className="text-right">Net Refund</TableHead>
+                          <TableHead className="text-right">Retained</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Outcome</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredCancelledSales.map((sale) => (
+                          <TableRow key={sale.id}>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{sale.client_name}</p>
+                                <p className="text-xs text-muted-foreground">{sale.client_phone}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{sale.project_name}</p>
+                                <p className="text-xs text-muted-foreground">{sale.plot_number}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {format(new Date(sale.cancellation_date), 'dd/MM/yyyy')}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {sale.processed_date ? format(new Date(sale.processed_date), 'dd/MM/yyyy') : '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(sale.total_paid)}
+                            </TableCell>
+                            <TableCell className="text-right text-orange-600">
+                              {formatCurrency(sale.net_refund)}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-green-600">
+                              {formatCurrency(sale.total_paid - sale.net_refund)}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(sale.refund_status)}</TableCell>
+                            <TableCell>{getOutcomeBadge(sale.outcome_type || 'pending')}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditDialog(sale)}
+                                  title="Edit refund status"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setDeletingSaleId(sale.id)}
+                                  title="Delete cancelled sale record"
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -555,7 +607,7 @@ export const CancelledSalesSection = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingSale} onOpenChange={(open) => !open && setEditingSale(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
           <DialogHeader className="sticky top-0 bg-background pb-4 border-b">
             <DialogTitle>Update Refund Details</DialogTitle>
             <DialogDescription>
@@ -564,7 +616,7 @@ export const CancelledSalesSection = () => {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Amount Collected</Label>
                 <p className="text-lg font-bold text-blue-600">
@@ -579,7 +631,7 @@ export const CancelledSalesSection = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="refundAmount">Refund Amount</Label>
                 <Input
