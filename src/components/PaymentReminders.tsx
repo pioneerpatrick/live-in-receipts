@@ -83,7 +83,8 @@ const openWhatsApp = (client: Client, e: React.MouseEvent) => {
   }
   
   const message = generateWhatsAppMessage(client);
-  const whatsappUrl = `https://wa.me/${phone}?text=${message}`;
+  // Use WhatsApp Web directly to avoid api.whatsapp.com blocking
+  const whatsappUrl = `https://web.whatsapp.com/send?phone=${phone}&text=${message}`;
   
   window.open(whatsappUrl, '_blank');
 };
