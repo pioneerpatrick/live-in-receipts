@@ -100,26 +100,28 @@ export function EmployeeList({ onAddEmployee, onEditEmployee }: EmployeeListProp
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Users className="h-5 w-5" />
-              Employees ({activeCount} active / {employees.length} total)
+              <span className="hidden xs:inline">Employees ({activeCount} active / {employees.length} total)</span>
+              <span className="xs:hidden">Employees ({activeCount}/{employees.length})</span>
             </CardTitle>
           </div>
-          <div className="flex gap-2">
-            <div className="relative">
+          <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 xs:flex-none">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search employees..."
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-64"
+                className="pl-9 w-full xs:w-48"
               />
             </div>
-            <Button onClick={onAddEmployee}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Employee
+            <Button onClick={onAddEmployee} className="w-full xs:w-auto">
+              <Plus className="h-4 w-4 mr-1" />
+              <span className="hidden xs:inline">Add Employee</span>
+              <span className="xs:hidden">Add</span>
             </Button>
           </div>
         </div>
@@ -130,80 +132,124 @@ export function EmployeeList({ onAddEmployee, onEditEmployee }: EmployeeListProp
             {searchTerm ? "No employees found matching your search" : "No employees yet. Add your first employee to get started."}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Job Title</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Basic Salary</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-10"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees.map((employee) => (
-                  <TableRow key={employee.id} className={!employee.is_active ? "opacity-50" : ""}>
-                    <TableCell className="font-mono text-sm">{employee.employee_id}</TableCell>
-                    <TableCell className="font-medium">{employee.full_name}</TableCell>
-                    <TableCell>{employee.job_title}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize">
-                        {employee.employment_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatKES(employee.basic_salary)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={employee.is_active ? "default" : "secondary"}>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            {/* Mobile Card View */}
+            <div className="block md:hidden space-y-2 px-4">
+              {filteredEmployees.map((employee) => (
+                <div key={employee.id} className={`bg-muted/30 rounded-lg p-3 space-y-2 ${!employee.is_active ? "opacity-50" : ""}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{employee.full_name}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{employee.employee_id}</p>
+                      <p className="text-sm text-muted-foreground">{employee.job_title}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono text-sm">{formatKES(employee.basic_salary)}</p>
+                      <Badge variant={employee.is_active ? "default" : "secondary"} className="mt-1">
                         {employee.is_active ? "Active" : "Inactive"}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEditEmployee(employee)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleActive(employee)}>
-                            {employee.is_active ? (
-                              <>
-                                <UserX className="h-4 w-4 mr-2" />
-                                Deactivate
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Activate
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => {
-                              setEmployeeToDelete(employee);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-1 pt-2 border-t border-border/50">
+                    <Button variant="ghost" size="sm" onClick={() => onEditEmployee(employee)}>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleToggleActive(employee)}>
+                      {employee.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-destructive"
+                      onClick={() => {
+                        setEmployeeToDelete(employee);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block px-4 sm:px-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Job Title</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Basic Salary</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredEmployees.map((employee) => (
+                    <TableRow key={employee.id} className={!employee.is_active ? "opacity-50" : ""}>
+                      <TableCell className="font-mono text-sm">{employee.employee_id}</TableCell>
+                      <TableCell className="font-medium">{employee.full_name}</TableCell>
+                      <TableCell>{employee.job_title}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {employee.employment_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatKES(employee.basic_salary)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={employee.is_active ? "default" : "secondary"}>
+                          {employee.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onEditEmployee(employee)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleToggleActive(employee)}>
+                              {employee.is_active ? (
+                                <>
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Deactivate
+                                </>
+                              ) : (
+                                <>
+                                  <UserCheck className="h-4 w-4 mr-2" />
+                                  Activate
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => {
+                                setEmployeeToDelete(employee);
+                                setDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
       </CardContent>

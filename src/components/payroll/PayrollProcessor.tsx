@@ -172,15 +172,15 @@ export function PayrollProcessor() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex flex-wrap gap-4">
               <div>
                 <Label>Month</Label>
                 <Select
                   value={selectedMonth.toString()}
                   onValueChange={(v) => setSelectedMonth(parseInt(v))}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-32 sm:w-40">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -198,7 +198,7 @@ export function PayrollProcessor() {
                   value={selectedYear.toString()}
                   onValueChange={(v) => setSelectedYear(parseInt(v))}
                 >
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-24 sm:w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -211,8 +211,8 @@ export function PayrollProcessor() {
                 </Select>
               </div>
             </div>
-            <div className="md:ml-auto flex items-end">
-              <Button onClick={runPayroll} disabled={processing || employees.length === 0}>
+            <div className="sm:ml-auto flex items-end">
+              <Button onClick={runPayroll} disabled={processing || employees.length === 0} className="w-full sm:w-auto">
                 <Play className="h-4 w-4 mr-2" />
                 {processing ? "Processing..." : "Run Payroll"}
               </Button>
@@ -224,73 +224,124 @@ export function PayrollProcessor() {
               No active employees found. Add employees first to run payroll.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead className="text-right">Gross Pay</TableHead>
-                    <TableHead className="text-right">PAYE</TableHead>
-                    <TableHead className="text-right">NSSF</TableHead>
-                    <TableHead className="text-right">SHA</TableHead>
-                    <TableHead className="text-right">Housing Levy</TableHead>
-                    <TableHead className="text-right">Other</TableHead>
-                    <TableHead className="text-right">Net Pay</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {employees.map((emp) => {
-                    const result = payrollResults.get(emp.id);
-                    if (!result) return null;
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              {/* Mobile Card View */}
+              <div className="block lg:hidden space-y-2 px-4">
+                {employees.map((emp) => {
+                  const result = payrollResults.get(emp.id);
+                  if (!result) return null;
 
-                    return (
-                      <TableRow key={emp.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{emp.full_name}</div>
-                            <div className="text-sm text-muted-foreground">{emp.employee_id}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatKES(result.grossPay)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-destructive">
-                          {formatKES(result.paye)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatKES(result.nssfEmployee)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatKES(result.shaDeduction)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatKES(result.housingLevyEmployee)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatKES(result.breakdown.deductions.otherDeductions)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono font-bold text-primary">
-                          {formatKES(result.netPay)}
-                        </TableCell>
-                        <TableCell>
-                          {result.hasExisting ? (
-                            <Badge variant="secondary" className="flex items-center gap-1 w-fit">
-                              <CheckCircle className="h-3 w-3" />
-                              Processed
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="flex items-center gap-1 w-fit">
-                              <AlertCircle className="h-3 w-3" />
-                              Pending
-                            </Badge>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                  return (
+                    <div key={emp.id} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium">{emp.full_name}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{emp.employee_id}</p>
+                        </div>
+                        {result.hasExisting ? (
+                          <Badge variant="secondary" className="flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Done
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-border/50">
+                        <div>
+                          <p className="text-muted-foreground">Gross Pay</p>
+                          <p className="font-mono">{formatKES(result.grossPay)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Net Pay</p>
+                          <p className="font-mono font-bold text-primary">{formatKES(result.netPay)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">PAYE</p>
+                          <p className="font-mono text-destructive">{formatKES(result.paye)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Deductions</p>
+                          <p className="font-mono">{formatKES(result.totalDeductions)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden lg:block px-4 sm:px-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employee</TableHead>
+                      <TableHead className="text-right">Gross Pay</TableHead>
+                      <TableHead className="text-right">PAYE</TableHead>
+                      <TableHead className="text-right">NSSF</TableHead>
+                      <TableHead className="text-right">SHA</TableHead>
+                      <TableHead className="text-right">Housing Levy</TableHead>
+                      <TableHead className="text-right">Other</TableHead>
+                      <TableHead className="text-right">Net Pay</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employees.map((emp) => {
+                      const result = payrollResults.get(emp.id);
+                      if (!result) return null;
+
+                      return (
+                        <TableRow key={emp.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{emp.full_name}</div>
+                              <div className="text-sm text-muted-foreground">{emp.employee_id}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {formatKES(result.grossPay)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-destructive">
+                            {formatKES(result.paye)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {formatKES(result.nssfEmployee)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {formatKES(result.shaDeduction)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {formatKES(result.housingLevyEmployee)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {formatKES(result.breakdown.deductions.otherDeductions)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-bold text-primary">
+                            {formatKES(result.netPay)}
+                          </TableCell>
+                          <TableCell>
+                            {result.hasExisting ? (
+                              <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                                <CheckCircle className="h-3 w-3" />
+                                Processed
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                                <AlertCircle className="h-3 w-3" />
+                                Pending
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>

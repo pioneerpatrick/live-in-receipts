@@ -274,7 +274,7 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh]">
+      <DialogContent className="w-[95vw] max-w-5xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5" />
@@ -288,12 +288,12 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
         {!file ? (
           <div className="space-y-4">
             <div 
-              className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-12 text-center hover:border-primary/50 transition-colors cursor-pointer"
+              className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 sm:p-12 text-center hover:border-primary/50 transition-colors cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
             >
-              <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">Drop your Excel file here</p>
-              <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
+              <Upload className="h-8 w-8 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-base sm:text-lg font-medium mb-2">Drop your Excel file here</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-4">or click to browse</p>
               <Button variant="secondary">
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                 Select Excel File
@@ -331,7 +331,7 @@ export const ExcelUploadDialog = ({ open, onClose, onImportComplete }: ExcelUplo
             </div>
 
             {/* Column Mapping Status */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="flex items-center gap-2 mb-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />
