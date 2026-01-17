@@ -305,8 +305,8 @@ export function ProjectsManager() {
           {selectedProject ? (
             // Plot management view
             <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" onClick={() => setSelectedProject(null)}>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <Button variant="ghost" onClick={() => setSelectedProject(null)} className="w-fit">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Projects
                 </Button>
@@ -314,10 +314,10 @@ export function ProjectsManager() {
 
               <Card>
                 <CardHeader>
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div>
-                      <CardTitle className="text-xl">{selectedProject.name}</CardTitle>
-                      <p className="text-muted-foreground flex items-center gap-1 mt-1">
+                      <CardTitle className="text-lg sm:text-xl">{selectedProject.name}</CardTitle>
+                      <p className="text-muted-foreground flex items-center gap-1 mt-1 text-sm">
                         <MapPin className="h-4 w-4" />
                         {selectedProject.location}
                       </p>
@@ -325,14 +325,16 @@ export function ProjectsManager() {
                         <p className="text-sm text-muted-foreground mt-2">{selectedProject.description}</p>
                       )}
                     </div>
-                    <div className="flex gap-2">
-                      <Button onClick={() => setShowPlotForm(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Plot
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => setShowPlotForm(true)} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        <span className="hidden xs:inline">Add Plot</span>
+                        <span className="xs:hidden">Add</span>
                       </Button>
-                      <Button variant="outline" onClick={() => setShowBulkForm(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Bulk Add
+                      <Button variant="outline" size="sm" onClick={() => setShowBulkForm(true)}>
+                        <Plus className="h-4 w-4 mr-1" />
+                        <span className="hidden xs:inline">Bulk Add</span>
+                        <span className="xs:hidden">Bulk</span>
                       </Button>
                     </div>
                   </div>
@@ -372,9 +374,9 @@ export function ProjectsManager() {
           ) : (
             // Projects list view
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h3 className="text-lg font-medium">All Projects</h3>
-                <Button onClick={() => setShowProjectForm(true)}>
+                <Button onClick={() => setShowProjectForm(true)} className="w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Project
                 </Button>
@@ -393,7 +395,7 @@ export function ProjectsManager() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {projects.map((project) => {
                     const actualPlotCount = plotCounts[project.id] || project.total_plots;
                     const effectiveCapacity = Math.max(project.capacity, actualPlotCount);
