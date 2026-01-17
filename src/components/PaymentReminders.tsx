@@ -1,8 +1,16 @@
 import { Client } from '@/types/client';
 import { formatCurrency } from '@/lib/supabaseStorage';
-import { Bell, AlertTriangle, Clock, Calendar, MessageCircle } from 'lucide-react';
+import { Bell, AlertTriangle, Clock, Calendar, MessageCircle, Copy, ExternalLink } from 'lucide-react';
 import { format, differenceInDays, differenceInMonths, parseISO, isValid } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useState } from 'react';
 
 interface PaymentRemindersProps {
   clients: Client[];
@@ -57,41 +65,82 @@ Thank you for your continued trust.
 Best regards,
 *Property Management Team*`;
 
-  return encodeURIComponent(message);
+  return message;
 };
 
-const openWhatsApp = (client: Client, e: React.MouseEvent) => {
-  e.stopPropagation();
-  
-  if (!client.phone) {
-    alert('No phone number available for this client');
-    return;
-  }
-  
+const getFormattedPhone = (phone: string): string => {
   // Clean phone number - remove spaces, dashes, and ensure it starts with country code
-  let phone = client.phone.replace(/[\s\-\(\)]/g, '');
+  let cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
   
   // If phone doesn't start with +, assume Kenya (+254)
-  if (!phone.startsWith('+')) {
-    if (phone.startsWith('0')) {
-      phone = '254' + phone.substring(1);
-    } else if (!phone.startsWith('254')) {
-      phone = '254' + phone;
+  if (!cleanPhone.startsWith('+')) {
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '254' + cleanPhone.substring(1);
+    } else if (!cleanPhone.startsWith('254')) {
+      cleanPhone = '254' + cleanPhone;
     }
   } else {
-    phone = phone.substring(1); // Remove the + for URL
+    cleanPhone = cleanPhone.substring(1); // Remove the + for URL
   }
   
-  const message = generateWhatsAppMessage(client);
-  // Use WhatsApp Web directly to avoid api.whatsapp.com blocking
-  const whatsappUrl = `https://web.whatsapp.com/send?phone=${phone}&text=${message}`;
-  
-  window.open(whatsappUrl, '_blank');
+  return cleanPhone;
 };
 
 export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersProps) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  
+  const [whatsappDialog, setWhatsappDialog] = useState<{ open: boolean; client: Client | null }>({
+    open: false,
+    client: null
+  });
+
+  const handleWhatsAppClick = (client: Client, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!client.phone) {
+      toast.error('No phone number available for this client');
+      return;
+    }
+    
+    setWhatsappDialog({ open: true, client });
+  };
+
+  const copyMessage = async () => {
+    if (!whatsappDialog.client) return;
+    
+    const message = generateWhatsAppMessage(whatsappDialog.client);
+    await navigator.clipboard.writeText(message);
+    toast.success('Message copied to clipboard!');
+  };
+
+  const copyWhatsAppLink = async () => {
+    if (!whatsappDialog.client?.phone) return;
+    
+    const phone = getFormattedPhone(whatsappDialog.client.phone);
+    const message = encodeURIComponent(generateWhatsAppMessage(whatsappDialog.client));
+    const link = `https://web.whatsapp.com/send?phone=${phone}&text=${message}`;
+    
+    await navigator.clipboard.writeText(link);
+    toast.success('WhatsApp link copied! Paste in a new browser tab.');
+  };
+
+  const openWhatsAppDirect = () => {
+    if (!whatsappDialog.client?.phone) return;
+    
+    const phone = getFormattedPhone(whatsappDialog.client.phone);
+    const message = encodeURIComponent(generateWhatsAppMessage(whatsappDialog.client));
+    const link = `https://web.whatsapp.com/send?phone=${phone}&text=${message}`;
+    
+    // Create a temporary link and click it
+    const a = document.createElement('a');
+    a.href = link;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const getReminders = (): ReminderClient[] => {
     return clients
@@ -192,88 +241,155 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
   };
 
   return (
-    <div className="bg-card rounded-lg p-4 sm:p-6 card-shadow animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
-        <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
-          <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-          Payment Reminders
-        </h3>
-        <div className="flex flex-wrap gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
-          {overdueCount > 0 && (
-            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-destructive/10 text-destructive rounded-full font-medium">
-              {overdueCount} overdue
-            </span>
-          )}
-          {dueTodayCount > 0 && (
-            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-orange-500/10 text-orange-600 rounded-full font-medium">
-              {dueTodayCount} due today
-            </span>
-          )}
-          {upcomingCount > 0 && (
-            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary/10 text-primary rounded-full font-medium">
-              {upcomingCount} upcoming
-            </span>
-          )}
+    <>
+      <div className="bg-card rounded-lg p-4 sm:p-6 card-shadow animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
+          <h3 className="font-heading text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+            Payment Reminders
+          </h3>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
+            {overdueCount > 0 && (
+              <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-destructive/10 text-destructive rounded-full font-medium">
+                {overdueCount} overdue
+              </span>
+            )}
+            {dueTodayCount > 0 && (
+              <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-orange-500/10 text-orange-600 rounded-full font-medium">
+                {dueTodayCount} due today
+              </span>
+            )}
+            {upcomingCount > 0 && (
+              <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary/10 text-primary rounded-full font-medium">
+                {upcomingCount} upcoming
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2 sm:space-y-3 max-h-80 overflow-y-auto">
+          {reminders.map(reminder => {
+            const styles = getStatusStyles(reminder.status);
+            const IconComponent = styles.icon;
+            
+            return (
+              <div
+                key={reminder.id}
+                onClick={() => onSelectClient(reminder)}
+                className={`p-2.5 sm:p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md active:scale-[0.99] ${styles.bg} ${styles.border}`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
+                  <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div className={`p-1 sm:p-1.5 rounded-full ${styles.bg} flex-shrink-0`}>
+                      <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 ${styles.text}`} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground text-sm sm:text-base truncate">{reminder.name}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                        {reminder.project_name} - Plot {reminder.plot_number}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1">
+                        {reminder.next_payment_date && (
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">
+                            Due: {format(parseISO(reminder.next_payment_date), 'dd MMM yyyy')}
+                          </p>
+                        )}
+                        <span className={`text-[10px] sm:text-xs font-semibold ${styles.text}`}>
+                          • {reminder.timeDisplay}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 flex-shrink-0">
+                    <div className="text-right">
+                      <p className={`font-bold text-sm sm:text-base ${styles.text}`}>
+                        {formatCurrency(reminder.balance)}
+                      </p>
+                      <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${styles.bg} ${styles.text} font-medium`}>
+                        {styles.label}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => handleWhatsAppClick(reminder, e)}
+                      className="h-7 sm:h-8 px-2 sm:px-3 gap-1 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700"
+                    >
+                      <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="text-[10px] sm:text-xs">WhatsApp</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="space-y-2 sm:space-y-3 max-h-80 overflow-y-auto">
-        {reminders.map(reminder => {
-          const styles = getStatusStyles(reminder.status);
-          const IconComponent = styles.icon;
+      {/* WhatsApp Dialog */}
+      <Dialog open={whatsappDialog.open} onOpenChange={(open) => setWhatsappDialog({ open, client: open ? whatsappDialog.client : null })}>
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <MessageCircle className="w-5 h-5" />
+              Send WhatsApp Reminder
+            </DialogTitle>
+          </DialogHeader>
           
-          return (
-            <div
-              key={reminder.id}
-              onClick={() => onSelectClient(reminder)}
-              className={`p-2.5 sm:p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md active:scale-[0.99] ${styles.bg} ${styles.border}`}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
-                <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
-                  <div className={`p-1 sm:p-1.5 rounded-full ${styles.bg} flex-shrink-0`}>
-                    <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 ${styles.text}`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground text-sm sm:text-base truncate">{reminder.name}</p>
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                      {reminder.project_name} - Plot {reminder.plot_number}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1">
-                      {reminder.next_payment_date && (
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">
-                          Due: {format(parseISO(reminder.next_payment_date), 'dd MMM yyyy')}
-                        </p>
-                      )}
-                      <span className={`text-[10px] sm:text-xs font-semibold ${styles.text}`}>
-                        • {reminder.timeDisplay}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 flex-shrink-0">
-                  <div className="text-right">
-                    <p className={`font-bold text-sm sm:text-base ${styles.text}`}>
-                      {formatCurrency(reminder.balance)}
-                    </p>
-                    <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${styles.bg} ${styles.text} font-medium`}>
-                      {styles.label}
-                    </span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => openWhatsApp(reminder, e)}
-                    className="h-7 sm:h-8 px-2 sm:px-3 gap-1 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700"
-                  >
-                    <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="text-[10px] sm:text-xs">WhatsApp</span>
-                  </Button>
+          {whatsappDialog.client && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="font-medium text-sm">{whatsappDialog.client.name}</p>
+                <p className="text-xs text-muted-foreground">{whatsappDialog.client.phone}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Balance: <span className="font-semibold text-destructive">{formatCurrency(whatsappDialog.client.balance)}</span>
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Message Preview:</p>
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg max-h-40 overflow-y-auto">
+                  <pre className="text-xs whitespace-pre-wrap font-sans text-green-800">
+                    {generateWhatsAppMessage(whatsappDialog.client)}
+                  </pre>
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Button
+                  onClick={openWhatsAppDirect}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open WhatsApp Web
+                </Button>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={copyWhatsAppLink}
+                    className="text-green-600 border-green-300 hover:bg-green-50"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Link
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={copyMessage}
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Message
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  If WhatsApp doesn't open, copy the link and paste it in a new browser tab
+                </p>
+              </div>
             </div>
-          );
-        })}
-      </div>
-    </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
