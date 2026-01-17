@@ -144,65 +144,107 @@ export const ExpenseList = ({ expenses, onAdd, onEdit, onDelete }: ExpenseListPr
             </Select>
           </div>
 
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Recipient</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredExpenses.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell className="whitespace-nowrap">
-                      {format(new Date(expense.expense_date), 'dd MMM yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      <code className="text-xs bg-muted px-1 py-0.5 rounded">
-                        {expense.reference_number || '-'}
-                      </code>
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate" title={expense.description}>
-                      {expense.description}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getCategoryColor(expense.category)}>
-                        {expense.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{expense.recipient || '-'}</TableCell>
-                    <TableCell className="text-right font-semibold text-destructive">
-                      {formatCurrency(expense.amount)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => onEdit(expense)}>
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteExpense(expense)}>
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            {/* Mobile Card View */}
+            <div className="block md:hidden space-y-2 px-4">
+              {filteredExpenses.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchTerm || categoryFilter !== 'all' 
+                    ? 'No expenses match your filters' 
+                    : 'No expenses recorded yet'}
+                </div>
+              ) : (
+                filteredExpenses.map((expense) => (
+                  <div key={expense.id} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{expense.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(expense.expense_date), 'dd MMM yyyy')}
+                        </p>
+                        <Badge variant="outline" className={`mt-1 text-xs ${getCategoryColor(expense.category)}`}>
+                          {expense.category}
+                        </Badge>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredExpenses.length === 0 && (
+                      <p className="font-semibold text-destructive text-sm">{formatCurrency(expense.amount)}</p>
+                    </div>
+                    {expense.recipient && (
+                      <p className="text-xs text-muted-foreground">To: {expense.recipient}</p>
+                    )}
+                    <div className="flex justify-end gap-1 pt-2 border-t border-border/50">
+                      <Button variant="ghost" size="sm" onClick={() => onEdit(expense)}>
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteExpense(expense)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block px-4 sm:px-0">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                      {searchTerm || categoryFilter !== 'all' 
-                        ? 'No expenses match your filters' 
-                        : 'No expenses recorded yet'}
-                    </TableCell>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Reference</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Recipient</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredExpenses.map((expense) => (
+                    <TableRow key={expense.id}>
+                      <TableCell className="whitespace-nowrap">
+                        {format(new Date(expense.expense_date), 'dd MMM yyyy')}
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                          {expense.reference_number || '-'}
+                        </code>
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate" title={expense.description}>
+                        {expense.description}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getCategoryColor(expense.category)}>
+                          {expense.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{expense.recipient || '-'}</TableCell>
+                      <TableCell className="text-right font-semibold text-destructive">
+                        {formatCurrency(expense.amount)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => onEdit(expense)}>
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteExpense(expense)}>
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredExpenses.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        {searchTerm || categoryFilter !== 'all' 
+                          ? 'No expenses match your filters' 
+                          : 'No expenses recorded yet'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>

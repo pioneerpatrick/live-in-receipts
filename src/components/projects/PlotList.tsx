@@ -69,68 +69,123 @@ export function PlotList({ plots, onEdit, onDelete, onReturn, isLoading }: PlotL
       </div>
 
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Plot Number</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredPlots.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  {isLoading ? 'Loading plots...' : 'No plots found'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredPlots.map((plot) => (
-                <TableRow key={plot.id}>
-                  <TableCell className="font-medium">{plot.plot_number}</TableCell>
-                  <TableCell>{plot.size}</TableCell>
-                  <TableCell>{formatCurrency(plot.price)}</TableCell>
-                  <TableCell>{getStatusBadge(plot.status)}</TableCell>
-                  <TableCell>
-                    {plot.client ? (
-                      <div>
-                        <p className="font-medium">{plot.client.name}</p>
-                        {plot.client.phone && (
-                          <p className="text-sm text-muted-foreground">{plot.client.phone}</p>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => onEdit(plot)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      {plot.status === 'sold' && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => setReturnId(plot.id)}
-                          title="Return plot (client defaulted)"
-                        >
-                          <RotateCcw className="h-4 w-4 text-orange-600" />
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(plot.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+        {/* Mobile Card View */}
+        <div className="block md:hidden">
+          {filteredPlots.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {isLoading ? 'Loading plots...' : 'No plots found'}
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {filteredPlots.map((plot) => (
+                <div key={plot.id} className="p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{plot.plot_number}</p>
+                      <p className="text-sm text-muted-foreground">{plot.size}</p>
                     </div>
+                    <div className="text-right">
+                      <p className="font-medium text-primary text-sm">{formatCurrency(plot.price)}</p>
+                      {getStatusBadge(plot.status)}
+                    </div>
+                  </div>
+                  {plot.client && (
+                    <div className="pt-2 border-t border-border/50">
+                      <p className="font-medium text-sm">{plot.client.name}</p>
+                      {plot.client.phone && (
+                        <p className="text-xs text-muted-foreground">{plot.client.phone}</p>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-1 pt-2">
+                    <Button variant="ghost" size="sm" onClick={() => onEdit(plot)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {plot.status === 'sold' && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setReturnId(plot.id)}
+                        title="Return plot"
+                      >
+                        <RotateCcw className="h-4 w-4 text-orange-600" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(plot.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Plot Number</TableHead>
+                <TableHead>Size</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPlots.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    {isLoading ? 'Loading plots...' : 'No plots found'}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                filteredPlots.map((plot) => (
+                  <TableRow key={plot.id}>
+                    <TableCell className="font-medium">{plot.plot_number}</TableCell>
+                    <TableCell>{plot.size}</TableCell>
+                    <TableCell>{formatCurrency(plot.price)}</TableCell>
+                    <TableCell>{getStatusBadge(plot.status)}</TableCell>
+                    <TableCell>
+                      {plot.client ? (
+                        <div>
+                          <p className="font-medium">{plot.client.name}</p>
+                          {plot.client.phone && (
+                            <p className="text-sm text-muted-foreground">{plot.client.phone}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => onEdit(plot)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {plot.status === 'sold' && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => setReturnId(plot.id)}
+                            title="Return plot (client defaulted)"
+                          >
+                            <RotateCcw className="h-4 w-4 text-orange-600" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(plot.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <ConfirmDialog

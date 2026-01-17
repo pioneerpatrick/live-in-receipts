@@ -122,7 +122,7 @@ export const PaymentHistoryImportDialog = ({ open, onClose, onImportComplete }: 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh]">
+      <DialogContent className="w-[95vw] max-w-5xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="h-5 w-5" />
@@ -136,12 +136,12 @@ export const PaymentHistoryImportDialog = ({ open, onClose, onImportComplete }: 
         {!file ? (
           <div className="space-y-4">
             <div 
-              className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-12 text-center hover:border-primary/50 transition-colors cursor-pointer"
+              className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 sm:p-12 text-center hover:border-primary/50 transition-colors cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
             >
-              <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-lg font-medium mb-2">Drop your Excel file here</p>
-              <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
+              <Upload className="h-8 w-8 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-base sm:text-lg font-medium mb-2">Drop your Excel file here</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-4">or click to browse</p>
               <Button variant="secondary">
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                 Select Excel File
@@ -188,23 +188,23 @@ export const PaymentHistoryImportDialog = ({ open, onClose, onImportComplete }: 
             </div>
 
             {/* Summary Stats */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg text-center">
-                <p className="text-2xl font-bold text-blue-600">{parsedData.length}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-blue-50 dark:bg-blue-950 rounded-lg text-center">
+                <p className="text-xl sm:text-2xl font-bold text-blue-600">{parsedData.length}</p>
                 <p className="text-xs text-muted-foreground">Clients</p>
               </div>
-              <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg text-center">
-                <p className="text-2xl font-bold text-green-600">{totalPayments}</p>
+              <div className="p-2 sm:p-3 bg-green-50 dark:bg-green-950 rounded-lg text-center">
+                <p className="text-xl sm:text-2xl font-bold text-green-600">{totalPayments}</p>
                 <p className="text-xs text-muted-foreground">Payments</p>
               </div>
-              <div className="p-3 bg-purple-50 dark:bg-purple-950 rounded-lg text-center">
-                <p className="text-2xl font-bold text-purple-600">
+              <div className="p-2 sm:p-3 bg-purple-50 dark:bg-purple-950 rounded-lg text-center">
+                <p className="text-xl sm:text-2xl font-bold text-purple-600">
                   {parsedData.filter(c => c.client.status === 'completed').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Completed</p>
               </div>
-              <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg text-center">
-                <p className="text-2xl font-bold text-amber-600">
+              <div className="p-2 sm:p-3 bg-amber-50 dark:bg-amber-950 rounded-lg text-center">
+                <p className="text-xl sm:text-2xl font-bold text-amber-600">
                   {parsedData.filter(c => c.client.status === 'ongoing').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Ongoing</p>
@@ -305,14 +305,15 @@ export const PaymentHistoryImportDialog = ({ open, onClose, onImportComplete }: 
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={importing}>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={handleClose} disabled={importing} className="w-full sm:w-auto">
             Cancel
           </Button>
           {parsedData.length > 0 && (
-            <Button onClick={handleImport} disabled={importing}>
+            <Button onClick={handleImport} disabled={importing} className="w-full sm:w-auto">
               {importing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Import {parsedData.length} Clients & {totalPayments} Payments
+              <span className="hidden sm:inline">Import {parsedData.length} Clients & {totalPayments} Payments</span>
+              <span className="sm:hidden">Import {parsedData.length} Clients</span>
             </Button>
           )}
         </DialogFooter>

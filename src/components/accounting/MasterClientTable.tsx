@@ -207,75 +207,130 @@ export const MasterClientTable = ({ clients }: MasterClientTableProps) => {
 
         {/* Table */}
         <ScrollArea className="h-[500px]">
-          <div id="master-client-table">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">#</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Project / Plot</TableHead>
-                  <TableHead className="text-right">Total Price</TableHead>
-                  <TableHead className="text-right">Paid</TableHead>
-                  <TableHead className="text-right">Balance</TableHead>
-                  <TableHead className="text-right">% Paid</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Agent</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClients.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                      No clients found matching your criteria
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredClients.map((client, index) => {
-                    const isCancelled = client.status === 'cancelled';
-                    return (
-                    <TableRow 
+          <div id="master-client-table" className="-mx-4 sm:mx-0">
+            {/* Mobile Card View */}
+            <div className="block md:hidden space-y-2 px-4">
+              {filteredClients.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No clients found matching your criteria
+                </div>
+              ) : (
+                filteredClients.map((client, index) => {
+                  const isCancelled = client.status === 'cancelled';
+                  return (
+                    <div 
                       key={client.id} 
                       className={cn(
+                        "bg-muted/30 rounded-lg p-3 space-y-2",
                         isCancelled && "bg-red-500/10 border-l-4 border-l-red-500"
                       )}
                     >
-                      <TableCell className={cn("text-muted-foreground text-xs", isCancelled && "text-red-600")}>{index + 1}</TableCell>
-                      <TableCell>
-                        <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
                           <p className={cn("font-medium text-sm", isCancelled && "text-red-600 line-through")}>{client.name}</p>
-                          <p className={cn("text-xs text-muted-foreground", isCancelled && "text-red-500")}>{client.phone || '-'}</p>
+                          <p className={cn("text-xs text-muted-foreground", isCancelled && "text-red-500")}>
+                            {client.project_name} - {client.plot_number}
+                          </p>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className={cn("font-medium text-sm", isCancelled && "text-red-600")}>{client.project_name}</p>
-                          <p className={cn("text-xs text-muted-foreground", isCancelled && "text-red-500")}>Plot: {client.plot_number}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className={cn("text-right font-medium text-sm", isCancelled && "text-red-600")}>
-                        {formatCurrency(client.total_price - client.discount)}
-                      </TableCell>
-                      <TableCell className={cn("text-right text-sm", isCancelled ? "text-red-600" : "text-green-600")}>
-                        {formatCurrency(client.total_paid)}
-                      </TableCell>
-                      <TableCell className={cn("text-right text-sm", isCancelled ? "text-red-600" : "text-amber-600")}>
-                        {formatCurrency(client.balance)}
-                      </TableCell>
-                      <TableCell className={cn("text-right text-sm", isCancelled && "text-red-600")}>
-                        {(client.percent_paid ?? 0).toFixed(1)}%
-                      </TableCell>
-                      <TableCell>
                         {getStatusBadge(client.status, client.balance)}
-                      </TableCell>
-                      <TableCell className={cn("hidden lg:table-cell text-xs text-muted-foreground", isCancelled && "text-red-500")}>
-                        {client.sales_agent || '-'}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-xs pt-2 border-t border-border/50">
+                        <div>
+                          <p className="text-muted-foreground">Total</p>
+                          <p className={cn("font-medium", isCancelled && "text-red-600")}>
+                            {formatCurrency(client.total_price - client.discount)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Paid</p>
+                          <p className={cn("font-medium", isCancelled ? "text-red-600" : "text-green-600")}>
+                            {formatCurrency(client.total_paid)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Balance</p>
+                          <p className={cn("font-medium", isCancelled ? "text-red-600" : "text-amber-600")}>
+                            {formatCurrency(client.balance)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block px-4 sm:px-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">#</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Project / Plot</TableHead>
+                    <TableHead className="text-right">Total Price</TableHead>
+                    <TableHead className="text-right">Paid</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead className="text-right">% Paid</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden lg:table-cell">Agent</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredClients.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                        No clients found matching your criteria
                       </TableCell>
                     </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    filteredClients.map((client, index) => {
+                      const isCancelled = client.status === 'cancelled';
+                      return (
+                      <TableRow 
+                        key={client.id} 
+                        className={cn(
+                          isCancelled && "bg-red-500/10 border-l-4 border-l-red-500"
+                        )}
+                      >
+                        <TableCell className={cn("text-muted-foreground text-xs", isCancelled && "text-red-600")}>{index + 1}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className={cn("font-medium text-sm", isCancelled && "text-red-600 line-through")}>{client.name}</p>
+                            <p className={cn("text-xs text-muted-foreground", isCancelled && "text-red-500")}>{client.phone || '-'}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className={cn("font-medium text-sm", isCancelled && "text-red-600")}>{client.project_name}</p>
+                            <p className={cn("text-xs text-muted-foreground", isCancelled && "text-red-500")}>Plot: {client.plot_number}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className={cn("text-right font-medium text-sm", isCancelled && "text-red-600")}>
+                          {formatCurrency(client.total_price - client.discount)}
+                        </TableCell>
+                        <TableCell className={cn("text-right text-sm", isCancelled ? "text-red-600" : "text-green-600")}>
+                          {formatCurrency(client.total_paid)}
+                        </TableCell>
+                        <TableCell className={cn("text-right text-sm", isCancelled ? "text-red-600" : "text-amber-600")}>
+                          {formatCurrency(client.balance)}
+                        </TableCell>
+                        <TableCell className={cn("text-right text-sm", isCancelled && "text-red-600")}>
+                          {(client.percent_paid ?? 0).toFixed(1)}%
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(client.status, client.balance)}
+                        </TableCell>
+                        <TableCell className={cn("hidden lg:table-cell text-xs text-muted-foreground", isCancelled && "text-red-500")}>
+                          {client.sales_agent || '-'}
+                        </TableCell>
+                      </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </ScrollArea>
         

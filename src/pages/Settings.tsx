@@ -783,93 +783,159 @@ const Settings = () => {
                 {loading ? (
                   <div className="text-center py-8 text-muted-foreground">Loading users...</div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Joined</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredUsers.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                              No users found
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          filteredUsers.map((user) => (
-                            <TableRow key={user.id}>
-                              <TableCell className="font-medium">{user.full_name}</TableCell>
-                              <TableCell>
-                                <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                                  {user.role === 'admin' && <Crown className="w-3 h-3 mr-1" />}
-                                  {user.role || 'No role'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {new Date(user.created_at).toLocaleDateString()}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-2">
+                  <div className="overflow-x-auto -mx-4 sm:mx-0">
+                    {/* Mobile Card View */}
+                    <div className="block md:hidden space-y-2 px-4">
+                      {filteredUsers.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">No users found</div>
+                      ) : (
+                        filteredUsers.map((user) => (
+                          <div key={user.id} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium">{user.full_name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Joined {new Date(user.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                                {user.role === 'admin' && <Crown className="w-3 h-3 mr-1" />}
+                                {user.role || 'No role'}
+                              </Badge>
+                            </div>
+                            <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-border/50">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setNewRole(user.role || 'staff');
+                                  setRoleDialogOpen(true);
+                                }}
+                              >
+                                {user.role === 'admin' ? 'Change Role' : 'Promote'}
+                              </Button>
+                              {user.user_id !== currentUser?.id && (
+                                <>
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => {
                                       setSelectedUser(user);
-                                      setNewRole(user.role || 'staff');
-                                      setRoleDialogOpen(true);
+                                      setNewPassword('');
+                                      setConfirmPassword('');
+                                      setPasswordResetDialogOpen(true);
                                     }}
                                   >
-                                    {user.role === 'admin' ? (
-                                      <>
-                                        <UserMinus className="w-4 h-4 mr-1" />
-                                        <span className="hidden sm:inline">Change</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Crown className="w-4 h-4 mr-1" />
-                                        <span className="hidden sm:inline">Promote</span>
-                                      </>
-                                    )}
+                                    <KeyRound className="w-4 h-4" />
                                   </Button>
-                                  {user.user_id !== currentUser?.id && (
-                                    <>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                          setSelectedUser(user);
-                                          setNewPassword('');
-                                          setConfirmPassword('');
-                                          setPasswordResetDialogOpen(true);
-                                        }}
-                                        title="Reset Password"
-                                      >
-                                        <KeyRound className="w-4 h-4" />
-                                      </Button>
-                                      <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => {
-                                          setSelectedUser(user);
-                                          setDeleteDialogOpen(true);
-                                        }}
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
-                                    </>
-                                  )}
-                                </div>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedUser(user);
+                                      setDeleteDialogOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block px-4 sm:px-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Joined</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredUsers.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                No users found
                               </TableCell>
                             </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
+                          ) : (
+                            filteredUsers.map((user) => (
+                              <TableRow key={user.id}>
+                                <TableCell className="font-medium">{user.full_name}</TableCell>
+                                <TableCell>
+                                  <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                                    {user.role === 'admin' && <Crown className="w-3 h-3 mr-1" />}
+                                    {user.role || 'No role'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {new Date(user.created_at).toLocaleDateString()}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedUser(user);
+                                        setNewRole(user.role || 'staff');
+                                        setRoleDialogOpen(true);
+                                      }}
+                                    >
+                                      {user.role === 'admin' ? (
+                                        <>
+                                          <UserMinus className="w-4 h-4 mr-1" />
+                                          <span className="hidden sm:inline">Change</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Crown className="w-4 h-4 mr-1" />
+                                          <span className="hidden sm:inline">Promote</span>
+                                        </>
+                                      )}
+                                    </Button>
+                                    {user.user_id !== currentUser?.id && (
+                                      <>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            setSelectedUser(user);
+                                            setNewPassword('');
+                                            setConfirmPassword('');
+                                            setPasswordResetDialogOpen(true);
+                                          }}
+                                          title="Reset Password"
+                                        >
+                                          <KeyRound className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() => {
+                                            setSelectedUser(user);
+                                            setDeleteDialogOpen(true);
+                                          }}
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -918,45 +984,76 @@ const Settings = () => {
                   </Button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Time</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Action</TableHead>
-                        <TableHead className="hidden sm:table-cell">Details</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredLogs.length === 0 ? (
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                  {/* Mobile Card View */}
+                  <div className="block md:hidden space-y-2 px-4">
+                    {filteredLogs.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">No activity logs found</div>
+                    ) : (
+                      filteredLogs.map((log) => (
+                        <div key={log.id} className="bg-muted/30 rounded-lg p-3 space-y-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm">{log.user_name || 'Unknown'}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(log.created_at), 'MMM d, HH:mm')}
+                              </p>
+                            </div>
+                            <Badge variant={getActionBadgeVariant(log.action)}>
+                              {getActionLabel(log.action as ActivityAction)}
+                            </Badge>
+                          </div>
+                          {log.details && (
+                            <p className="text-xs text-muted-foreground truncate pt-1">
+                              {JSON.stringify(log.details).slice(0, 60)}
+                            </p>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block px-4 sm:px-0">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                            No activity logs found
-                          </TableCell>
+                          <TableHead>Time</TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead>Action</TableHead>
+                          <TableHead className="hidden sm:table-cell">Details</TableHead>
                         </TableRow>
-                      ) : (
-                        filteredLogs.map((log) => (
-                          <TableRow key={log.id}>
-                            <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                              {format(new Date(log.created_at), 'MMM d, HH:mm')}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {log.user_name || 'Unknown'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={getActionBadgeVariant(log.action)}>
-                                {getActionLabel(log.action as ActivityAction)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell text-sm text-muted-foreground max-w-xs truncate">
-                              {log.details ? JSON.stringify(log.details).slice(0, 50) : '-'}
+                      </TableHeader>
+                      <TableBody>
+                        {filteredLogs.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                              No activity logs found
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ) : (
+                          filteredLogs.map((log) => (
+                            <TableRow key={log.id}>
+                              <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                                {format(new Date(log.created_at), 'MMM d, HH:mm')}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {log.user_name || 'Unknown'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={getActionBadgeVariant(log.action)}>
+                                  {getActionLabel(log.action as ActivityAction)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell text-sm text-muted-foreground max-w-xs truncate">
+                                {log.details ? JSON.stringify(log.details).slice(0, 50) : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </CardContent>
             </Card>
