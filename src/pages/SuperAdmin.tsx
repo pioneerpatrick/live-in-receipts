@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import TenantUserManagement from '@/components/superadmin/TenantUserManagement';
 import { DemoModeSection } from '@/components/superadmin/DemoModeSection';
+import { TenantDashboardPreview } from '@/components/superadmin/TenantDashboardPreview';
 import { initializeDemoTenant } from '@/lib/demoTenantSeeder';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tenant } from '@/types/client';
 import { 
   Building2, Plus, Edit, Trash2, RefreshCw, Users, Globe, 
-  Check, X, Shield, Activity, ExternalLink, UserCog, Play
+  Check, X, Shield, Activity, ExternalLink, UserCog, Play, Eye
 } from 'lucide-react';
 
 interface TenantWithStats extends Tenant {
@@ -40,6 +41,7 @@ const SuperAdmin = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userManagementTenant, setUserManagementTenant] = useState<Tenant | null>(null);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [previewTenant, setPreviewTenant] = useState<Tenant | null>(null);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'tenants' | 'demo'>('tenants');
 
@@ -530,6 +532,14 @@ const SuperAdmin = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setPreviewTenant(tenant)}
+                            title="Preview dashboard"
+                          >
+                            <Eye className="w-4 h-4 text-amber-500" />
+                          </Button>
                           {tenant.domain && tenant.status === 'active' && (
                             <Button
                               variant="ghost"
@@ -872,6 +882,15 @@ const SuperAdmin = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Tenant Dashboard Preview */}
+      {previewTenant && (
+        <TenantDashboardPreview
+          tenant={previewTenant}
+          open={!!previewTenant}
+          onClose={() => setPreviewTenant(null)}
+        />
+      )}
     </div>
   );
 };
