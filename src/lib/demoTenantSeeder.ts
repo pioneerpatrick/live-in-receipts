@@ -44,13 +44,13 @@ export const createDemoTenant = async (): Promise<string | null> => {
       return existingTenant.id;
     }
 
-    // 1. Create the demo tenant (no custom domain - uses system domain with ?tenant= parameter)
+    // 1. Create the demo tenant
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .insert({
         name: 'Demo Properties Ltd',
         slug: DEMO_TENANT_SLUG,
-        domain: null, // No custom domain - accessed via system domain with ?tenant=demo-company
+        domain: 'demo.example.com',
         status: 'active',
         primary_color: '#1E40AF',
         secondary_color: '#3B82F6',
@@ -522,16 +522,6 @@ export const initializeDemoTenant = async (): Promise<{ created: boolean; tenant
   
   if (exists) {
     const tenant = await getDemoTenant();
-    
-    // Fix existing demo tenant: remove fake domain so it uses system domain
-    if (tenant && tenant.domain) {
-      await supabase
-        .from('tenants')
-        .update({ domain: null })
-        .eq('id', tenant.id);
-      console.log('Updated demo tenant to use system domain');
-    }
-    
     return { created: false, tenantId: tenant?.id || null };
   }
 
