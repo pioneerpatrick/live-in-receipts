@@ -313,8 +313,8 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
         } as ReminderClient;
       })
       .filter((client): client is ReminderClient => client !== null)
-      // Show all overdue and upcoming within 60 days
-      .filter(client => client.daysUntilDue <= 60)
+      // Show ALL overdue clients (negative days) and upcoming within 60 days
+      .filter(client => client.status === 'overdue' || client.daysUntilDue <= 60)
       .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
   };
 
