@@ -45,6 +45,9 @@ const formatTimeDifference = (days: number): string => {
 
 const generateWhatsAppMessage = (client: Client, productionUrl: string | null): string => {
   const paymentLink = productionUrl ? `${productionUrl}/payments/${client.id}` : null;
+  const monthlyContribution = client.installment_months && client.installment_months > 0 && client.balance > 0
+    ? Math.ceil(client.balance / client.installment_months)
+    : null;
   
   const message = `Dear ${client.name},
 
@@ -57,7 +60,9 @@ This is a friendly payment reminder from our team.
 • Total Price: ${formatCurrency(client.total_price)}
 • Amount Paid: ${formatCurrency(client.total_paid)}
 • *Outstanding Balance: ${formatCurrency(client.balance)}*
+${monthlyContribution ? `• *Monthly Contribution: ${formatCurrency(monthlyContribution)}*` : ''}
 ${client.next_payment_date ? `• Due Date: ${format(parseISO(client.next_payment_date), 'dd MMM yyyy')}` : ''}
+${client.installment_months ? `• Payment Plan: ${client.installment_months} months` : ''}
 ${paymentLink ? `\n🔗 *View Payment History:*\n${paymentLink}` : ''}
 
 We kindly request you to clear the outstanding balance at your earliest convenience.
@@ -74,6 +79,9 @@ Best regards,
 
 const generateEmailMessage = (client: Client, productionUrl: string | null): { subject: string; body: string } => {
   const paymentLink = productionUrl ? `${productionUrl}/payments/${client.id}` : null;
+  const monthlyContribution = client.installment_months && client.installment_months > 0 && client.balance > 0
+    ? Math.ceil(client.balance / client.installment_months)
+    : null;
   
   const subject = `Payment Reminder - ${client.project_name} Plot ${client.plot_number}`;
   
@@ -88,7 +96,9 @@ PAYMENT DETAILS:
 • Total Price: ${formatCurrency(client.total_price)}
 • Amount Paid: ${formatCurrency(client.total_paid)}
 • Outstanding Balance: ${formatCurrency(client.balance)}
+${monthlyContribution ? `• Monthly Contribution: ${formatCurrency(monthlyContribution)}` : ''}
 ${client.next_payment_date ? `• Due Date: ${format(parseISO(client.next_payment_date), 'dd MMM yyyy')}` : ''}
+${client.installment_months ? `• Payment Plan: ${client.installment_months} months` : ''}
 ${paymentLink ? `\nView Payment History: ${paymentLink}` : ''}
 
 We kindly request you to clear the outstanding balance at your earliest convenience.
