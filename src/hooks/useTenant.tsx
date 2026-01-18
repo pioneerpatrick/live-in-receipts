@@ -77,20 +77,15 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const isMainDomain = isMainSystemDomain();
 
-  const checkSuperAdmin = async () => {
+  const checkSuperAdmin = async (userId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setIsSuperAdmin(false);
-        return;
-      }
-
       const { data } = await supabase
         .from('super_admins')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
 
       setIsSuperAdmin(!!data);
@@ -207,25 +202,44 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshTenant = async () => {
+    if (initialized && !loading) return; // Prevent duplicate calls
+    
     setLoading(true);
-    const domain = getTenantDomain();
-    
-    if (domain) {
-      await fetchTenantByDomain(domain);
-    } else if (!isMainDomain) {
-      await fetchUserTenant();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const domain = getTenantDomain();
+      
+      // Run domain/tenant fetch and super admin check in parallel
+      const promises: Promise<void>[] = [];
+      
+      if (domain) {
+        promises.push(fetchTenantByDomain(domain));
+      } else if (!isMainDomain && user) {
+        promises.push(fetchUserTenant());
+      }
+      
+      if (user) {
+        promises.push(checkSuperAdmin(user.id));
+      }
+      
+      await Promise.all(promises);
+    } catch (error) {
+      console.error('Error refreshing tenant:', error);
+    } finally {
+      setLoading(false);
+      setInitialized(true);
     }
-    
-    await checkSuperAdmin();
-    setLoading(false);
   };
 
   useEffect(() => {
     refreshTenant();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      refreshTenant();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        setInitialized(false);
+        refreshTenant();
+      }
     });
 
     return () => subscription.unsubscribe();
