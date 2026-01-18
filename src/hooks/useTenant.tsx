@@ -43,16 +43,22 @@ const isMainSystemDomain = (): boolean => {
 // Check if current user is accessing as super admin
 const isSuperAdminAccess = (): boolean => {
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('super_access') === 'true';
+  const result = urlParams.get('super_access') === 'true';
+  console.log('isSuperAdminAccess check:', { search: window.location.search, result });
+  return result;
 };
 
 // Get tenant domain from current URL
 const getTenantDomain = (): string | null => {
   const hostname = window.location.hostname;
+  const search = window.location.search;
   
   // Check for test tenant parameter first (used for super admin access)
-  const urlParams = new URLSearchParams(window.location.search);
+  const urlParams = new URLSearchParams(search);
   const testTenant = urlParams.get('tenant');
+  
+  console.log('getTenantDomain:', { hostname, search, testTenant });
+  
   if (testTenant) {
     return testTenant;
   }
