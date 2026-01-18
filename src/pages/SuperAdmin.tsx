@@ -336,6 +336,63 @@ const SuperAdmin = () => {
     }
   };
 
+  const getDomainStatusIndicator = (tenant: TenantWithStats) => {
+    if (!tenant.domain) {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+          <span className="text-muted-foreground text-sm">Not configured</span>
+        </div>
+      );
+    }
+    
+    if (tenant.slug === 'demo-company') {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-amber-500" />
+          <span className="text-muted-foreground text-sm italic">Demo Only</span>
+        </div>
+      );
+    }
+    
+    // Check if domain appears to be a custom domain (not lovable.app)
+    const isCustomDomain = !tenant.domain.includes('lovable.app');
+    
+    if (isCustomDomain && tenant.status === 'active') {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" title="Live & Verified" />
+          <a 
+            href={`https://${tenant.domain}`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary hover:underline text-sm flex items-center gap-1"
+          >
+            {tenant.domain}
+            <ExternalLink className="w-3 h-3" />
+          </a>
+          <Badge className="bg-green-500/10 text-green-600 text-xs border-green-500/20">Live</Badge>
+        </div>
+      );
+    }
+    
+    // Lovable subdomain or pending
+    return (
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-blue-500" title="Subdomain Active" />
+        <a 
+          href={`https://${tenant.domain}`} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-primary hover:underline text-sm"
+        >
+          {tenant.domain}
+        </a>
+        <Badge variant="outline" className="text-xs">Subdomain</Badge>
+      </div>
+    );
+  };
+
   // Overall stats
   const totalTenants = tenants.length;
   const activeTenants = tenants.filter(t => t.status === 'active').length;
@@ -538,22 +595,7 @@ const SuperAdmin = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {tenant.domain ? (
-                          tenant.slug === 'demo-company' ? (
-                            <span className="text-muted-foreground text-sm italic">Demo Only</span>
-                          ) : (
-                            <a 
-                              href={`https://${tenant.domain}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline text-sm"
-                            >
-                              {tenant.domain}
-                            </a>
-                          )
-                        ) : (
-                          <span className="text-muted-foreground text-sm">Not configured</span>
-                        )}
+                        {getDomainStatusIndicator(tenant)}
                       </TableCell>
                       <TableCell>{getStatusBadge(tenant.status)}</TableCell>
                       <TableCell>{tenant.user_count || 0}</TableCell>
