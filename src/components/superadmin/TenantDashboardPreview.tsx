@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { 
   Eye, Users, FileText, LayoutDashboard, TrendingUp, 
   X, Building2, Calendar, CreditCard, Settings, 
-  PieChart, Clock, CheckCircle, AlertTriangle
+  PieChart, Clock, CheckCircle, AlertTriangle, ExternalLink, Copy
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TenantDashboardPreviewProps {
   tenant: Tenant;
@@ -51,6 +52,29 @@ const mockProjects = [
 
 export const TenantDashboardPreview = ({ tenant, open, onClose }: TenantDashboardPreviewProps) => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // Production URL for accessing the full system
+  const productionDomain = 'https://technopanalyrecieptsystem.lovable.app';
+  
+  const getFullSystemUrl = () => {
+    if (tenant.domain) {
+      return `https://${tenant.domain}`;
+    }
+    return `${productionDomain}/?tenant=${tenant.slug}`;
+  };
+  
+  const handleOpenFullSystem = () => {
+    const url = getFullSystemUrl();
+    window.open(url, '_blank');
+    toast.success(`Opening ${tenant.name} full system...`);
+  };
+  
+  const handleCopyLink = () => {
+    const url = getFullSystemUrl();
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success('Link copied to clipboard!', { description: url });
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -89,7 +113,24 @@ export const TenantDashboardPreview = ({ tenant, open, onClose }: TenantDashboar
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="border-amber-500 text-amber-600">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCopyLink}
+                className="text-green-600 border-green-600 hover:bg-green-50"
+              >
+                <Copy className="w-3 h-3 mr-1" />
+                Copy Link
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={handleOpenFullSystem}
+                className="bg-primary"
+              >
+                <ExternalLink className="w-3 h-3 mr-1" />
+                Open Full System
+              </Button>
+              <Badge variant="outline" className="border-amber-500 text-amber-600 hidden sm:flex">
                 <Eye className="w-3 h-3 mr-1" />
                 Preview Mode
               </Badge>
