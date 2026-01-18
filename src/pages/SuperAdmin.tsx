@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tenant } from '@/types/client';
 import { 
   Building2, Plus, Edit, Trash2, RefreshCw, Users, Globe, 
-  Check, X, Shield, Activity, ExternalLink, UserCog, Play, Eye
+  Check, X, Shield, Activity, ExternalLink, UserCog, Play, Eye, Copy, Link
 } from 'lucide-react';
 
 interface TenantWithStats extends Tenant {
@@ -334,6 +334,27 @@ const SuperAdmin = () => {
     }
   };
 
+  // Copy tenant link without opening
+  const handleCopyLink = (tenant: Tenant) => {
+    const productionDomain = 'https://technopanalyrecieptsystem.lovable.app';
+    
+    let accessUrl: string;
+    if (tenant.domain) {
+      accessUrl = `https://${tenant.domain}`;
+    } else {
+      accessUrl = `${productionDomain}/?tenant=${tenant.slug}`;
+    }
+    
+    navigator.clipboard.writeText(accessUrl).then(() => {
+      toast.success('Link copied to clipboard!', {
+        description: accessUrl,
+        duration: 4000,
+      });
+    }).catch(() => {
+      toast.error('Failed to copy link');
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -626,6 +647,32 @@ const SuperAdmin = () => {
                       </TableCell>
                       <TableCell className="py-2 sm:py-4">
                         <div className="flex justify-end gap-0.5 sm:gap-1">
+                          {/* Copy Link Button */}
+                          {tenant.status === 'active' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 sm:h-9 sm:w-9"
+                              onClick={() => handleCopyLink(tenant)}
+                              title="Copy shareable link"
+                            >
+                              <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" />
+                            </Button>
+                          )}
+                          {/* Open in new tab */}
+                          {tenant.status === 'active' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 sm:h-9 sm:w-9"
+                              onClick={() => handleAccessClient(tenant)}
+                              onMouseEnter={() => tenant.slug && handlePrefetchTenant(tenant.slug)}
+                              title="Open client system"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                            </Button>
+                          )}
+                          {/* Preview dashboard */}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -635,18 +682,6 @@ const SuperAdmin = () => {
                           >
                             <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
                           </Button>
-                          {tenant.domain && tenant.status === 'active' && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 sm:h-9 sm:w-9 hidden xs:inline-flex"
-                              onClick={() => handleAccessClient(tenant)}
-                              onMouseEnter={() => tenant.domain && handlePrefetchTenant(tenant.domain)}
-                              title="Access client system"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                            </Button>
-                          )}
                           <Button
                             variant="ghost"
                             size="icon"
