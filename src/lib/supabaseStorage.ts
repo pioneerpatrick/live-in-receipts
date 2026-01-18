@@ -1,19 +1,59 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Client, Payment } from '@/types/client';
 
-// Helper to get current user's tenant_id
+// Cache tenant ID in memory to avoid repeated lookups
+let cachedTenantId: string | null = null;
+let tenantIdPromise: Promise<string | null> | null = null;
+
+// Helper to get current user's tenant_id with caching
 const getCurrentTenantId = async (): Promise<string | null> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  // Return cached value if available
+  if (cachedTenantId !== null) {
+    return cachedTenantId;
+  }
 
-  const { data } = await supabase
-    .from('tenant_users')
-    .select('tenant_id')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  // If a fetch is already in progress, wait for it
+  if (tenantIdPromise) {
+    return tenantIdPromise;
+  }
 
-  return data?.tenant_id || null;
+  // Start a new fetch
+  tenantIdPromise = (async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        cachedTenantId = null;
+        return null;
+      }
+
+      const { data } = await supabase
+        .from('tenant_users')
+        .select('tenant_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      cachedTenantId = data?.tenant_id || null;
+      return cachedTenantId;
+    } finally {
+      tenantIdPromise = null;
+    }
+  })();
+
+  return tenantIdPromise;
 };
+
+// Clear tenant cache (call on logout)
+export const clearTenantCache = () => {
+  cachedTenantId = null;
+  tenantIdPromise = null;
+};
+
+// Listen for auth state changes to clear cache on logout
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') {
+    clearTenantCache();
+  }
+});
 
 // Client operations
 export const getClients = async (): Promise<Client[]> => {

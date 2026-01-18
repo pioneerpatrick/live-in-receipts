@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,8 @@ import {
 import { CancelledSale } from '@/types/cancelledSale';
 import { Expense } from '@/types/expense';
 import { Client } from '@/types/client';
-import { formatCurrency, getClients } from '@/lib/supabaseStorage';
+import { formatCurrency } from '@/lib/supabaseStorage';
+import { useClients } from '@/hooks/useDataCache';
 import { 
   FileText, 
   TrendingUp, 
@@ -37,20 +38,7 @@ interface CancelledSalesAuditReportProps {
 
 export const CancelledSalesAuditReport = ({ cancelledSales, expenses }: CancelledSalesAuditReportProps) => {
   const navigate = useNavigate();
-  const [clients, setClients] = useState<Client[]>([]);
-
-  // Fetch clients to get transferred client details
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const clientsData = await getClients();
-        setClients(clientsData);
-      } catch (error) {
-        console.error('Error fetching clients:', error);
-      }
-    };
-    fetchClients();
-  }, []);
+  const { data: clients = [] } = useClients();
 
   // Get transferred client details
   const getTransferredClient = (sale: CancelledSale): Client | undefined => {

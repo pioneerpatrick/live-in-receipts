@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, LayoutDashboard, Building, BarChart3, Calculator, Crown } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
+import { usePrefetchData } from '@/hooks/useDataCache';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -20,6 +22,16 @@ const Header = () => {
   const { user, role, signOut } = useAuth();
   const { tenant, isSuperAdmin, isMainDomain } = useTenant();
   const location = useLocation();
+  const { prefetchClients, prefetchPayments } = usePrefetchData();
+  
+  // Prefetch data when user logs in for instant page loads
+  useEffect(() => {
+    if (user && role === 'admin') {
+      // Prefetch data in background for instant navigation
+      prefetchClients();
+      prefetchPayments();
+    }
+  }, [user, role, prefetchClients, prefetchPayments]);
   
   // Show "Back to Dashboard" button for admin on non-dashboard pages
   const showBackToDashboard = role === 'admin' && location.pathname !== '/';
