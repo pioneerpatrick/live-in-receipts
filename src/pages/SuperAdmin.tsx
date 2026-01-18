@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
-import { useAuth } from '@/hooks/useAuth';
+
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -32,7 +32,7 @@ interface TenantWithStats extends Tenant {
 const SuperAdmin = () => {
   const navigate = useNavigate();
   const { isSuperAdmin, loading: tenantLoading } = useTenant();
-  const { } = useAuth();
+  
   
   const [tenants, setTenants] = useState<TenantWithStats[]>([]);
   const [loading, setLoading] = useState(true);
