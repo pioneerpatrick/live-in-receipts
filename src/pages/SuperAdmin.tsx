@@ -337,20 +337,28 @@ const SuperAdmin = () => {
   };
 
   const getDomainStatusIndicator = (tenant: TenantWithStats) => {
+    // Truncate domain for display on smaller screens
+    const truncateDomain = (domain: string) => {
+      if (domain.length > 20) {
+        return domain.substring(0, 18) + '...';
+      }
+      return domain;
+    };
+
     if (!tenant.domain) {
       return (
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-          <span className="text-muted-foreground text-sm">Not configured</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-muted-foreground/30 flex-shrink-0" />
+          <span className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap">Not set</span>
         </div>
       );
     }
     
     if (tenant.slug === 'demo-company') {
       return (
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-amber-500" />
-          <span className="text-muted-foreground text-sm italic">Demo Only</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+          <span className="text-muted-foreground text-xs sm:text-sm italic whitespace-nowrap">Demo</span>
         </div>
       );
     }
@@ -360,35 +368,37 @@ const SuperAdmin = () => {
     
     if (isCustomDomain && tenant.status === 'active') {
       return (
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" title="Live & Verified" />
+        <div className="flex items-center gap-1.5 min-w-0">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" title="Live & Verified" />
           <a 
             href={`https://${tenant.domain}`} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-primary hover:underline text-sm flex items-center gap-1"
+            className="text-primary hover:underline text-xs sm:text-sm flex items-center gap-0.5 truncate max-w-[100px] sm:max-w-[150px] md:max-w-none"
+            title={tenant.domain}
           >
-            {tenant.domain}
-            <ExternalLink className="w-3 h-3" />
+            <span className="truncate">{truncateDomain(tenant.domain)}</span>
+            <ExternalLink className="w-3 h-3 flex-shrink-0" />
           </a>
-          <Badge className="bg-green-500/10 text-green-600 text-xs border-green-500/20">Live</Badge>
+          <Badge className="bg-green-500/10 text-green-600 text-[10px] sm:text-xs border-green-500/20 flex-shrink-0 hidden sm:inline-flex">Live</Badge>
         </div>
       );
     }
     
     // Lovable subdomain or pending
     return (
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-blue-500" title="Subdomain Active" />
+      <div className="flex items-center gap-1.5 min-w-0">
+        <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" title="Subdomain Active" />
         <a 
           href={`https://${tenant.domain}`} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-primary hover:underline text-sm"
+          className="text-primary hover:underline text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[150px] md:max-w-none"
+          title={tenant.domain}
         >
-          {tenant.domain}
+          {truncateDomain(tenant.domain)}
         </a>
-        <Badge variant="outline" className="text-xs">Subdomain</Badge>
+        <Badge variant="outline" className="text-[10px] sm:text-xs flex-shrink-0 hidden sm:inline-flex">Sub</Badge>
       </div>
     );
   };
@@ -450,43 +460,43 @@ const SuperAdmin = () => {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 sm:gap-2 flex-wrap">
             <Button 
               onClick={() => setActiveTab('demo')} 
               variant={activeTab === 'demo' ? 'default' : 'outline'}
-              className={activeTab === 'demo' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+              className={`text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10 ${activeTab === 'demo' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
             >
-              <Play className="w-4 h-4 mr-2" />
-              Demo Mode
+              <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Demo</span>
             </Button>
-            <Button onClick={fetchTenants} variant="outline" disabled={loading}>
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+            <Button onClick={fetchTenants} variant="outline" disabled={loading} className="text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10">
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline ml-2">Refresh</span>
             </Button>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Client
+            <Button onClick={() => handleOpenDialog()} className="text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10">
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Add</span> <span className="hidden sm:inline ml-1">Client</span>
             </Button>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6">
           <Button 
             variant={activeTab === 'tenants' ? 'default' : 'ghost'} 
             onClick={() => setActiveTab('tenants')}
-            className="gap-2"
+            className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10"
           >
-            <Building2 className="w-4 h-4" />
-            Client Organizations
+            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Clients</span>
           </Button>
           <Button 
             variant={activeTab === 'demo' ? 'default' : 'ghost'} 
             onClick={() => setActiveTab('demo')}
-            className={`gap-2 ${activeTab === 'demo' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
+            className={`gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-10 ${activeTab === 'demo' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
           >
-            <Play className="w-4 h-4" />
-            Demo for Pitching
+            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Demo</span>
           </Button>
         </div>
 
@@ -500,47 +510,47 @@ const SuperAdmin = () => {
           <>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Building2 className="w-8 h-8 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Clients</p>
-                  <p className="text-2xl font-bold">{totalTenants}</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Clients</p>
+                  <p className="text-lg sm:text-2xl font-bold">{totalTenants}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Activity className="w-8 h-8 text-green-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Active</p>
-                  <p className="text-2xl font-bold">{activeTenants}</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Active</p>
+                  <p className="text-lg sm:text-2xl font-bold">{activeTenants}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Users className="w-8 h-8 text-blue-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Users</p>
-                  <p className="text-2xl font-bold">{totalUsers}</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Users</p>
+                  <p className="text-lg sm:text-2xl font-bold">{totalUsers}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Globe className="w-8 h-8 text-purple-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Records</p>
-                  <p className="text-2xl font-bold">{totalClients}</p>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Globe className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Records</p>
+                  <p className="text-lg sm:text-2xl font-bold">{totalClients}</p>
                 </div>
               </div>
             </CardContent>
@@ -558,117 +568,124 @@ const SuperAdmin = () => {
               Manage all client organizations and their configurations
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-x-auto">
+          <CardContent className="p-2 sm:p-6">
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Domain</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Users</TableHead>
-                    <TableHead>Records</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="whitespace-nowrap text-xs sm:text-sm">Client</TableHead>
+                    <TableHead className="whitespace-nowrap text-xs sm:text-sm">Domain</TableHead>
+                    <TableHead className="whitespace-nowrap text-xs sm:text-sm hidden sm:table-cell">Status</TableHead>
+                    <TableHead className="whitespace-nowrap text-xs sm:text-sm hidden md:table-cell">Users</TableHead>
+                    <TableHead className="whitespace-nowrap text-xs sm:text-sm hidden md:table-cell">Records</TableHead>
+                    <TableHead className="whitespace-nowrap text-xs sm:text-sm hidden lg:table-cell">Plan</TableHead>
+                    <TableHead className="text-right whitespace-nowrap text-xs sm:text-sm">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {tenants.map((tenant) => (
                     <TableRow key={tenant.id} className={tenant.slug === 'demo-company' ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
+                      <TableCell className="py-2 sm:py-4">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                           <div 
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
+                            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm flex-shrink-0"
                             style={{ backgroundColor: tenant.primary_color }}
                           >
                             {tenant.name.charAt(0)}
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{tenant.name}</p>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <p className="font-medium text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none">{tenant.name}</p>
                               {tenant.slug === 'demo-company' && (
-                                <Badge className="bg-amber-500 text-xs">Demo</Badge>
+                                <Badge className="bg-amber-500 text-[10px] sm:text-xs flex-shrink-0">Demo</Badge>
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground">{tenant.slug}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[80px] sm:max-w-none">{tenant.slug}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2 sm:py-4">
                         {getDomainStatusIndicator(tenant)}
                       </TableCell>
-                      <TableCell>{getStatusBadge(tenant.status)}</TableCell>
-                      <TableCell>{tenant.user_count || 0}</TableCell>
-                      <TableCell>{tenant.client_count || 0}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{tenant.subscription_plan}</Badge>
+                      <TableCell className="py-2 sm:py-4 hidden sm:table-cell">{getStatusBadge(tenant.status)}</TableCell>
+                      <TableCell className="py-2 sm:py-4 hidden md:table-cell text-xs sm:text-sm">{tenant.user_count || 0}</TableCell>
+                      <TableCell className="py-2 sm:py-4 hidden md:table-cell text-xs sm:text-sm">{tenant.client_count || 0}</TableCell>
+                      <TableCell className="py-2 sm:py-4 hidden lg:table-cell">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">{tenant.subscription_plan}</Badge>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end gap-1">
+                      <TableCell className="py-2 sm:py-4">
+                        <div className="flex justify-end gap-0.5 sm:gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-7 w-7 sm:h-9 sm:w-9"
                             onClick={() => setPreviewTenant(tenant)}
                             title="Preview dashboard"
                           >
-                            <Eye className="w-4 h-4 text-amber-500" />
+                            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
                           </Button>
                           {tenant.domain && tenant.status === 'active' && (
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-7 w-7 sm:h-9 sm:w-9 hidden xs:inline-flex"
                               onClick={() => handleAccessClient(tenant)}
                               onMouseEnter={() => tenant.domain && handlePrefetchTenant(tenant.domain)}
                               title="Access client system"
                             >
-                              <ExternalLink className="w-4 h-4 text-primary" />
+                              <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
                             </Button>
                           )}
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-7 w-7 sm:h-9 sm:w-9 hidden sm:inline-flex"
                             onClick={() => setUserManagementTenant(tenant)}
                             title="Manage users"
                           >
-                            <UserCog className="w-4 h-4 text-blue-500" />
+                            <UserCog className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-7 w-7 sm:h-9 sm:w-9"
                             onClick={() => handleOpenDialog(tenant)}
                             title="Edit client"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </Button>
                           {tenant.status === 'active' ? (
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-7 w-7 sm:h-9 sm:w-9 hidden sm:inline-flex"
                               onClick={() => handleStatusChange(tenant, 'suspended')}
                               title="Suspend client"
                             >
-                              <X className="w-4 h-4 text-destructive" />
+                              <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-destructive" />
                             </Button>
                           ) : (
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="h-7 w-7 sm:h-9 sm:w-9 hidden sm:inline-flex"
                               onClick={() => handleStatusChange(tenant, 'active')}
                               title="Activate client"
                             >
-                              <Check className="w-4 h-4 text-green-500" />
+                              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-500" />
                             </Button>
                           )}
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-7 w-7 sm:h-9 sm:w-9"
                             onClick={() => {
                               setSelectedTenant(tenant);
                               setDeleteDialogOpen(true);
                             }}
                             title="Delete client"
                           >
-                            <Trash2 className="w-4 h-4 text-destructive" />
+                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-destructive" />
                           </Button>
                         </div>
                       </TableCell>
@@ -676,7 +693,7 @@ const SuperAdmin = () => {
                   ))}
                   {tenants.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-6 sm:py-8 text-muted-foreground text-xs sm:text-sm">
                         No clients found. Click "Add Client" to create the first one.
                       </TableCell>
                     </TableRow>
