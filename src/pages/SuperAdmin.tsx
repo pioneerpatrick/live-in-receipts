@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import TenantUserManagement from '@/components/superadmin/TenantUserManagement';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tenant } from '@/types/client';
 import { 
   Building2, Plus, Edit, Trash2, RefreshCw, Users, Globe, 
-  Palette, Check, X, Eye, Settings, Shield, Activity, ExternalLink
+  Palette, Check, X, Eye, Settings, Shield, Activity, ExternalLink, UserCog
 } from 'lucide-react';
 
 interface TenantWithStats extends Tenant {
@@ -35,6 +36,7 @@ const SuperAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userManagementTenant, setUserManagementTenant] = useState<Tenant | null>(null);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -477,6 +479,14 @@ const SuperAdmin = () => {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => setUserManagementTenant(tenant)}
+                            title="Manage users"
+                          >
+                            <UserCog className="w-4 h-4 text-blue-500" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleOpenDialog(tenant)}
                             title="Edit client"
                           >
@@ -528,6 +538,16 @@ const SuperAdmin = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* User Management Section */}
+        {userManagementTenant && (
+          <div className="mt-6">
+            <TenantUserManagement 
+              tenant={userManagementTenant} 
+              onClose={() => setUserManagementTenant(null)} 
+            />
+          </div>
+        )}
       </main>
 
       <Footer />
