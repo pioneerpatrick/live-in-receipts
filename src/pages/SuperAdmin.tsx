@@ -90,27 +90,41 @@ const SuperAdmin = () => {
   const fetchTenants = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('tenants')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Fetch all data in parallel instead of N+1 queries
+      const [tenantsResult, allUserCounts, allClientCounts] = await Promise.all([
+        supabase
+          .from('tenants')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('tenant_users')
+          .select('tenant_id'),
+        supabase
+          .from('clients')
+          .select('tenant_id'),
+      ]);
 
-      if (error) throw error;
+      if (tenantsResult.error) throw tenantsResult.error;
 
-      // Get stats for each tenant
-      const tenantsWithStats = await Promise.all(
-        (data || []).map(async (tenant) => {
-          const [{ count: userCount }, { count: clientCount }] = await Promise.all([
-            supabase.from('tenant_users').select('*', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
-            supabase.from('clients').select('*', { count: 'exact', head: true }).eq('tenant_id', tenant.id),
-          ]);
-          return {
-            ...tenant,
-            user_count: userCount || 0,
-            client_count: clientCount || 0,
-          } as TenantWithStats;
-        })
-      );
+      // Count users and clients per tenant efficiently in memory
+      const userCountMap = new Map<string, number>();
+      const clientCountMap = new Map<string, number>();
+
+      (allUserCounts.data || []).forEach(tu => {
+        userCountMap.set(tu.tenant_id, (userCountMap.get(tu.tenant_id) || 0) + 1);
+      });
+
+      (allClientCounts.data || []).forEach(c => {
+        if (c.tenant_id) {
+          clientCountMap.set(c.tenant_id, (clientCountMap.get(c.tenant_id) || 0) + 1);
+        }
+      });
+
+      const tenantsWithStats = (tenantsResult.data || []).map(tenant => ({
+        ...tenant,
+        user_count: userCountMap.get(tenant.id) || 0,
+        client_count: clientCountMap.get(tenant.id) || 0,
+      })) as TenantWithStats[];
 
       setTenants(tenantsWithStats);
     } catch (error) {
