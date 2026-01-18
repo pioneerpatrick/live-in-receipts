@@ -123,19 +123,30 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const fetchTenantByDomain = async (domain: string): Promise<Tenant | null> => {
+  const fetchTenantByDomainOrSlug = async (identifier: string): Promise<Tenant | null> => {
     try {
-      const { data, error } = await supabase
+      // First try to find by slug (for ?tenant= parameter)
+      const { data: bySlug, error: slugError } = await supabase
         .from('tenants')
         .select('*')
-        .eq('domain', domain)
+        .eq('slug', identifier)
         .eq('status', 'active')
         .maybeSingle();
 
-      if (error) throw error;
-      return data as Tenant | null;
+      if (bySlug) return bySlug as Tenant;
+
+      // Fall back to domain lookup
+      const { data: byDomain, error: domainError } = await supabase
+        .from('tenants')
+        .select('*')
+        .eq('domain', identifier)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (domainError) throw domainError;
+      return byDomain as Tenant | null;
     } catch (error) {
-      console.error('Error fetching tenant by domain:', error);
+      console.error('Error fetching tenant by domain/slug:', error);
       return null;
     }
   };
@@ -231,7 +242,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
       let tenantPromise: Promise<Tenant | null> | null = null;
       if (domain) {
         // URL has tenant parameter - use it
-        tenantPromise = fetchTenantByDomain(domain);
+        tenantPromise = fetchTenantByDomainOrSlug(domain);
         promises.push(tenantPromise);
       } else if (user && !isMainDomain) {
         // No URL param and not main domain - fetch from user's tenant
