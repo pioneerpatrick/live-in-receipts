@@ -185,7 +185,8 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshTenant = async () => {
-    if (initialized && !loading) return; // Prevent duplicate calls
+    // Always run if not initialized yet
+    if (initialized) return;
     
     setLoading(true);
     try {
@@ -193,30 +194,37 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
       const { data: { user } } = await supabase.auth.getUser();
       const domain = getTenantDomain();
       
+      console.log('Tenant refresh - domain:', domain, 'isMainDomain:', isMainDomain, 'user:', !!user);
+      
       // Build all promises upfront for maximum parallelism
       const promises: Promise<any>[] = [];
       
-      // Tenant fetch
+      // Tenant fetch - prioritize URL parameter domain
       let tenantPromise: Promise<Tenant | null> | null = null;
       if (domain) {
+        // URL has tenant parameter - use it
         tenantPromise = fetchTenantByDomain(domain);
         promises.push(tenantPromise);
-      } else if (!isMainDomain && user) {
+      } else if (user && !isMainDomain) {
+        // No URL param and not main domain - fetch from user's tenant
         tenantPromise = fetchUserTenant(user.id);
         promises.push(tenantPromise);
       }
       
-      // Super admin check
+      // Super admin check - always run if user exists
       if (user) {
         promises.push(checkSuperAdmin(user.id));
       }
       
       // Execute all in parallel
-      await Promise.all(promises);
+      if (promises.length > 0) {
+        await Promise.all(promises);
+      }
       
       // Apply tenant if found
       if (tenantPromise) {
         const tenantData = await tenantPromise;
+        console.log('Tenant data resolved:', tenantData?.name);
         if (tenantData) {
           setTenant(tenantData);
           applyTenantBranding(tenantData);

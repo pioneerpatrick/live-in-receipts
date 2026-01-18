@@ -147,6 +147,8 @@ export const useClients = () => {
     staleTime: 30 * 1000, // Data is fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: 500,
   });
 };
 
@@ -159,6 +161,8 @@ export const usePayments = () => {
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: 500,
   });
 };
 
