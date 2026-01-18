@@ -308,9 +308,21 @@ const SuperAdmin = () => {
     
     // For super admin, we use URL parameter to identify the tenant
     // This allows super admin to access any client's system
-    const accessUrl = `${window.location.origin}?tenant=${tenant.domain}&super_access=true`;
-    window.open(accessUrl, '_blank');
-    toast.success(`Opening ${tenant.name} in new tab`);
+    // Use encodeURIComponent to ensure special characters are handled
+    const encodedDomain = encodeURIComponent(tenant.domain);
+    const accessUrl = `${window.location.origin}/?tenant=${encodedDomain}&super_access=true`;
+    
+    console.log('Opening tenant access URL:', accessUrl);
+    
+    // Open in new tab
+    const newWindow = window.open(accessUrl, '_blank');
+    if (!newWindow) {
+      // Fallback: navigate in same window if popup blocked
+      toast.info('Popup blocked. Redirecting in current window...');
+      window.location.href = accessUrl;
+    } else {
+      toast.success(`Opening ${tenant.name} in new tab`);
+    }
   };
 
   const getStatusBadge = (status: string) => {
