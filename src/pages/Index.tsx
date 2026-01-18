@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -12,16 +12,15 @@ import { ExcelUploadDialog } from '@/components/ExcelUploadDialog';
 import { PaymentHistoryImportDialog } from '@/components/PaymentHistoryImportDialog';
 import { PaymentReminders } from '@/components/PaymentReminders';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
-import { Client, Payment, ReceiptData } from '@/types/client';
+import { Client, ReceiptData } from '@/types/client';
 import {
-  getClients,
-  getPayments,
   addClient,
   updateClient,
   deleteClient,
   addPayment,
   generateReceiptNumber,
 } from '@/lib/supabaseStorage';
+import { useClientsAndPayments, useInvalidateData } from '@/hooks/useDataCache';
 import { getProjects, getPlots, sellPlot, returnPlot } from '@/lib/projectStorage';
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,17 +28,19 @@ import { useTenant } from '@/hooks/useTenant';
 import { logActivity } from '@/lib/activityLogger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, FileText, Users, Shield, Building2, ExternalLink, Crown } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Shield, Building2, Crown } from 'lucide-react';
 
 const Index = () => {
   const { role } = useAuth();
   const { isSuperAdmin, isMainDomain, tenant } = useTenant();
   const isAdmin = role === 'admin';
   
+  // Use cached data hooks for instant loading
+  const { clients, payments, isLoading: loading, refetch: loadData } = useClientsAndPayments();
+  const { invalidateAll } = useInvalidateData();
+  
   // Super admin on main domain should use Super Admin dashboard, not see tenant data
   const showSuperAdminRedirect = isSuperAdmin && isMainDomain && !tenant;
-  const [clients, setClients] = useState<Client[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
   const [clientFormOpen, setClientFormOpen] = useState(false);
   const [paymentFormOpen, setPaymentFormOpen] = useState(false);
   const [paymentHistoryOpen, setPaymentHistoryOpen] = useState(false);
@@ -47,28 +48,6 @@ const Index = () => {
   const [paymentHistoryImportOpen, setPaymentHistoryImportOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [clientsData, paymentsData] = await Promise.all([
-        getClients(),
-        getPayments()
-      ]);
-      setClients(clientsData);
-      setPayments(paymentsData);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast.error('Failed to load data');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAddNew = () => {
     setSelectedClient(null);
@@ -452,6 +431,7 @@ const Index = () => {
           onAddNew={handleAddNew}
           onImportExcel={() => setExcelUploadOpen(true)}
           onImportWithPayments={() => setPaymentHistoryImportOpen(true)}
+          loading={loading}
         />
       </main>
 

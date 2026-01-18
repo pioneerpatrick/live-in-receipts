@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -9,42 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AccountingDashboard } from '@/components/accounting/AccountingDashboard';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { PaymentRequisitions } from '@/components/accounting/PaymentRequisitions';
-import { Client, Payment } from '@/types/client';
-import { getClients, getPayments, formatCurrency } from '@/lib/supabaseStorage';
+import { formatCurrency } from '@/lib/supabaseStorage';
+import { useClientsAndPayments } from '@/hooks/useDataCache';
 import { BarChart3, RefreshCw, TrendingUp, DollarSign, Users, Wallet, FileCheck } from 'lucide-react';
 
 const Admin = () => {
   const { role } = useAuth();
-  const [clients, setClients] = useState<Client[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { clients, payments, isLoading: loading, refetch: loadAllData } = useClientsAndPayments();
   const [timeRange, setTimeRange] = useState('all');
-
-  useEffect(() => {
-    if (role === 'admin') {
-      loadAllData();
-    }
-  }, [role]);
-
-  const loadAllData = async () => {
-    setLoading(true);
-    await loadAccountingData();
-    setLoading(false);
-  };
-
-  const loadAccountingData = async () => {
-    try {
-      const [clientsData, paymentsData] = await Promise.all([
-        getClients(),
-        getPayments()
-      ]);
-      setClients(clientsData);
-      setPayments(paymentsData);
-    } catch (error) {
-      console.error('Error loading accounting data:', error);
-      toast.error('Failed to load data');
-    }
-  };
 
   // Calculate stats
   const totalRevenue = payments.reduce((sum, p) => sum + Number(p.amount), 0);

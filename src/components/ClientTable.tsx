@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, differenceInDays, parseISO, isValid } from 'date-fns';
 import { Client } from '@/types/client';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/supabaseStorage';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -21,13 +22,14 @@ interface ClientTableProps {
   onAddNew: () => void;
   onImportExcel: () => void;
   onImportWithPayments?: () => void;
+  loading?: boolean;
 }
 
 type DateFilterType = 'none' | 'sale_date' | 'completion_date';
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
-const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, onAddNew, onImportExcel, onImportWithPayments }: ClientTableProps) => {
+const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, onAddNew, onImportExcel, onImportWithPayments, loading = false }: ClientTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilterType, setDateFilterType] = useState<DateFilterType>('none');
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -276,6 +278,40 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
       printWindow.print();
     }
   };
+
+  // Loading skeleton
+  if (loading) {
+    return (
+      <div className="bg-card rounded-lg card-shadow animate-fade-in overflow-hidden">
+        <div className="p-3 sm:p-4 md:p-6 border-b border-border">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <Skeleton className="h-7 w-64" />
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <Skeleton className="h-10 flex-1" />
+              <Skeleton className="h-10 w-36" />
+            </div>
+            <div className="flex gap-2">
+              {Array(5).fill(0).map((_, i) => (
+                <Skeleton key={i} className="h-9 w-9" />
+              ))}
+              <Skeleton className="h-9 w-24 ml-auto" />
+            </div>
+          </div>
+        </div>
+        <div className="p-4 space-y-3">
+          {Array(5).fill(0).map((_, i) => (
+            <div key={i} className="flex gap-4">
+              <Skeleton className="h-12 w-8" />
+              <Skeleton className="h-12 flex-1" />
+              <Skeleton className="h-12 w-24" />
+              <Skeleton className="h-12 w-32" />
+              <Skeleton className="h-12 w-20" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-lg card-shadow animate-fade-in overflow-hidden">
