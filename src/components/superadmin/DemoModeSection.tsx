@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { resetDemoTenant } from '@/lib/demoTenantSeeder';
 import { 
   Play, Eye, Users, FileText, LayoutDashboard, 
-  TrendingUp, Calendar, CheckCircle, Clock, ExternalLink, RefreshCw
+  TrendingUp, Calendar, CheckCircle, Clock, ExternalLink, RefreshCw, RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -36,6 +38,7 @@ interface DemoPayment {
 export const DemoModeSection = () => {
   const [activeView, setActiveView] = useState<'overview' | 'clients' | 'payments'>('overview');
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
   const [demoTenantId, setDemoTenantId] = useState<string | null>(null);
   const [clients, setClients] = useState<DemoClient[]>([]);
   const [payments, setPayments] = useState<DemoPayment[]>([]);
@@ -108,6 +111,20 @@ export const DemoModeSection = () => {
     const accessUrl = `${window.location.origin}?tenant=demo.example.com&super_access=true`;
     window.open(accessUrl, '_blank');
     toast.success('Opening demo tenant in new tab');
+  };
+
+  const handleResetDemoData = async () => {
+    setResetting(true);
+    try {
+      await resetDemoTenant();
+      toast.success('Demo data reset to fresh sample data!');
+      await fetchDemoData();
+    } catch (error) {
+      console.error('Error resetting demo data:', error);
+      toast.error('Failed to reset demo data');
+    } finally {
+      setResetting(false);
+    }
   };
 
   const totalClients = clients.length;
@@ -187,6 +204,41 @@ export const DemoModeSection = () => {
               <FileText className="w-4 h-4 mr-1" />
               Payments
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  size="sm"
+                  variant="outline"
+                  disabled={resetting}
+                  className="border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  {resetting ? (
+                    <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                  ) : (
+                    <RotateCcw className="w-4 h-4 mr-1" />
+                  )}
+                  Reset Data
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset Demo Data?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will delete all current demo data and recreate fresh sample data with up-to-date dates. 
+                    This action is useful before presentations to ensure clean, realistic data.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleResetDemoData}
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    Reset Demo Data
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button 
               size="sm"
               onClick={handleAccessDemo}

@@ -528,3 +528,431 @@ export const initializeDemoTenant = async (): Promise<{ created: boolean; tenant
   const tenantId = await createDemoTenant();
   return { created: true, tenantId };
 };
+
+// Delete all demo tenant data (keeps the tenant itself)
+export const clearDemoTenantData = async (tenantId: string): Promise<void> => {
+  try {
+    // Delete in order to respect foreign key constraints
+    // 1. Delete payments first (references clients)
+    await supabase.from('payments').delete().eq('tenant_id', tenantId);
+    
+    // 2. Delete expenses
+    await supabase.from('expenses').delete().eq('tenant_id', tenantId);
+    
+    // 3. Delete cancelled sales
+    await supabase.from('cancelled_sales').delete().eq('tenant_id', tenantId);
+    
+    // 4. Delete clients
+    await supabase.from('clients').delete().eq('tenant_id', tenantId);
+    
+    // 5. Delete plots (references projects)
+    await supabase.from('plots').delete().eq('tenant_id', tenantId);
+    
+    // 6. Delete projects
+    await supabase.from('projects').delete().eq('tenant_id', tenantId);
+    
+    // 7. Delete company settings
+    await supabase.from('company_settings').delete().eq('tenant_id', tenantId);
+    
+    console.log('Demo tenant data cleared successfully');
+  } catch (error) {
+    console.error('Error clearing demo tenant data:', error);
+    throw error;
+  }
+};
+
+// Reset demo tenant to fresh sample data
+export const resetDemoTenant = async (): Promise<{ success: boolean; tenantId: string | null }> => {
+  try {
+    const demoTenant = await getDemoTenant();
+    
+    if (!demoTenant) {
+      // If demo tenant doesn't exist, create it
+      const tenantId = await createDemoTenant();
+      return { success: true, tenantId };
+    }
+    
+    const tenantId = demoTenant.id;
+    
+    // Clear all existing data
+    await clearDemoTenantData(tenantId);
+    
+    // Now recreate the sample data (similar to createDemoTenant but without creating the tenant)
+    
+    // 1. Recreate company settings
+    await supabase.from('company_settings').insert({
+      tenant_id: tenantId,
+      company_name: 'Demo Properties Ltd',
+      company_tagline: 'Your Dream Home Awaits',
+      phone: '+254 700 000 000',
+      email: 'demo@example.com',
+      address: '123 Demo Street, Nairobi',
+      po_box: 'P.O. Box 12345-00100',
+      website: 'https://demo-properties.example.com',
+      receipt_footer_message: 'Thank you for your payment! For inquiries, call us at +254 700 000 000.',
+    });
+
+    // 2. Create demo projects
+    const projects = [
+      {
+        tenant_id: tenantId,
+        name: 'Sunset Gardens',
+        location: 'Kitengela, Kajiado',
+        description: 'Premium residential plots with ready title deeds near the bypass.',
+        total_plots: 50,
+        capacity: 50,
+        buying_price: 500000,
+      },
+      {
+        tenant_id: tenantId,
+        name: 'Green Valley Estate',
+        location: 'Joska, Machakos',
+        description: 'Affordable plots in a serene environment with excellent road access.',
+        total_plots: 80,
+        capacity: 80,
+        buying_price: 350000,
+      },
+      {
+        tenant_id: tenantId,
+        name: 'Hilltop Heights',
+        location: 'Ruiru, Kiambu',
+        description: 'Exclusive gated community with panoramic views and modern amenities.',
+        total_plots: 30,
+        capacity: 30,
+        buying_price: 1200000,
+      },
+    ];
+
+    const { data: insertedProjects, error: projectsError } = await supabase
+      .from('projects')
+      .insert(projects)
+      .select();
+
+    if (projectsError) throw projectsError;
+
+    // 3. Create demo plots for each project
+    const plots: any[] = [];
+    insertedProjects.forEach((project) => {
+      const plotCount = project.name === 'Hilltop Heights' ? 30 : project.name === 'Sunset Gardens' ? 50 : 80;
+      const prefix = project.name === 'Sunset Gardens' ? 'A' : project.name === 'Green Valley Estate' ? 'B' : 'C';
+      
+      for (let i = 1; i <= plotCount; i++) {
+        plots.push({
+          tenant_id: tenantId,
+          project_id: project.id,
+          plot_number: `${prefix}-${String(i).padStart(2, '0')}`,
+          size: '50x100',
+          price: project.buying_price,
+          status: 'available',
+        });
+      }
+    });
+
+    const { data: insertedPlots, error: plotsError } = await supabase
+      .from('plots')
+      .insert(plots)
+      .select();
+
+    if (plotsError) throw plotsError;
+
+    // 4. Create demo clients with fresh dates (relative to today)
+    const today = new Date();
+    const formatDate = (daysAgo: number) => {
+      const date = new Date(today);
+      date.setDate(date.getDate() - daysAgo);
+      return date.toISOString().split('T')[0];
+    };
+
+    const clients = [
+      {
+        tenant_id: tenantId,
+        name: 'John Kamau Mwangi',
+        phone: '+254 712 345 678',
+        project_name: 'Sunset Gardens',
+        plot_number: 'A-01',
+        unit_price: 500000,
+        number_of_plots: 1,
+        total_price: 500000,
+        discount: 0,
+        total_paid: 500000,
+        balance: 0,
+        status: 'completed',
+        percent_paid: 100,
+        sales_agent: 'Sarah Wanjiru',
+        payment_type: 'cash',
+        sale_date: formatDate(45),
+        completion_date: formatDate(45),
+        commission: 25000,
+        commission_received: 25000,
+        commission_balance: 0,
+      },
+      {
+        tenant_id: tenantId,
+        name: 'Mary Wanjiku Njoroge',
+        phone: '+254 723 456 789',
+        project_name: 'Green Valley Estate',
+        plot_number: 'B-15',
+        unit_price: 350000,
+        number_of_plots: 1,
+        total_price: 350000,
+        discount: 10000,
+        total_paid: 170000,
+        balance: 170000,
+        status: 'ongoing',
+        percent_paid: 50,
+        sales_agent: 'James Ochieng',
+        payment_type: 'installments',
+        payment_period: '12 months',
+        installment_months: 12,
+        sale_date: formatDate(35),
+        next_payment_date: formatDate(-10),
+        commission: 17500,
+        commission_received: 8750,
+        commission_balance: 8750,
+      },
+      {
+        tenant_id: tenantId,
+        name: 'Peter Ochieng Otieno',
+        phone: '+254 734 567 890',
+        project_name: 'Sunset Gardens',
+        plot_number: 'A-05, A-06',
+        unit_price: 500000,
+        number_of_plots: 2,
+        total_price: 1000000,
+        discount: 50000,
+        total_paid: 380000,
+        balance: 570000,
+        status: 'ongoing',
+        percent_paid: 40,
+        sales_agent: 'Sarah Wanjiru',
+        payment_type: 'installments',
+        payment_period: '18 months',
+        installment_months: 18,
+        sale_date: formatDate(60),
+        next_payment_date: formatDate(-5),
+        commission: 50000,
+        commission_received: 20000,
+        commission_balance: 30000,
+      },
+      {
+        tenant_id: tenantId,
+        name: 'Grace Njeri Kariuki',
+        phone: '+254 745 678 901',
+        project_name: 'Hilltop Heights',
+        plot_number: 'C-08',
+        unit_price: 1200000,
+        number_of_plots: 1,
+        total_price: 1200000,
+        discount: 0,
+        total_paid: 300000,
+        balance: 900000,
+        status: 'ongoing',
+        percent_paid: 25,
+        sales_agent: 'David Mwangi',
+        payment_type: 'installments',
+        payment_period: '24 months',
+        installment_months: 24,
+        sale_date: formatDate(20),
+        next_payment_date: formatDate(-15),
+        commission: 60000,
+        commission_received: 15000,
+        commission_balance: 45000,
+      },
+      {
+        tenant_id: tenantId,
+        name: 'David Mwangi Kimani',
+        phone: '+254 756 789 012',
+        project_name: 'Green Valley Estate',
+        plot_number: 'B-22',
+        unit_price: 350000,
+        number_of_plots: 1,
+        total_price: 350000,
+        discount: 0,
+        total_paid: 262500,
+        balance: 87500,
+        status: 'ongoing',
+        percent_paid: 75,
+        sales_agent: 'James Ochieng',
+        payment_type: 'installments',
+        payment_period: '6 months',
+        installment_months: 6,
+        sale_date: formatDate(90),
+        next_payment_date: formatDate(-2),
+        commission: 17500,
+        commission_received: 13125,
+        commission_balance: 4375,
+      },
+      {
+        tenant_id: tenantId,
+        name: 'Elizabeth Akinyi Oloo',
+        phone: '+254 767 890 123',
+        project_name: 'Sunset Gardens',
+        plot_number: 'A-12',
+        unit_price: 500000,
+        number_of_plots: 1,
+        total_price: 500000,
+        discount: 20000,
+        total_paid: 480000,
+        balance: 0,
+        status: 'completed',
+        percent_paid: 100,
+        sales_agent: 'Sarah Wanjiru',
+        payment_type: 'installments',
+        payment_period: '12 months',
+        installment_months: 12,
+        sale_date: formatDate(180),
+        completion_date: formatDate(10),
+        commission: 24000,
+        commission_received: 24000,
+        commission_balance: 0,
+      },
+      {
+        tenant_id: tenantId,
+        name: 'Joseph Kiprop Kosgei',
+        phone: '+254 778 901 234',
+        project_name: 'Hilltop Heights',
+        plot_number: 'C-15, C-16',
+        unit_price: 1200000,
+        number_of_plots: 2,
+        total_price: 2400000,
+        discount: 100000,
+        total_paid: 1150000,
+        balance: 1150000,
+        status: 'ongoing',
+        percent_paid: 50,
+        sales_agent: 'David Mwangi',
+        payment_type: 'installments',
+        payment_period: '24 months',
+        installment_months: 24,
+        sale_date: formatDate(120),
+        next_payment_date: formatDate(-8),
+        commission: 115000,
+        commission_received: 57500,
+        commission_balance: 57500,
+      },
+      {
+        tenant_id: tenantId,
+        name: 'Nancy Wairimu Maina',
+        phone: '+254 789 012 345',
+        project_name: 'Green Valley Estate',
+        plot_number: 'B-30',
+        unit_price: 350000,
+        number_of_plots: 1,
+        total_price: 350000,
+        discount: 15000,
+        total_paid: 83750,
+        balance: 251250,
+        status: 'ongoing',
+        percent_paid: 25,
+        sales_agent: 'James Ochieng',
+        payment_type: 'installments',
+        payment_period: '12 months',
+        installment_months: 12,
+        sale_date: formatDate(15),
+        next_payment_date: formatDate(-20),
+        commission: 16750,
+        commission_received: 4188,
+        commission_balance: 12562,
+      },
+    ];
+
+    const { data: insertedClients, error: clientsError } = await supabase
+      .from('clients')
+      .insert(clients)
+      .select();
+
+    if (clientsError) throw clientsError;
+
+    // Update plots to mark some as sold
+    const plotUpdates = insertedClients.map(async (client) => {
+      const plotNumbers = client.plot_number.split(', ');
+      for (const plotNumber of plotNumbers) {
+        const plot = insertedPlots.find(p => p.plot_number === plotNumber);
+        if (plot) {
+          await supabase
+            .from('plots')
+            .update({ status: 'sold', client_id: client.id, sold_at: client.sale_date })
+            .eq('id', plot.id);
+        }
+      }
+    });
+    await Promise.all(plotUpdates);
+
+    // 5. Create demo payments
+    const payments: any[] = [];
+    let receiptCounter = 1001;
+
+    for (const client of insertedClients) {
+      const clientPayments = generatePaymentsForClient(client, tenantId, receiptCounter);
+      payments.push(...clientPayments);
+      receiptCounter += clientPayments.length;
+    }
+
+    if (payments.length > 0) {
+      const { error: paymentsError } = await supabase
+        .from('payments')
+        .insert(payments);
+
+      if (paymentsError) throw paymentsError;
+    }
+
+    // 6. Create demo expenses with fresh dates
+    const expenses = [
+      {
+        tenant_id: tenantId,
+        category: 'Commission Payout',
+        description: 'Sales commission - Sarah Wanjiru',
+        amount: 25000,
+        expense_date: formatDate(30),
+        payment_method: 'M-Pesa',
+        recipient: 'Sarah Wanjiru',
+        is_commission_payout: true,
+      },
+      {
+        tenant_id: tenantId,
+        category: 'Marketing',
+        description: 'Social media advertising campaign',
+        amount: 15000,
+        expense_date: formatDate(25),
+        payment_method: 'Bank Transfer',
+        recipient: 'Digital Marketing Agency',
+      },
+      {
+        tenant_id: tenantId,
+        category: 'Office Supplies',
+        description: 'Printer paper, ink cartridges, stationery',
+        amount: 5500,
+        expense_date: formatDate(20),
+        payment_method: 'Cash',
+        recipient: 'Office Mart Ltd',
+      },
+      {
+        tenant_id: tenantId,
+        category: 'Transport',
+        description: 'Site visit fuel and transport costs',
+        amount: 8000,
+        expense_date: formatDate(15),
+        payment_method: 'M-Pesa',
+        recipient: 'James Ochieng',
+      },
+      {
+        tenant_id: tenantId,
+        category: 'Legal Fees',
+        description: 'Title deed processing fees',
+        amount: 25000,
+        expense_date: formatDate(10),
+        payment_method: 'Bank Transfer',
+        recipient: 'Wanjiku & Associates Advocates',
+      },
+    ];
+
+    await supabase.from('expenses').insert(expenses);
+
+    console.log('Demo tenant reset successfully with fresh data');
+    return { success: true, tenantId };
+    
+  } catch (error) {
+    console.error('Error resetting demo tenant:', error);
+    throw error;
+  }
+};
