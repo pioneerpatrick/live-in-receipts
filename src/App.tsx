@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import SuperAdminBackButton from "@/components/SuperAdminBackButton";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
@@ -26,6 +27,7 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <SuperAdminBackButton />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route 

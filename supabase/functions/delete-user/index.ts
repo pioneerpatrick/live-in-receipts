@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       }
     })
 
-    // Get the authorization header to verify the requesting user is an admin
+    // Get the authorization header to verify the requesting user
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'No authorization header' }), {
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Create a client with the user's token to verify they're an admin
+    // Create a client with the user's token to verify their identity
     const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } }
     })
@@ -43,14 +43,26 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Check if requesting user is admin
+    // Check if requesting user is super admin
+    const { data: superAdminData } = await supabaseAdmin
+      .from('super_admins')
+      .select('id')
+      .eq('user_id', requestingUser.id)
+      .maybeSingle()
+
+    const isSuperAdmin = !!superAdminData
+
+    // Check if requesting user is admin (for non-super admin requests)
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', requestingUser.id)
-      .single()
+      .maybeSingle()
 
-    if (roleData?.role !== 'admin') {
+    const isAdmin = roleData?.role === 'admin'
+
+    // Must be either super admin or regular admin
+    if (!isSuperAdmin && !isAdmin) {
       return new Response(JSON.stringify({ error: 'Only admins can delete users' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -66,12 +78,35 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Prevent admin from deleting themselves
+    // Prevent user from deleting themselves
     if (userId === requestingUser.id) {
       return new Response(JSON.stringify({ error: 'Cannot delete your own account' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
+    }
+
+    // For non-super admins, verify the user being deleted is in the same tenant
+    if (!isSuperAdmin) {
+      const { data: requestingUserTenant } = await supabaseAdmin
+        .from('tenant_users')
+        .select('tenant_id')
+        .eq('user_id', requestingUser.id)
+        .maybeSingle()
+
+      const { data: targetUserTenant } = await supabaseAdmin
+        .from('tenant_users')
+        .select('tenant_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (!requestingUserTenant || !targetUserTenant || 
+          requestingUserTenant.tenant_id !== targetUserTenant.tenant_id) {
+        return new Response(JSON.stringify({ error: 'Cannot delete users from other organizations' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
     }
 
     // Delete user from auth (this will cascade to profiles and user_roles due to foreign keys)
