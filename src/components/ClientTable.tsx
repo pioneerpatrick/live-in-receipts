@@ -31,7 +31,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [showFilters, setShowFilters] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'completed' | 'cancelled'>('all');
+  const [statusFilter, setStatusFilter] = useState<'active' | 'ongoing' | 'completed' | 'cancelled'>('active');
 
   const filteredClients = clients.filter(client => {
     // Text search filter - add null safety for optional fields
@@ -44,15 +44,16 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
 
     if (!matchesSearch) return false;
 
-    // Status filter - now includes cancelled
-    if (statusFilter !== 'all') {
-      const clientStatus = client.status?.toLowerCase() || 'ongoing';
-      if (statusFilter === 'completed' && clientStatus !== 'completed') return false;
-      if (statusFilter === 'ongoing' && clientStatus !== 'ongoing') return false;
-      if (statusFilter === 'cancelled' && clientStatus !== 'cancelled') return false;
-    } else {
-      // By default (status = 'all'), hide cancelled clients
+    // Status filter
+    if (statusFilter === 'active') {
+      // Show all except cancelled (ongoing + completed)
       if (client.status?.toLowerCase() === 'cancelled') return false;
+    } else if (statusFilter === 'ongoing') {
+      if (client.status?.toLowerCase() !== 'ongoing') return false;
+    } else if (statusFilter === 'completed') {
+      if (client.status?.toLowerCase() !== 'completed') return false;
+    } else if (statusFilter === 'cancelled') {
+      if (client.status?.toLowerCase() !== 'cancelled') return false;
     }
 
     // Date range filter
@@ -72,6 +73,12 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
     }
 
     return true;
+  })
+  // Sort by created_at descending (latest first)
+  .sort((a, b) => {
+    const dateA = new Date(a.created_at || 0).getTime();
+    const dateB = new Date(b.created_at || 0).getTime();
+    return dateB - dateA;
   });
 
   const clearDateFilters = () => {
@@ -80,7 +87,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
     setEndDate(undefined);
   };
 
-  const hasActiveFilters = (dateFilterType !== 'none' && (startDate || endDate)) || statusFilter !== 'all';
+  const hasActiveFilters = (dateFilterType !== 'none' && (startDate || endDate)) || statusFilter !== 'active';
 
   const getBalanceStatus = (balance: number, totalPrice: number) => {
     if (balance === 0) return 'success';
@@ -261,12 +268,12 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                   className="pl-10 w-full"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={(value: 'all' | 'ongoing' | 'completed' | 'cancelled') => setStatusFilter(value)}>
+              <Select value={statusFilter} onValueChange={(value: 'active' | 'ongoing' | 'completed' | 'cancelled') => setStatusFilter(value)}>
                 <SelectTrigger className="w-full sm:w-36">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Active Only</SelectItem>
+                  <SelectItem value="active">All Active</SelectItem>
                   <SelectItem value="ongoing">Ongoing</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
