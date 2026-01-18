@@ -16,7 +16,7 @@ const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 // Main system domain (Technopanaly admin domain)
 const MAIN_DOMAINS = [
-  'technopanaly.lovable.app',
+  'technopanalyrecieptsystem.lovable.app',
   'recieptsystem.technopanaly.co.ke',
   'live-inreciepts.lovable.app', // Legacy domain
 ];
