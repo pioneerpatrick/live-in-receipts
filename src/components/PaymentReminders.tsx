@@ -114,32 +114,37 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
     toast.success('Message copied to clipboard!');
   };
 
-  const copyWhatsAppLink = async () => {
-    if (!whatsappDialog.client?.phone) return;
+  const getWhatsAppUrl = (useWebVersion: boolean = false) => {
+    if (!whatsappDialog.client?.phone) return '';
     
     const phone = getFormattedPhone(whatsappDialog.client.phone);
     const message = encodeURIComponent(generateWhatsAppMessage(whatsappDialog.client));
-    const link = `https://web.whatsapp.com/send?phone=${phone}&text=${message}`;
     
-    await navigator.clipboard.writeText(link);
-    toast.success('WhatsApp link copied! Paste in a new browser tab.');
+    // wa.me works on mobile and desktop, web.whatsapp.com is desktop-only
+    return useWebVersion 
+      ? `https://web.whatsapp.com/send?phone=${phone}&text=${message}`
+      : `https://wa.me/${phone}?text=${message}`;
   };
 
-  const openWhatsAppDirect = () => {
-    if (!whatsappDialog.client?.phone) return;
+  const copyWhatsAppLink = async (useWebVersion: boolean = false) => {
+    const link = getWhatsAppUrl(useWebVersion);
+    if (!link) return;
     
-    const phone = getFormattedPhone(whatsappDialog.client.phone);
-    const message = encodeURIComponent(generateWhatsAppMessage(whatsappDialog.client));
-    const link = `https://web.whatsapp.com/send?phone=${phone}&text=${message}`;
+    await navigator.clipboard.writeText(link);
+    toast.success(`WhatsApp link copied! Paste in a new browser tab.`);
+  };
+
+  const openWhatsAppDirect = (useWebVersion: boolean = false) => {
+    const link = getWhatsAppUrl(useWebVersion);
+    if (!link) return;
     
-    // Create a temporary link and click it
-    const a = document.createElement('a');
-    a.href = link;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    // Use window.open for better compatibility
+    const newWindow = window.open(link, '_blank', 'noopener,noreferrer');
+    
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      // Popup was blocked, show instructions
+      toast.info('Popup blocked. Click "Copy Link" and paste in a new tab.');
+    }
   };
 
   const getReminders = (): ReminderClient[] => {
@@ -356,18 +361,28 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
               </div>
 
               <div className="space-y-2">
-                <Button
-                  onClick={openWhatsAppDirect}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open WhatsApp Web
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    onClick={() => openWhatsAppDirect(false)}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Open WhatsApp
+                  </Button>
+                  <Button
+                    onClick={() => openWhatsAppDirect(true)}
+                    variant="outline"
+                    className="text-green-600 border-green-300 hover:bg-green-50"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    WhatsApp Web
+                  </Button>
+                </div>
                 
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant="outline"
-                    onClick={copyWhatsAppLink}
+                    onClick={() => copyWhatsAppLink(false)}
                     className="text-green-600 border-green-300 hover:bg-green-50"
                   >
                     <Copy className="w-4 h-4 mr-2" />
@@ -383,7 +398,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
                 </div>
 
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  If WhatsApp doesn't open, copy the link and paste it in a new browser tab
+                  ⚠️ Links may be blocked in preview. Use <span className="font-medium">Copy Link</span> and paste in a new tab, or test on the published app.
                 </p>
               </div>
             </div>
