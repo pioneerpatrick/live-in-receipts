@@ -298,6 +298,7 @@ export type Database = {
           production_url: string | null
           receipt_footer_message: string | null
           receipt_watermark: string | null
+          signature_url: string | null
           social_handle: string | null
           tenant_id: string | null
           updated_at: string
@@ -317,6 +318,7 @@ export type Database = {
           production_url?: string | null
           receipt_footer_message?: string | null
           receipt_watermark?: string | null
+          signature_url?: string | null
           social_handle?: string | null
           tenant_id?: string | null
           updated_at?: string
@@ -336,6 +338,7 @@ export type Database = {
           production_url?: string | null
           receipt_footer_message?: string | null
           receipt_watermark?: string | null
+          signature_url?: string | null
           social_handle?: string | null
           tenant_id?: string | null
           updated_at?: string
