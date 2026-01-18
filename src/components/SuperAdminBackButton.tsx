@@ -1,13 +1,20 @@
-import { useTenant, isSuperAdminAccess } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Shield } from 'lucide-react';
+import { useTenant } from '@/hooks/useTenant';
+
+// Check if current user is accessing as super admin (standalone function)
+const isSuperAdminAccess = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('super_access') === 'true';
+};
 
 const SuperAdminBackButton = () => {
-  const { isSuperAdmin, isMainDomain } = useTenant();
+  const tenantContext = useTenant();
   const isAccessingClient = isSuperAdminAccess();
 
   // Only show when super admin is viewing a client system (not on main domain)
-  if (!isSuperAdmin || isMainDomain || !isAccessingClient) {
+  if (!tenantContext.isSuperAdmin || tenantContext.isMainDomain || !isAccessingClient) {
     return null;
   }
 
