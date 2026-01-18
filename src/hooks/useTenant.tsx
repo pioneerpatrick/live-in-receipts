@@ -34,8 +34,9 @@ const isMainSystemDomain = (): boolean => {
     return !testTenant;
   }
   
-  // Check for Lovable preview domains - treat as main domain unless tenant param present
-  if (hostname.includes('lovableproject.com')) {
+  // Check for Lovable preview/project domains - treat as main domain unless tenant param present
+  // This includes both lovableproject.com and lovable.app preview domains
+  if (hostname.includes('lovableproject.com') || hostname.includes('lovable.app')) {
     const urlParams = new URLSearchParams(window.location.search);
     const testTenant = urlParams.get('tenant');
     return !testTenant;
@@ -77,7 +78,7 @@ const getTenantDomain = (): string | null => {
   }
   
   // Skip for Lovable preview/project domains (development)
-  if (hostname.includes('lovableproject.com')) {
+  if (hostname.includes('lovableproject.com') || hostname.includes('lovable.app')) {
     return null;
   }
   
