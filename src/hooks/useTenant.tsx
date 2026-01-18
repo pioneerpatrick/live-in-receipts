@@ -12,7 +12,18 @@ interface TenantContextType {
   refreshTenant: () => Promise<void>;
 }
 
-const TenantContext = createContext<TenantContextType | undefined>(undefined);
+// Default context value to prevent errors during HMR/initial load
+const defaultContextValue: TenantContextType = {
+  tenant: null,
+  tenantId: null,
+  loading: true,
+  isSuperAdmin: false,
+  isMainDomain: true,
+  setTenant: () => {},
+  refreshTenant: async () => {},
+};
+
+const TenantContext = createContext<TenantContextType>(defaultContextValue);
 
 // Main system domain (Technopanaly admin domain)
 const MAIN_DOMAINS = [
@@ -288,8 +299,5 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
 
 export const useTenant = (): TenantContextType => {
   const context = useContext(TenantContext);
-  if (context === undefined) {
-    throw new Error('useTenant must be used within a TenantProvider');
-  }
   return context;
 };
