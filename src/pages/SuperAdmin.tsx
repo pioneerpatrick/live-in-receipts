@@ -301,29 +301,36 @@ const SuperAdmin = () => {
   }, []);
 
   const handleAccessClient = (tenant: Tenant) => {
-    // Get the current system domain (main app domain)
-    const systemDomain = window.location.origin;
+    // Use production URL for shareable links (published app domain)
+    const productionDomain = 'https://technopanalyrecieptsystem.lovable.app';
     
     let accessUrl: string;
     
     if (tenant.domain) {
       // If tenant has a custom domain configured, use it
-      const protocol = window.location.protocol;
-      accessUrl = `${protocol}//${tenant.domain}`;
+      accessUrl = `https://${tenant.domain}`;
       console.log('Opening client custom domain:', accessUrl);
     } else {
-      // No custom domain - use system domain with tenant slug parameter
-      accessUrl = `${systemDomain}/?tenant=${tenant.slug}`;
-      console.log('Opening client via system domain:', accessUrl);
+      // No custom domain - use production domain with tenant slug parameter
+      accessUrl = `${productionDomain}/?tenant=${tenant.slug}`;
+      console.log('Opening client via production domain:', accessUrl);
     }
+    
+    // Copy to clipboard for easy sharing
+    navigator.clipboard.writeText(accessUrl).then(() => {
+      toast.success(`Link copied! Opening ${tenant.name}...`, {
+        description: accessUrl,
+        duration: 5000,
+      });
+    }).catch(() => {
+      toast.success(`Opening ${tenant.name}`);
+    });
     
     // Open in new tab
     const newWindow = window.open(accessUrl, '_blank');
     if (!newWindow) {
       // Fallback: show the URL for manual access
       toast.info(`Open this URL in a new browser tab: ${accessUrl}`);
-    } else {
-      toast.success(`Opening ${tenant.name}`);
     }
   };
 
