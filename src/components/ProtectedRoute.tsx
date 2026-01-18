@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenant, isSuperAdminAccess } from '@/hooks/useTenant';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -9,8 +10,12 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const { user, loading, role } = useAuth();
+  const { isSuperAdmin, loading: tenantLoading } = useTenant();
+  
+  // Check if super admin is accessing client system
+  const superAdminAccessingClient = isSuperAdminAccess();
 
-  if (loading) {
+  if (loading || tenantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -20,6 +25,11 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Super admin accessing client system bypasses role checks
+  if (superAdminAccessingClient && isSuperAdmin) {
+    return <>{children}</>;
   }
 
   // If a specific role is required, check for it

@@ -40,11 +40,17 @@ const isMainSystemDomain = (): boolean => {
   return hostname === MAIN_DOMAIN || hostname === `www.${MAIN_DOMAIN}`;
 };
 
+// Check if current user is accessing as super admin
+const isSuperAdminAccess = (): boolean => {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('super_access') === 'true';
+};
+
 // Get tenant domain from current URL
 const getTenantDomain = (): string | null => {
   const hostname = window.location.hostname;
   
-  // Check for test tenant parameter first
+  // Check for test tenant parameter first (used for super admin access)
   const urlParams = new URLSearchParams(window.location.search);
   const testTenant = urlParams.get('tenant');
   if (testTenant) {
@@ -63,6 +69,9 @@ const getTenantDomain = (): string | null => {
   
   return hostname;
 };
+
+// Export for use in auth components
+export { isSuperAdminAccess };
 
 export const TenantProvider = ({ children }: { children: ReactNode }) => {
   const [tenant, setTenant] = useState<Tenant | null>(null);

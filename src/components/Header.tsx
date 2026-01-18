@@ -52,8 +52,8 @@ const Header = () => {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Super Admin Link */}
-            {isSuperAdmin && (
+            {/* Super Admin Link - Only visible on main domain for super admins */}
+            {isSuperAdmin && isMainDomain && (
               <Button
                 asChild
                 variant={isActive('/super-admin') ? 'default' : 'ghost'}

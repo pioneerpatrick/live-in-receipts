@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tenant } from '@/types/client';
 import { 
   Building2, Plus, Edit, Trash2, RefreshCw, Users, Globe, 
-  Palette, Check, X, Eye, Settings, Shield, Activity
+  Palette, Check, X, Eye, Settings, Shield, Activity, ExternalLink
 } from 'lucide-react';
 
 interface TenantWithStats extends Tenant {
@@ -258,6 +258,19 @@ const SuperAdmin = () => {
     }
   };
 
+  const handleAccessClient = (tenant: Tenant) => {
+    if (!tenant.domain) {
+      toast.error('This client does not have a domain configured');
+      return;
+    }
+    
+    // For super admin, we use URL parameter to identify the tenant
+    // This allows super admin to access any client's system
+    const accessUrl = `${window.location.origin}?tenant=${tenant.domain}&super_access=true`;
+    window.open(accessUrl, '_blank');
+    toast.success(`Opening ${tenant.name} in new tab`);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -451,10 +464,21 @@ const SuperAdmin = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-1">
+                          {tenant.domain && tenant.status === 'active' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleAccessClient(tenant)}
+                              title="Access client system"
+                            >
+                              <ExternalLink className="w-4 h-4 text-primary" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleOpenDialog(tenant)}
+                            title="Edit client"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -463,6 +487,7 @@ const SuperAdmin = () => {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleStatusChange(tenant, 'suspended')}
+                              title="Suspend client"
                             >
                               <X className="w-4 h-4 text-destructive" />
                             </Button>
@@ -471,6 +496,7 @@ const SuperAdmin = () => {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleStatusChange(tenant, 'active')}
+                              title="Activate client"
                             >
                               <Check className="w-4 h-4 text-green-500" />
                             </Button>
@@ -482,6 +508,7 @@ const SuperAdmin = () => {
                               setSelectedTenant(tenant);
                               setDeleteDialogOpen(true);
                             }}
+                            title="Delete client"
                           >
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
