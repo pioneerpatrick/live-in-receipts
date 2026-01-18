@@ -105,8 +105,13 @@ const Auth = () => {
   }
 
   // Get display info based on tenant or main domain
-  const displayName = tenant?.name || (isMainDomain ? 'TECHNO PANALY' : 'LIVE-IN PROPERTIES');
-  const displayTagline = isMainDomain && !tenant ? 'Powering Digital Transformation' : (tenant ? 'Staff Portal' : 'Genuine plots with ready title deeds');
+  // If tenant is loaded from ?tenant= param, use tenant info
+  // If on main domain with no tenant, show Techno Panaly (super admin)
+  // Otherwise show generic "Property Management" placeholder
+  const displayName = tenant?.name || (isMainDomain ? 'TECHNO PANALY' : 'Property Management');
+  const displayTagline = tenant 
+    ? (tenant.name === 'Demo Properties Ltd' ? 'Demo Account - Your Dream Home Awaits' : 'Staff Portal')
+    : (isMainDomain ? 'Powering Digital Transformation' : 'Receipt Management System');
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -289,10 +294,10 @@ const Auth = () => {
         </Card>
       </main>
 
-      {/* Footer - Hide on main domain (super admin) */}
-      {!isMainDomain && (
+      {/* Footer - Show tenant-specific message or generic */}
+      {(!isMainDomain || tenant) && (
         <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border">
-          <p>Thank you for choosing Live-IN Properties. We Secure your Future.</p>
+          <p>Thank you for choosing {tenant?.name || 'our services'}. We Secure your Future.</p>
         </footer>
       )}
     </div>
