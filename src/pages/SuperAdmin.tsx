@@ -41,6 +41,7 @@ const SuperAdmin = () => {
   const [userManagementTenant, setUserManagementTenant] = useState<Tenant | null>(null);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'tenants' | 'demo'>('tenants');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -338,7 +339,6 @@ const SuperAdmin = () => {
     );
   }
 
-  const [activeTab, setActiveTab] = useState<'tenants' | 'demo'>('tenants');
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
