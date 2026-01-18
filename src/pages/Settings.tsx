@@ -53,6 +53,7 @@ interface CompanySettings {
   receipt_footer_message: string | null;
   receipt_watermark: string | null;
   logo_url: string | null;
+  signature_url: string | null;
   production_url: string | null;
 }
 
@@ -64,7 +65,9 @@ const Settings = () => {
   const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingSignature, setUploadingSignature] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const signatureInputRef = useRef<HTMLInputElement>(null);
 
   // Users state
   const [users, setUsers] = useState<UserWithRole[]>([]);
@@ -293,6 +296,88 @@ const Settings = () => {
     } catch (error) {
       console.error('Error removing logo:', error);
       toast.error('Failed to remove logo');
+    }
+  };
+
+  const handleSignatureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !companySettings) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Signature must be less than 2MB');
+      return;
+    }
+
+    setUploadingSignature(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `company-signature-${Date.now()}.${fileExt}`;
+
+      if (companySettings.signature_url) {
+        const oldPath = companySettings.signature_url.split('/').pop();
+        if (oldPath) {
+          await supabase.storage.from('company-logos').remove([oldPath]);
+        }
+      }
+
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(fileName);
+
+      const newSignatureUrl = urlData.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from('company_settings')
+        .update({ signature_url: newSignatureUrl })
+        .eq('id', companySettings.id);
+
+      if (updateError) throw updateError;
+
+      setCompanySettings({ ...companySettings, signature_url: newSignatureUrl });
+      toast.success('Signature uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading signature:', error);
+      toast.error('Failed to upload signature');
+    } finally {
+      setUploadingSignature(false);
+      if (signatureInputRef.current) {
+        signatureInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveSignature = async () => {
+    if (!companySettings?.signature_url) return;
+
+    try {
+      const oldPath = companySettings.signature_url.split('/').pop();
+      if (oldPath) {
+        await supabase.storage.from('company-logos').remove([oldPath]);
+      }
+
+      const { error } = await supabase
+        .from('company_settings')
+        .update({ signature_url: null })
+        .eq('id', companySettings.id);
+
+      if (error) throw error;
+
+      setCompanySettings({ ...companySettings, signature_url: null });
+      toast.success('Signature removed successfully');
+    } catch (error) {
+      console.error('Error removing signature:', error);
+      toast.error('Failed to remove signature');
     }
   };
 
@@ -624,6 +709,58 @@ const Settings = () => {
                             Upload Logo
                           </Button>
                           <p className="text-xs text-muted-foreground">Max 2MB, JPG/PNG</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Company Signature */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Authorized Signature</h3>
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          {companySettings.signature_url ? (
+                            <div className="relative">
+                              <img
+                                src={companySettings.signature_url}
+                                alt="Authorized Signature"
+                                className="w-32 h-16 object-contain border rounded-lg bg-muted"
+                              />
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                className="absolute -top-2 -right-2 w-6 h-6"
+                                onClick={handleRemoveSignature}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="w-32 h-16 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/50">
+                              <Image className="w-6 h-6 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <input
+                            ref={signatureInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleSignatureUpload}
+                            className="hidden"
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={() => signatureInputRef.current?.click()}
+                            disabled={uploadingSignature}
+                          >
+                            {uploadingSignature ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Upload className="w-4 h-4 mr-2" />
+                            )}
+                            Upload Signature
+                          </Button>
+                          <p className="text-xs text-muted-foreground">Max 2MB, JPG/PNG (for receipts)</p>
                         </div>
                       </div>
                     </div>
