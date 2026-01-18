@@ -6,6 +6,7 @@ export interface Project {
   total_plots: number;
   buying_price: number;
   description?: string;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -20,10 +21,11 @@ export interface Plot {
   client_id?: string;
   sold_at?: string;
   notes?: string;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
-  // Joined fields
-  project?: Project;
+  // Joined fields (partial)
+  project?: Partial<Project> & { id: string; name: string; location: string };
   client?: {
     id: string;
     name: string;
