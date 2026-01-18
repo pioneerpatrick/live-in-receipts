@@ -105,7 +105,7 @@ const Auth = () => {
 
   // Get display info based on tenant or main domain
   const displayName = tenant?.name || (isMainDomain ? 'Technopanaly' : 'LIVE-IN PROPERTIES');
-  const displayTagline = isMainDomain && !tenant ? 'Multi-Tenant Receipt System' : 'Genuine plots with ready title deeds';
+  const displayTagline = isMainDomain && !tenant ? 'Powering Digital Transformation' : (tenant ? 'Staff Portal' : 'Genuine plots with ready title deeds');
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

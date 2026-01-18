@@ -38,14 +38,18 @@ const Header = () => {
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
             <Link to="/" className="flex items-center gap-2 sm:gap-3">
               <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
-                <Home className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
+                {isMainDomain && isSuperAdmin ? (
+                  <Shield className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
+                ) : (
+                  <Home className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
+                )}
               </div>
               <div className="min-w-0">
                 <h1 className="font-heading text-base sm:text-xl md:text-2xl font-bold text-secondary truncate">
-                  {tenant?.name || 'LIVE-IN'} <span className="text-primary">{!tenant ? 'PROPERTIES' : ''}</span>
+                  {isMainDomain && isSuperAdmin ? 'Technopanaly' : (tenant?.name || 'LIVE-IN PROPERTIES')}
                 </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground italic hidden xs:block truncate">
-                  {isMainDomain && isSuperAdmin ? 'Technopanaly Admin Console' : 'Genuine plots with ready title deeds'}
+                  {isMainDomain && isSuperAdmin ? 'Powering Digital Transformation' : (tenant ? 'Staff Portal' : 'Genuine plots with ready title deeds')}
                 </p>
               </div>
             </Link>
