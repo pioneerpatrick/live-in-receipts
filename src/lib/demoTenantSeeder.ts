@@ -37,6 +37,13 @@ export const getDemoTenant = async () => {
 // Create demo tenant with full sample data
 export const createDemoTenant = async (): Promise<string | null> => {
   try {
+    // Double-check if demo tenant already exists to prevent duplicates
+    const existingTenant = await getDemoTenant();
+    if (existingTenant) {
+      console.log('Demo tenant already exists, skipping creation');
+      return existingTenant.id;
+    }
+
     // 1. Create the demo tenant
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
@@ -57,12 +64,20 @@ export const createDemoTenant = async (): Promise<string | null> => {
       .select()
       .single();
 
-    if (tenantError) throw tenantError;
+    if (tenantError) {
+      // Check if it's a duplicate key error (tenant already exists)
+      if (tenantError.code === '23505') {
+        console.log('Demo tenant already exists (duplicate key), fetching existing');
+        const existing = await getDemoTenant();
+        return existing?.id || null;
+      }
+      throw tenantError;
+    }
 
     const tenantId = tenant.id;
 
-    // 2. Create company settings for the demo tenant
-    await supabase.from('company_settings').insert({
+    // 2. Create company settings for the demo tenant (ignore if already exists)
+    const { error: settingsError } = await supabase.from('company_settings').insert({
       tenant_id: tenantId,
       company_name: 'Demo Properties Ltd',
       company_tagline: 'Your Dream Home Awaits',
@@ -73,6 +88,10 @@ export const createDemoTenant = async (): Promise<string | null> => {
       website: 'https://demo-properties.example.com',
       receipt_footer_message: 'Thank you for your payment! For inquiries, call us at +254 700 000 000.',
     });
+    
+    if (settingsError && settingsError.code !== '23505') {
+      console.error('Error creating company settings:', settingsError);
+    }
 
     // 3. Create demo projects
     const projects = [
@@ -138,9 +157,6 @@ export const createDemoTenant = async (): Promise<string | null> => {
     if (plotsError) throw plotsError;
 
     // 5. Create demo clients with varying statuses
-    const sunsetProject = insertedProjects.find(p => p.name === 'Sunset Gardens');
-    const greenValleyProject = insertedProjects.find(p => p.name === 'Green Valley Estate');
-    const hilltopProject = insertedProjects.find(p => p.name === 'Hilltop Heights');
 
     const clients = [
       {

@@ -21,7 +21,6 @@ import {
   deleteClient,
   addPayment,
   generateReceiptNumber,
-  formatCurrency,
 } from '@/lib/supabaseStorage';
 import { getProjects, getPlots, sellPlot, returnPlot } from '@/lib/projectStorage';
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
