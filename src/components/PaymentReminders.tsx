@@ -416,10 +416,21 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
                           • {reminder.timeDisplay}
                         </span>
                       </div>
+                      {/* Monthly contribution info */}
+                      {reminder.installment_months && reminder.installment_months > 0 && reminder.balance > 0 && (
+                        <div className="mt-1 text-[10px] sm:text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            Monthly: {formatCurrency(Math.ceil(reminder.balance / reminder.installment_months))}
+                          </span>
+                          <span className="mx-1">•</span>
+                          <span>{reminder.installment_months} months plan</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2 flex-shrink-0">
                     <div className="text-right">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Total Due</p>
                       <p className={`font-bold text-sm sm:text-base ${styles.text}`}>
                         {formatCurrency(reminder.balance)}
                       </p>
