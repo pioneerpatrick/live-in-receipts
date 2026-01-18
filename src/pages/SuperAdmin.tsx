@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
+import { prefetchTenantData } from '@/hooks/useDataCache';
 
 import { toast } from 'sonner';
 import Header from '@/components/Header';
@@ -293,6 +294,12 @@ const SuperAdmin = () => {
     }
   };
 
+  // Prefetch tenant data on hover for instant loading
+  const handlePrefetchTenant = useCallback((domain: string) => {
+    // Fire and forget - don't await
+    prefetchTenantData(domain).catch(() => {});
+  }, []);
+
   const handleAccessClient = (tenant: Tenant) => {
     if (!tenant.domain) {
       toast.error('This client does not have a domain configured');
@@ -559,6 +566,7 @@ const SuperAdmin = () => {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleAccessClient(tenant)}
+                              onMouseEnter={() => tenant.domain && handlePrefetchTenant(tenant.domain)}
                               title="Access client system"
                             >
                               <ExternalLink className="w-4 h-4 text-primary" />
