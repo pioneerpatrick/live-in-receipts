@@ -95,7 +95,7 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const fetchTenantByDomain = async (domain: string) => {
+  const fetchTenantByDomain = async (domain: string): Promise<Tenant | null> => {
     try {
       const { data, error } = await supabase
         .from('tenants')
@@ -105,46 +105,29 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (error) throw error;
-      
-      if (data) {
-        setTenant(data as Tenant);
-        applyTenantBranding(data as Tenant);
-      }
+      return data as Tenant | null;
     } catch (error) {
       console.error('Error fetching tenant by domain:', error);
+      return null;
     }
   };
 
-  const fetchUserTenant = async () => {
+  const fetchUserTenant = async (userId: string): Promise<Tenant | null> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Get user's tenant
+      // Get user's tenant with single join query
       const { data: tenantUser, error: tuError } = await supabase
         .from('tenant_users')
-        .select('tenant_id')
-        .eq('user_id', user.id)
+        .select('tenant_id, tenants(*)')
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (tuError) throw tuError;
-      if (!tenantUser) return;
+      if (!tenantUser?.tenants) return null;
 
-      // Get tenant details
-      const { data: tenantData, error: tError } = await supabase
-        .from('tenants')
-        .select('*')
-        .eq('id', tenantUser.tenant_id)
-        .maybeSingle();
-
-      if (tError) throw tError;
-      
-      if (tenantData) {
-        setTenant(tenantData as Tenant);
-        applyTenantBranding(tenantData as Tenant);
-      }
+      return tenantUser.tenants as unknown as Tenant;
     } catch (error) {
       console.error('Error fetching user tenant:', error);
+      return null;
     }
   };
 
@@ -206,23 +189,39 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     
     setLoading(true);
     try {
+      // Run user fetch first (needed for other queries)
       const { data: { user } } = await supabase.auth.getUser();
       const domain = getTenantDomain();
       
-      // Run domain/tenant fetch and super admin check in parallel
-      const promises: Promise<void>[] = [];
+      // Build all promises upfront for maximum parallelism
+      const promises: Promise<any>[] = [];
       
+      // Tenant fetch
+      let tenantPromise: Promise<Tenant | null> | null = null;
       if (domain) {
-        promises.push(fetchTenantByDomain(domain));
+        tenantPromise = fetchTenantByDomain(domain);
+        promises.push(tenantPromise);
       } else if (!isMainDomain && user) {
-        promises.push(fetchUserTenant());
+        tenantPromise = fetchUserTenant(user.id);
+        promises.push(tenantPromise);
       }
       
+      // Super admin check
       if (user) {
         promises.push(checkSuperAdmin(user.id));
       }
       
+      // Execute all in parallel
       await Promise.all(promises);
+      
+      // Apply tenant if found
+      if (tenantPromise) {
+        const tenantData = await tenantPromise;
+        if (tenantData) {
+          setTenant(tenantData);
+          applyTenantBranding(tenantData);
+        }
+      }
     } catch (error) {
       console.error('Error refreshing tenant:', error);
     } finally {
