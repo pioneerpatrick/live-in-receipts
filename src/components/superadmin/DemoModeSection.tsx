@@ -1,97 +1,119 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Play, Eye, Users, FileText, LayoutDashboard, 
-  TrendingUp, Calendar, CheckCircle, Clock
+  TrendingUp, Calendar, CheckCircle, Clock, ExternalLink, RefreshCw
 } from 'lucide-react';
+import { toast } from 'sonner';
 
-// Demo data for pitching to new clients
-const DEMO_CLIENTS = [
-  {
-    id: '1',
-    name: 'John Kamau',
-    phone: '+254 712 345 678',
-    project_name: 'Sunset Gardens',
-    plot_number: 'A-15',
-    total_price: 850000,
-    total_paid: 425000,
-    balance: 425000,
-    status: 'ongoing',
-    percent_paid: 50,
-    next_payment_date: '2024-02-15',
-  },
-  {
-    id: '2',
-    name: 'Mary Wanjiku',
-    phone: '+254 723 456 789',
-    project_name: 'Green Valley Estate',
-    plot_number: 'B-23',
-    total_price: 1200000,
-    total_paid: 1200000,
-    balance: 0,
-    status: 'completed',
-    percent_paid: 100,
-    next_payment_date: null,
-  },
-  {
-    id: '3',
-    name: 'Peter Ochieng',
-    phone: '+254 734 567 890',
-    project_name: 'Sunset Gardens',
-    plot_number: 'A-22, A-23',
-    total_price: 1700000,
-    total_paid: 680000,
-    balance: 1020000,
-    status: 'ongoing',
-    percent_paid: 40,
-    next_payment_date: '2024-02-01',
-  },
-  {
-    id: '4',
-    name: 'Grace Njeri',
-    phone: '+254 745 678 901',
-    project_name: 'Hilltop Heights',
-    plot_number: 'C-08',
-    total_price: 650000,
-    total_paid: 162500,
-    balance: 487500,
-    status: 'ongoing',
-    percent_paid: 25,
-    next_payment_date: '2024-02-20',
-  },
-  {
-    id: '5',
-    name: 'David Mwangi',
-    phone: '+254 756 789 012',
-    project_name: 'Green Valley Estate',
-    plot_number: 'B-10',
-    total_price: 1200000,
-    total_paid: 900000,
-    balance: 300000,
-    status: 'ongoing',
-    percent_paid: 75,
-    next_payment_date: '2024-01-30',
-  },
-];
+interface DemoClient {
+  id: string;
+  name: string;
+  phone: string;
+  project_name: string;
+  plot_number: string;
+  total_price: number;
+  total_paid: number;
+  balance: number;
+  status: string;
+  percent_paid: number;
+  next_payment_date: string | null;
+}
 
-const DEMO_PAYMENTS = [
-  { date: '2024-01-15', client: 'John Kamau', amount: 85000, method: 'M-Pesa', receipt: 'RCP-2024-0125' },
-  { date: '2024-01-14', client: 'David Mwangi', amount: 150000, method: 'Bank Transfer', receipt: 'RCP-2024-0124' },
-  { date: '2024-01-13', client: 'Peter Ochieng', amount: 170000, method: 'Cash', receipt: 'RCP-2024-0123' },
-  { date: '2024-01-12', client: 'Grace Njeri', amount: 65000, method: 'M-Pesa', receipt: 'RCP-2024-0122' },
-  { date: '2024-01-11', client: 'Mary Wanjiku', amount: 200000, method: 'Bank Transfer', receipt: 'RCP-2024-0121' },
-];
+interface DemoPayment {
+  id: string;
+  payment_date: string;
+  amount: number;
+  payment_method: string;
+  receipt_number: string;
+  client_name?: string;
+}
 
 export const DemoModeSection = () => {
   const [activeView, setActiveView] = useState<'overview' | 'clients' | 'payments'>('overview');
+  const [loading, setLoading] = useState(true);
+  const [demoTenantId, setDemoTenantId] = useState<string | null>(null);
+  const [clients, setClients] = useState<DemoClient[]>([]);
+  const [payments, setPayments] = useState<DemoPayment[]>([]);
 
-  const totalClients = DEMO_CLIENTS.length;
-  const totalRevenue = DEMO_CLIENTS.reduce((sum, c) => sum + c.total_paid, 0);
-  const totalReceivables = DEMO_CLIENTS.reduce((sum, c) => sum + c.balance, 0);
-  const completedClients = DEMO_CLIENTS.filter(c => c.status === 'completed').length;
+  useEffect(() => {
+    fetchDemoData();
+  }, []);
+
+  const fetchDemoData = async () => {
+    setLoading(true);
+    try {
+      // Get demo tenant
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('slug', 'demo-company')
+        .maybeSingle();
+
+      if (tenantError) throw tenantError;
+      if (!tenant) {
+        setLoading(false);
+        return;
+      }
+
+      setDemoTenantId(tenant.id);
+
+      // Fetch clients and payments for demo tenant
+      const [clientsResult, paymentsResult] = await Promise.all([
+        supabase
+          .from('clients')
+          .select('id, name, phone, project_name, plot_number, total_price, total_paid, balance, status, percent_paid, next_payment_date')
+          .eq('tenant_id', tenant.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('payments')
+          .select('id, payment_date, amount, payment_method, receipt_number, client_id')
+          .eq('tenant_id', tenant.id)
+          .order('payment_date', { ascending: false })
+          .limit(10),
+      ]);
+
+      if (clientsResult.error) throw clientsResult.error;
+      if (paymentsResult.error) throw paymentsResult.error;
+
+      setClients(clientsResult.data || []);
+      
+      // Map payments with client names
+      const paymentsWithNames = (paymentsResult.data || []).map(payment => {
+        const client = clientsResult.data?.find(c => c.id === payment.client_id);
+        return {
+          ...payment,
+          client_name: client?.name || 'Unknown',
+        };
+      });
+      setPayments(paymentsWithNames);
+
+    } catch (error) {
+      console.error('Error fetching demo data:', error);
+      toast.error('Failed to load demo data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccessDemo = () => {
+    if (!demoTenantId) {
+      toast.error('Demo tenant not found');
+      return;
+    }
+    const accessUrl = `${window.location.origin}?tenant=demo.example.com&super_access=true`;
+    window.open(accessUrl, '_blank');
+    toast.success('Opening demo tenant in new tab');
+  };
+
+  const totalClients = clients.length;
+  const totalRevenue = clients.reduce((sum, c) => sum + c.total_paid, 0);
+  const totalReceivables = clients.reduce((sum, c) => sum + c.balance, 0);
+  const completedClients = clients.filter(c => c.status === 'completed').length;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -103,6 +125,33 @@ export const DemoModeSection = () => {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  if (loading) {
+    return (
+      <Card className="border-2 border-dashed border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
+        <CardContent className="p-8 flex items-center justify-center">
+          <RefreshCw className="w-6 h-6 animate-spin text-amber-500 mr-2" />
+          <span>Loading demo data...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!demoTenantId) {
+    return (
+      <Card className="border-2 border-dashed border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
+        <CardContent className="p-8 text-center">
+          <Play className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h3 className="font-semibold text-lg mb-2">Demo Tenant Initializing</h3>
+          <p className="text-muted-foreground">The demo tenant with sample data is being created. Please refresh in a moment.</p>
+          <Button onClick={fetchDemoData} className="mt-4" variant="outline">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-2 border-dashed border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
@@ -138,10 +187,18 @@ export const DemoModeSection = () => {
               <FileText className="w-4 h-4 mr-1" />
               Payments
             </Button>
+            <Button 
+              size="sm"
+              onClick={handleAccessDemo}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              <ExternalLink className="w-4 h-4 mr-1" />
+              Open Full Demo
+            </Button>
           </div>
         </div>
         <CardDescription>
-          Show this demo data when pitching to potential clients. This is sample data only.
+          Live demo data from the "Demo Properties Ltd" tenant. Use this when pitching to potential clients.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -259,7 +316,7 @@ export const DemoModeSection = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {DEMO_CLIENTS.map((client) => (
+                {clients.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell>
                       <div>
@@ -308,23 +365,23 @@ export const DemoModeSection = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {DEMO_PAYMENTS.map((payment, index) => (
-                  <TableRow key={index}>
+                {payments.map((payment) => (
+                  <TableRow key={payment.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-muted-foreground" />
-                        {payment.date}
+                        {new Date(payment.payment_date).toLocaleDateString()}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">{payment.client}</TableCell>
+                    <TableCell className="font-medium">{payment.client_name}</TableCell>
                     <TableCell className="text-right text-green-600 font-medium">
                       KES {payment.amount.toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{payment.method}</Badge>
+                      <Badge variant="outline">{payment.payment_method}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground font-mono text-sm">
-                      {payment.receipt}
+                      {payment.receipt_number}
                     </TableCell>
                   </TableRow>
                 ))}

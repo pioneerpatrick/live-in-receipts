@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import TenantUserManagement from '@/components/superadmin/TenantUserManagement';
 import { DemoModeSection } from '@/components/superadmin/DemoModeSection';
+import { initializeDemoTenant } from '@/lib/demoTenantSeeder';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tenant } from '@/types/client';
 import { 
   Building2, Plus, Edit, Trash2, RefreshCw, Users, Globe, 
-  Palette, Check, X, Eye, Settings, Shield, Activity, ExternalLink, UserCog, Play
+  Check, X, Shield, Activity, ExternalLink, UserCog, Play
 } from 'lucide-react';
 
 interface TenantWithStats extends Tenant {
@@ -30,8 +31,8 @@ interface TenantWithStats extends Tenant {
 
 const SuperAdmin = () => {
   const navigate = useNavigate();
-  const { isSuperAdmin, isMainDomain, loading: tenantLoading } = useTenant();
-  const { user } = useAuth();
+  const { isSuperAdmin, loading: tenantLoading } = useTenant();
+  const { } = useAuth();
   
   const [tenants, setTenants] = useState<TenantWithStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,9 +66,23 @@ const SuperAdmin = () => {
 
   useEffect(() => {
     if (isSuperAdmin) {
-      fetchTenants();
+      initializeDemoData();
     }
   }, [isSuperAdmin]);
+
+  const initializeDemoData = async () => {
+    try {
+      const result = await initializeDemoTenant();
+      if (result.created) {
+        toast.success('Demo tenant created with sample data for presentations!');
+      }
+      await fetchTenants();
+    } catch (error) {
+      console.error('Error initializing demo tenant:', error);
+      // Still fetch tenants even if demo creation fails
+      await fetchTenants();
+    }
+  };
 
   const fetchTenants = async () => {
     setLoading(true);
@@ -469,7 +484,7 @@ const SuperAdmin = () => {
                 </TableHeader>
                 <TableBody>
                   {tenants.map((tenant) => (
-                    <TableRow key={tenant.id}>
+                    <TableRow key={tenant.id} className={tenant.slug === 'demo-company' ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div 
@@ -479,21 +494,30 @@ const SuperAdmin = () => {
                             {tenant.name.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-medium">{tenant.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{tenant.name}</p>
+                              {tenant.slug === 'demo-company' && (
+                                <Badge className="bg-amber-500 text-xs">Demo</Badge>
+                              )}
+                            </div>
                             <p className="text-xs text-muted-foreground">{tenant.slug}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         {tenant.domain ? (
-                          <a 
-                            href={`https://${tenant.domain}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline text-sm"
-                          >
-                            {tenant.domain}
-                          </a>
+                          tenant.slug === 'demo-company' ? (
+                            <span className="text-muted-foreground text-sm italic">Demo Only</span>
+                          ) : (
+                            <a 
+                              href={`https://${tenant.domain}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline text-sm"
+                            >
+                              {tenant.domain}
+                            </a>
+                          )
                         ) : (
                           <span className="text-muted-foreground text-sm">Not configured</span>
                         )}
