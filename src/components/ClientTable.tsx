@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { format, differenceInDays, parseISO, isValid } from 'date-fns';
 import { Client } from '@/types/client';
 import { formatCurrency } from '@/lib/supabaseStorage';
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload, CalendarIcon, X, Filter, CreditCard, Clock, AlertTriangle } from 'lucide-react';
+import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload, CalendarIcon, X, Filter, CreditCard, Clock, AlertTriangle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 interface ClientTableProps {
   clients: Client[];
@@ -25,6 +25,8 @@ interface ClientTableProps {
 
 type DateFilterType = 'none' | 'sale_date' | 'completion_date';
 
+const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
+
 const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, onAddNew, onImportExcel, onImportWithPayments }: ClientTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilterType, setDateFilterType] = useState<DateFilterType>('none');
@@ -32,59 +34,87 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'active' | 'ongoing' | 'completed' | 'cancelled'>('active');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
-  const filteredClients = clients.filter(client => {
-    // Text search filter - add null safety for optional fields
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = 
-      (client.name || '').toLowerCase().includes(searchLower) ||
-      (client.phone || '').includes(searchTerm) ||
-      (client.plot_number || '').toLowerCase().includes(searchLower) ||
-      (client.project_name || '').toLowerCase().includes(searchLower);
+  // Memoize filtered and sorted clients for performance
+  const filteredClients = useMemo(() => {
+    return clients.filter(client => {
+      // Text search filter - add null safety for optional fields
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        (client.name || '').toLowerCase().includes(searchLower) ||
+        (client.phone || '').includes(searchTerm) ||
+        (client.plot_number || '').toLowerCase().includes(searchLower) ||
+        (client.project_name || '').toLowerCase().includes(searchLower);
 
-    if (!matchesSearch) return false;
+      if (!matchesSearch) return false;
 
-    // Status filter
-    if (statusFilter === 'active') {
-      // Show all except cancelled (ongoing + completed)
-      if (client.status?.toLowerCase() === 'cancelled') return false;
-    } else if (statusFilter === 'ongoing') {
-      if (client.status?.toLowerCase() !== 'ongoing') return false;
-    } else if (statusFilter === 'completed') {
-      if (client.status?.toLowerCase() !== 'completed') return false;
-    } else if (statusFilter === 'cancelled') {
-      if (client.status?.toLowerCase() !== 'cancelled') return false;
-    }
-
-    // Date range filter
-    if (dateFilterType !== 'none' && (startDate || endDate)) {
-      const dateField = dateFilterType === 'sale_date' ? client.sale_date : client.completion_date;
-      
-      if (!dateField) return false;
-      
-      const clientDate = new Date(dateField);
-      
-      if (startDate && clientDate < startDate) return false;
-      if (endDate) {
-        const endOfDay = new Date(endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        if (clientDate > endOfDay) return false;
+      // Status filter
+      if (statusFilter === 'active') {
+        // Show all except cancelled (ongoing + completed)
+        if (client.status?.toLowerCase() === 'cancelled') return false;
+      } else if (statusFilter === 'ongoing') {
+        if (client.status?.toLowerCase() !== 'ongoing') return false;
+      } else if (statusFilter === 'completed') {
+        if (client.status?.toLowerCase() !== 'completed') return false;
+      } else if (statusFilter === 'cancelled') {
+        if (client.status?.toLowerCase() !== 'cancelled') return false;
       }
-    }
 
-    return true;
-  })
-  // Sort by sale_date descending (latest purchase first)
-  .sort((a, b) => {
-    const dateA = new Date(a.sale_date || a.created_at || 0).getTime();
-    const dateB = new Date(b.sale_date || b.created_at || 0).getTime();
-    return dateB - dateA;
-  });
+      // Date range filter
+      if (dateFilterType !== 'none' && (startDate || endDate)) {
+        const dateField = dateFilterType === 'sale_date' ? client.sale_date : client.completion_date;
+        
+        if (!dateField) return false;
+        
+        const clientDate = new Date(dateField);
+        
+        if (startDate && clientDate < startDate) return false;
+        if (endDate) {
+          const endOfDay = new Date(endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (clientDate > endOfDay) return false;
+        }
+      }
+
+      return true;
+    })
+    // Sort by sale_date descending (latest purchase first)
+    .sort((a, b) => {
+      const dateA = new Date(a.sale_date || a.created_at || 0).getTime();
+      const dateB = new Date(b.sale_date || b.created_at || 0).getTime();
+      return dateB - dateA;
+    });
+  }, [clients, searchTerm, statusFilter, dateFilterType, startDate, endDate]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedClients = filteredClients.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (value: 'active' | 'ongoing' | 'completed' | 'cancelled') => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1);
+  };
 
   const clearDateFilters = () => {
     setDateFilterType('none');
     setStartDate(undefined);
     setEndDate(undefined);
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = (dateFilterType !== 'none' && (startDate || endDate)) || statusFilter !== 'active';
@@ -264,11 +294,11 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                   type="text"
                   placeholder="Search clients..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 w-full"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={(value: 'active' | 'ongoing' | 'completed' | 'cancelled') => setStatusFilter(value)}>
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                 <SelectTrigger className="w-full sm:w-36">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -413,13 +443,13 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
 
       {/* Mobile Card View */}
       <div className="block md:hidden">
-        {filteredClients.length === 0 ? (
+        {paginatedClients.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground px-4">
             {searchTerm || hasActiveFilters ? 'No clients found matching your filters.' : 'No clients yet. Add your first client to get started.'}
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {filteredClients.map((client, index) => {
+            {paginatedClients.map((client, index) => {
               const paymentStatus = getPaymentStatus(client);
               const isOverdue = paymentStatus === 'overdue';
               const isDueToday = paymentStatus === 'due-today';
@@ -562,14 +592,14 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredClients.length === 0 ? (
+            {paginatedClients.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
                   {searchTerm || hasActiveFilters ? 'No clients found matching your filters.' : 'No clients yet. Add your first client to get started.'}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredClients.map((client, index) => {
+              paginatedClients.map((client, index) => {
                 const paymentStatus = getPaymentStatus(client);
                 const isOverdue = paymentStatus === 'overdue';
                 const isDueToday = paymentStatus === 'due-today';
@@ -586,7 +616,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                     !isCancelled && !isOverdue && !isDueToday && "hover:bg-muted/30"
                   )}
                 >
-                  <TableCell className="font-medium text-xs px-2">{index + 1}</TableCell>
+                  <TableCell className="font-medium text-xs px-2">{startIndex + index + 1}</TableCell>
                   <TableCell className="font-medium text-xs px-2">
                     <div className="flex flex-col">
                       <span className={cn("truncate", isCancelled && "text-red-600 line-through")}>{client.name}</span>
@@ -680,8 +710,104 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
       </div>
 
       {filteredClients.length > 0 && (
-        <div className="p-3 sm:p-4 border-t border-border text-xs sm:text-sm text-muted-foreground">
-          Showing {filteredClients.length} of {clients.length} clients
+        <div className="p-3 sm:p-4 border-t border-border">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Info and items per page */}
+            <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground">
+              <span>
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredClients.length)} of {filteredClients.length} clients
+                {filteredClients.length !== clients.length && ` (${clients.length} total)`}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline">Show:</span>
+                <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                  <SelectTrigger className="w-16 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEMS_PER_PAGE_OPTIONS.map(option => (
+                      <SelectItem key={option} value={String(option)}>{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  title="First page"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  title="Previous page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                <div className="flex items-center gap-1 mx-2">
+                  {/* Show page numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="icon"
+                        className="h-8 w-8 text-xs"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  title="Next page"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  title="Last page"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
