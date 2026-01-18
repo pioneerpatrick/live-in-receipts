@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Home, Loader2, Mail, Lock, User, Shield } from 'lucide-react';
+import { Home, Loader2, Mail, Lock, User } from 'lucide-react';
+import technopanalyLogo from '@/assets/technopanaly-logo.jpg';
 
 const loginSchema = z.object({
   email: z.string().trim().email('Invalid email address'),
@@ -104,7 +105,7 @@ const Auth = () => {
   }
 
   // Get display info based on tenant or main domain
-  const displayName = tenant?.name || (isMainDomain ? 'Technopanaly' : 'LIVE-IN PROPERTIES');
+  const displayName = tenant?.name || (isMainDomain ? 'TECHNO PANALY' : 'LIVE-IN PROPERTIES');
   const displayTagline = isMainDomain && !tenant ? 'Powering Digital Transformation' : (tenant ? 'Staff Portal' : 'Genuine plots with ready title deeds');
 
   return (
@@ -113,15 +114,13 @@ const Auth = () => {
       <header className="gradient-header border-b border-border py-6">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center gap-3">
-            {tenant?.logo_url ? (
+            {isMainDomain && !tenant ? (
+              <img src={technopanalyLogo} alt="Techno Panaly" className="w-16 h-16 rounded-full object-cover shadow-md" />
+            ) : tenant?.logo_url ? (
               <img src={tenant.logo_url} alt={tenant.name} className="w-14 h-14 rounded-full object-cover shadow-md" />
             ) : (
               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
-                {isMainDomain && !tenant ? (
-                  <Shield className="w-7 h-7 text-primary-foreground" />
-                ) : (
-                  <Home className="w-7 h-7 text-primary-foreground" />
-                )}
+                <Home className="w-7 h-7 text-primary-foreground" />
               </div>
             )}
             <div className="text-center">
@@ -290,10 +289,12 @@ const Auth = () => {
         </Card>
       </main>
 
-      {/* Footer */}
-      <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border">
-        <p>Thank you for choosing Live-IN Properties. We Secure your Future.</p>
-      </footer>
+      {/* Footer - Hide on main domain (super admin) */}
+      {!isMainDomain && (
+        <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border">
+          <p>Thank you for choosing Live-IN Properties. We Secure your Future.</p>
+        </footer>
+      )}
     </div>
   );
 };
