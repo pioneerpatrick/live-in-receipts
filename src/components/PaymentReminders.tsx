@@ -1,6 +1,6 @@
 import { Client } from '@/types/client';
 import { formatCurrency } from '@/lib/supabaseStorage';
-import { Bell, AlertTriangle, Clock, Calendar, MessageCircle, Copy, ExternalLink } from 'lucide-react';
+import { Bell, AlertTriangle, Clock, Calendar, MessageCircle, Copy, ExternalLink, Mail } from 'lucide-react';
 import { format, differenceInDays, differenceInMonths, parseISO, isValid } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -72,6 +72,37 @@ Best regards,
   return message;
 };
 
+const generateEmailMessage = (client: Client, productionUrl: string | null): { subject: string; body: string } => {
+  const paymentLink = productionUrl ? `${productionUrl}/payments/${client.id}` : null;
+  
+  const subject = `Payment Reminder - ${client.project_name} Plot ${client.plot_number}`;
+  
+  const body = `Dear ${client.name},
+
+This is a friendly payment reminder from our team.
+
+PAYMENT DETAILS:
+─────────────────────────────
+• Project: ${client.project_name}
+• Plot Number: ${client.plot_number}
+• Total Price: ${formatCurrency(client.total_price)}
+• Amount Paid: ${formatCurrency(client.total_paid)}
+• Outstanding Balance: ${formatCurrency(client.balance)}
+${client.next_payment_date ? `• Due Date: ${format(parseISO(client.next_payment_date), 'dd MMM yyyy')}` : ''}
+${paymentLink ? `\nView Payment History: ${paymentLink}` : ''}
+
+We kindly request you to clear the outstanding balance at your earliest convenience.
+
+For any queries, please don't hesitate to contact us.
+
+Thank you for your continued trust.
+
+Best regards,
+Property Management Team`;
+
+  return { subject, body };
+};
+
 const getFormattedPhone = (phone: string): string => {
   // Clean phone number - remove spaces, dashes, and ensure it starts with country code
   let cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
@@ -95,6 +126,11 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
   today.setHours(0, 0, 0, 0);
   
   const [whatsappDialog, setWhatsappDialog] = useState<{ open: boolean; client: Client | null }>({
+    open: false,
+    client: null
+  });
+  
+  const [emailDialog, setEmailDialog] = useState<{ open: boolean; client: Client | null }>({
     open: false,
     client: null
   });
@@ -167,6 +203,42 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
       // Popup was blocked, show instructions
       toast.info('Popup blocked. Click "Copy Link" and paste in a new tab.');
     }
+  };
+
+  const handleEmailClick = (client: Client, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEmailDialog({ open: true, client });
+  };
+
+  const getEmailUrl = () => {
+    if (!emailDialog.client) return '';
+    
+    const { subject, body } = generateEmailMessage(emailDialog.client, productionUrl);
+    return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  const copyEmailMessage = async () => {
+    if (!emailDialog.client) return;
+    
+    const { body } = generateEmailMessage(emailDialog.client, productionUrl);
+    await navigator.clipboard.writeText(body);
+    toast.success('Email message copied to clipboard!');
+  };
+
+  const copyEmailSubject = async () => {
+    if (!emailDialog.client) return;
+    
+    const { subject } = generateEmailMessage(emailDialog.client, productionUrl);
+    await navigator.clipboard.writeText(subject);
+    toast.success('Email subject copied to clipboard!');
+  };
+
+  const openEmailClient = () => {
+    const link = getEmailUrl();
+    if (!link) return;
+    
+    window.location.href = link;
+    toast.success('Opening email client...');
   };
 
   const getReminders = (): ReminderClient[] => {
@@ -336,15 +408,26 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
                         {styles.label}
                       </span>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => handleWhatsAppClick(reminder, e)}
-                      className="h-7 sm:h-8 px-2 sm:px-3 gap-1 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700"
-                    >
-                      <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="text-[10px] sm:text-xs">WhatsApp</span>
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleWhatsAppClick(reminder, e)}
+                        className="h-7 sm:h-8 px-2 sm:px-3 gap-1 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700"
+                      >
+                        <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline text-[10px] sm:text-xs">WhatsApp</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleEmailClick(reminder, e)}
+                        className="h-7 sm:h-8 px-2 sm:px-3 gap-1 text-blue-600 border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                      >
+                        <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline text-[10px] sm:text-xs">Email</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -421,6 +504,83 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
 
                 <p className="text-xs text-muted-foreground text-center mt-2">
                   ⚠️ Links may be blocked in preview. Use <span className="font-medium">Copy Link</span> and paste in a new tab, or test on the published app.
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Dialog */}
+      <Dialog open={emailDialog.open} onOpenChange={(open) => setEmailDialog({ open, client: open ? emailDialog.client : null })}>
+        <DialogContent className="w-[95vw] max-w-md sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-blue-600">
+              <Mail className="w-5 h-5" />
+              Send Email Reminder
+            </DialogTitle>
+          </DialogHeader>
+          
+          {emailDialog.client && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="font-medium text-sm">{emailDialog.client.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {emailDialog.client.project_name} - Plot {emailDialog.client.plot_number}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Balance: <span className="font-semibold text-destructive">{formatCurrency(emailDialog.client.balance)}</span>
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Subject:</p>
+                <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    {generateEmailMessage(emailDialog.client, productionUrl).subject}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Message Preview:</p>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg max-h-40 overflow-y-auto">
+                  <pre className="text-xs whitespace-pre-wrap font-sans text-blue-800">
+                    {generateEmailMessage(emailDialog.client, productionUrl).body}
+                  </pre>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Button
+                  onClick={openEmailClient}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Open Email Client
+                </Button>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={copyEmailSubject}
+                    className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Subject
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={copyEmailMessage}
+                    className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Message
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  📧 Click "Open Email Client" to compose an email with this template. You'll need to add the recipient's email address.
                 </p>
               </div>
             </div>
