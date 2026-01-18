@@ -74,10 +74,10 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
 
     return true;
   })
-  // Sort by created_at descending (latest first)
+  // Sort by sale_date descending (latest purchase first)
   .sort((a, b) => {
-    const dateA = new Date(a.created_at || 0).getTime();
-    const dateB = new Date(b.created_at || 0).getTime();
+    const dateA = new Date(a.sale_date || a.created_at || 0).getTime();
+    const dateB = new Date(b.sale_date || b.created_at || 0).getTime();
     return dateB - dateA;
   });
 
