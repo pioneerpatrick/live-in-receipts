@@ -237,8 +237,27 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
     const link = getEmailUrl();
     if (!link) return;
     
-    window.location.href = link;
-    toast.success('Opening email client...');
+    try {
+      // Try window.open first for better iframe compatibility
+      const newWindow = window.open(link, '_self');
+      
+      if (!newWindow) {
+        // Fallback: try location.href
+        window.location.href = link;
+      }
+      toast.success('Opening email client...');
+    } catch (error) {
+      // If blocked in preview, show instructions
+      toast.info('Email client blocked in preview. Copy the message and paste in your email app, or test on the published app.');
+    }
+  };
+
+  const copyEmailLink = async () => {
+    const link = getEmailUrl();
+    if (!link) return;
+    
+    await navigator.clipboard.writeText(link);
+    toast.success('Email link copied! Paste in browser address bar.');
   };
 
   const getReminders = (): ReminderClient[] => {
@@ -552,13 +571,23 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
               </div>
 
               <div className="space-y-2">
-                <Button
-                  onClick={openEmailClient}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Open Email Client
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    onClick={openEmailClient}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Open Email
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={copyEmailLink}
+                    className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Link
+                  </Button>
+                </div>
                 
                 <div className="grid grid-cols-2 gap-2">
                   <Button
@@ -580,7 +609,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
                 </div>
 
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  📧 Click "Open Email Client" to compose an email with this template. You'll need to add the recipient's email address.
+                  ⚠️ If "Open Email" doesn't work, use <span className="font-medium">Copy Link</span> and paste in browser, or copy the message manually. Test on the published app for best results.
                 </p>
               </div>
             </div>
