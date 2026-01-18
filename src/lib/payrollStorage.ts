@@ -1,23 +1,53 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Employee, PayrollRecord, EmployeeDeduction, StatutoryRate } from "@/types/payroll";
 
+// Helper to get current user's tenant_id
+const getCurrentTenantId = async (): Promise<string | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from('tenant_users')
+    .select('tenant_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  return data?.tenant_id || null;
+};
+
 // Employee Operations
 export async function getEmployees(): Promise<Employee[]> {
-  const { data, error } = await supabase
+  const tenantId = await getCurrentTenantId();
+  
+  let query = supabase
     .from('employees')
     .select('*')
     .order('full_name');
+
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return data as Employee[];
 }
 
 export async function getActiveEmployees(): Promise<Employee[]> {
-  const { data, error } = await supabase
+  const tenantId = await getCurrentTenantId();
+  
+  let query = supabase
     .from('employees')
     .select('*')
     .eq('is_active', true)
     .order('full_name');
+
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return data as Employee[];
@@ -35,9 +65,11 @@ export async function getEmployee(id: string): Promise<Employee | null> {
 }
 
 export async function addEmployee(employee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>): Promise<Employee> {
+  const tenantId = await getCurrentTenantId();
+  
   const { data, error } = await supabase
     .from('employees')
-    .insert(employee)
+    .insert({ ...employee, tenant_id: tenantId })
     .select()
     .single();
 
@@ -68,10 +100,15 @@ export async function deleteEmployee(id: string): Promise<void> {
 
 // Payroll Record Operations
 export async function getPayrollRecords(month?: number, year?: number): Promise<PayrollRecord[]> {
+  const tenantId = await getCurrentTenantId();
+  
   let query = supabase
     .from('payroll_records')
     .select('*, employee:employees(*)');
 
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
   if (month !== undefined) {
     query = query.eq('pay_period_month', month);
   }
@@ -103,10 +140,11 @@ export async function getEmployeePayrollRecords(employeeId: string, year?: numbe
 
 export async function addPayrollRecord(record: Omit<PayrollRecord, 'id' | 'created_at' | 'updated_at' | 'employee'>): Promise<PayrollRecord> {
   const { data: { user } } = await supabase.auth.getUser();
+  const tenantId = await getCurrentTenantId();
   
   const { data, error } = await supabase
     .from('payroll_records')
-    .insert({ ...record, created_by: user?.id })
+    .insert({ ...record, created_by: user?.id, tenant_id: tenantId })
     .select()
     .single();
 
@@ -167,9 +205,11 @@ export async function getEmployeeDeductions(employeeId: string): Promise<Employe
 }
 
 export async function addEmployeeDeduction(deduction: Omit<EmployeeDeduction, 'id' | 'created_at'>): Promise<EmployeeDeduction> {
+  const tenantId = await getCurrentTenantId();
+  
   const { data, error } = await supabase
     .from('employee_deductions')
-    .insert(deduction)
+    .insert({ ...deduction, tenant_id: tenantId })
     .select()
     .single();
 
@@ -200,11 +240,19 @@ export async function deleteEmployeeDeduction(id: string): Promise<void> {
 
 // Statutory Rates Operations
 export async function getStatutoryRates(): Promise<StatutoryRate[]> {
-  const { data, error } = await supabase
+  const tenantId = await getCurrentTenantId();
+  
+  let query = supabase
     .from('statutory_rates')
     .select('*')
     .eq('is_active', true)
     .order('rate_type', { ascending: true });
+
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return data as StatutoryRate[];

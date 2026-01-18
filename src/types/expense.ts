@@ -11,6 +11,7 @@ export interface Expense {
   client_id: string | null;
   is_commission_payout: boolean;
   notes: string | null;
+  tenant_id?: string;
   created_by: string | null;
   created_at: string;
   updated_at: string;
