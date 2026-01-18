@@ -48,16 +48,16 @@ export const createDemoTenant = async (): Promise<string | null> => {
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .insert({
-        name: 'Demo Properties Ltd',
+        name: 'Techno Panaly (Demo)',
         slug: DEMO_TENANT_SLUG,
         domain: null, // No custom domain - accessed via system domain with ?tenant=demo-company
         status: 'active',
-        primary_color: '#1E40AF',
-        secondary_color: '#3B82F6',
-        accent_color: '#10B981',
-        contact_email: 'demo@example.com',
+        primary_color: '#1e40af',
+        secondary_color: '#3b82f6',
+        accent_color: '#60a5fa',
+        contact_email: 'demo@technopanaly.com',
         contact_phone: '+254 700 000 000',
-        address: '123 Demo Street, Nairobi',
+        address: 'Nairobi, Kenya',
         max_users: 10,
         subscription_plan: 'premium',
       })
@@ -79,14 +79,14 @@ export const createDemoTenant = async (): Promise<string | null> => {
     // 2. Create company settings for the demo tenant (ignore if already exists)
     const { error: settingsError } = await supabase.from('company_settings').insert({
       tenant_id: tenantId,
-      company_name: 'Demo Properties Ltd',
-      company_tagline: 'Your Dream Home Awaits',
+      company_name: 'Techno Panaly',
+      company_tagline: 'Receipt Management System Demo',
       phone: '+254 700 000 000',
-      email: 'demo@example.com',
-      address: '123 Demo Street, Nairobi',
-      po_box: 'P.O. Box 12345-00100',
-      website: 'https://demo-properties.example.com',
-      receipt_footer_message: 'Thank you for your payment! For inquiries, call us at +254 700 000 000.',
+      email: 'demo@technopanaly.com',
+      address: 'Nairobi, Kenya',
+      po_box: 'P.O. Box 00100',
+      website: 'https://technopanalyrecieptsystem.lovable.app',
+      receipt_footer_message: 'This is a demo environment. Thank you for exploring Techno Panaly!',
     });
     
     if (settingsError && settingsError.code !== '23505') {
@@ -592,14 +592,14 @@ export const resetDemoTenant = async (): Promise<{ success: boolean; tenantId: s
     // 1. Recreate company settings
     await supabase.from('company_settings').insert({
       tenant_id: tenantId,
-      company_name: 'Demo Properties Ltd',
-      company_tagline: 'Your Dream Home Awaits',
+      company_name: 'Techno Panaly',
+      company_tagline: 'Receipt Management System Demo',
       phone: '+254 700 000 000',
-      email: 'demo@example.com',
-      address: '123 Demo Street, Nairobi',
-      po_box: 'P.O. Box 12345-00100',
-      website: 'https://demo-properties.example.com',
-      receipt_footer_message: 'Thank you for your payment! For inquiries, call us at +254 700 000 000.',
+      email: 'demo@technopanaly.com',
+      address: 'Nairobi, Kenya',
+      po_box: 'P.O. Box 00100',
+      website: 'https://technopanalyrecieptsystem.lovable.app',
+      receipt_footer_message: 'This is a demo environment. Thank you for exploring Techno Panaly!',
     });
 
     // 2. Create demo projects
