@@ -306,22 +306,20 @@ const SuperAdmin = () => {
       return;
     }
     
-    // For super admin, we use URL parameter to identify the tenant
-    // This allows super admin to access any client's system
-    // Use encodeURIComponent to ensure special characters are handled
-    const encodedDomain = encodeURIComponent(tenant.domain);
-    const accessUrl = `${window.location.origin}/?tenant=${encodedDomain}&super_access=true`;
+    // Open the client's actual domain directly
+    // The domain should be configured to point to this app
+    const protocol = window.location.protocol;
+    const accessUrl = `${protocol}//${tenant.domain}`;
     
-    console.log('Opening tenant access URL:', accessUrl);
+    console.log('Opening client domain:', accessUrl);
     
     // Open in new tab
     const newWindow = window.open(accessUrl, '_blank');
     if (!newWindow) {
-      // Fallback: navigate in same window if popup blocked
-      toast.info('Popup blocked. Redirecting in current window...');
-      window.location.href = accessUrl;
+      // Fallback: show the URL for manual access
+      toast.info(`Open ${tenant.domain} in a new browser tab`);
     } else {
-      toast.success(`Opening ${tenant.name} in new tab`);
+      toast.success(`Opening ${tenant.name} at ${tenant.domain}`);
     }
   };
 
