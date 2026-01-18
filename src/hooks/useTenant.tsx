@@ -15,7 +15,11 @@ interface TenantContextType {
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 // Main system domain (Technopanaly admin domain)
-const MAIN_DOMAIN = 'recieptsystem.technopanaly.co.ke';
+const MAIN_DOMAINS = [
+  'technopanaly.lovable.app',
+  'recieptsystem.technopanaly.co.ke',
+  'live-inreciepts.lovable.app', // Legacy domain
+];
 const LOCALHOST_DOMAINS = ['localhost', '127.0.0.1'];
 
 // Check if we're on the main admin domain
@@ -31,20 +35,20 @@ const isMainSystemDomain = (): boolean => {
   }
   
   // Check for Lovable preview domains - treat as main domain unless tenant param present
-  if (hostname.includes('lovable.app') || hostname.includes('lovableproject.com')) {
+  if (hostname.includes('lovableproject.com')) {
     const urlParams = new URLSearchParams(window.location.search);
     const testTenant = urlParams.get('tenant');
     return !testTenant;
   }
   
-  return hostname === MAIN_DOMAIN || hostname === `www.${MAIN_DOMAIN}`;
+  // Check if it's one of the main admin domains
+  return MAIN_DOMAINS.includes(hostname) || MAIN_DOMAINS.some(d => hostname === `www.${d}`);
 };
 
 // Check if current user is accessing as super admin
 const isSuperAdminAccess = (): boolean => {
   const urlParams = new URLSearchParams(window.location.search);
   const result = urlParams.get('super_access') === 'true';
-  console.log('isSuperAdminAccess check:', { search: window.location.search, result });
   return result;
 };
 
@@ -53,26 +57,32 @@ const getTenantDomain = (): string | null => {
   const hostname = window.location.hostname;
   const search = window.location.search;
   
-  // Check for test tenant parameter first (used for super admin access)
+  // Check for test tenant parameter first (used for super admin access in preview)
   const urlParams = new URLSearchParams(search);
   const testTenant = urlParams.get('tenant');
   
-  console.log('getTenantDomain:', { hostname, search, testTenant });
-  
   if (testTenant) {
+    console.log('Using tenant from URL param:', testTenant);
     return testTenant;
   }
   
-  // Skip for localhost and main domain
-  if (LOCALHOST_DOMAINS.includes(hostname) || isMainSystemDomain()) {
+  // Skip for localhost
+  if (LOCALHOST_DOMAINS.includes(hostname)) {
     return null;
   }
   
-  // Skip for Lovable preview domains without tenant param
-  if (hostname.includes('lovable.app') || hostname.includes('lovableproject.com')) {
+  // Skip for main admin domains
+  if (MAIN_DOMAINS.includes(hostname) || MAIN_DOMAINS.some(d => hostname === `www.${d}`)) {
     return null;
   }
   
+  // Skip for Lovable preview/project domains (development)
+  if (hostname.includes('lovableproject.com')) {
+    return null;
+  }
+  
+  // This is a client's custom domain - use it directly
+  console.log('Using client domain:', hostname);
   return hostname;
 };
 
