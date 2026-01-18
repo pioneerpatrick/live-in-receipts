@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Tenant } from '@/types/client';
 import { 
-  Users, Plus, Edit, Trash2, RefreshCw, Shield, UserPlus, Mail, Key
+  Users, Plus, Edit, Trash2, RefreshCw, Shield, UserPlus, Mail, Key, KeyRound
 } from 'lucide-react';
 
 interface TenantUser {
@@ -35,7 +35,9 @@ const TenantUserManagement = ({ tenant, onClose }: TenantUserManagementProps) =>
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<TenantUser | null>(null);
+  const [newPassword, setNewPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
   const [newUserForm, setNewUserForm] = useState({
@@ -225,6 +227,37 @@ const TenantUserManagement = ({ tenant, onClose }: TenantUserManagementProps) =>
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!selectedUser || !newPassword) {
+      toast.error('Please enter a new password');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase.functions.invoke('reset-user-password', {
+        body: { userId: selectedUser.user_id, newPassword },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Password reset successfully for ${selectedUser.full_name}`);
+      setResetPasswordDialogOpen(false);
+      setSelectedUser(null);
+      setNewPassword('');
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast.error(error.message || 'Failed to reset password');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       <Card>
@@ -298,6 +331,18 @@ const TenantUserManagement = ({ tenant, onClose }: TenantUserManagementProps) =>
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setNewPassword('');
+                            setResetPasswordDialogOpen(true);
+                          }}
+                          title="Reset password"
+                        >
+                          <KeyRound className="w-4 h-4 text-amber-500" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -455,6 +500,55 @@ const TenantUserManagement = ({ tenant, onClose }: TenantUserManagementProps) =>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5" />
+              Reset Password
+            </DialogTitle>
+            <DialogDescription>
+              Set a new password for <strong>{selectedUser?.full_name}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="pl-10"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleResetPassword} disabled={saving}>
+              {saving ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                'Reset Password'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
