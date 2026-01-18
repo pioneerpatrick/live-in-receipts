@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import technopanalyLogo from '@/assets/technopanaly-logo.jpg';
 
 const Header = () => {
   const { user, role, signOut } = useAuth();
@@ -37,16 +38,16 @@ const Header = () => {
           {/* Logo and Company Name */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
             <Link to="/" className="flex items-center gap-2 sm:gap-3">
-              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
-                {isMainDomain && isSuperAdmin ? (
-                  <Shield className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
-                ) : (
+              {isMainDomain && isSuperAdmin ? (
+                <img src={technopanalyLogo} alt="Techno Panaly" className="w-10 h-10 sm:w-14 sm:h-14 rounded-full object-cover shadow-md flex-shrink-0" />
+              ) : (
+                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
                   <Home className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
-                )}
-              </div>
+                </div>
+              )}
               <div className="min-w-0">
                 <h1 className="font-heading text-base sm:text-xl md:text-2xl font-bold text-secondary truncate">
-                  {isMainDomain && isSuperAdmin ? 'Technopanaly' : (tenant?.name || 'LIVE-IN PROPERTIES')}
+                  {isMainDomain && isSuperAdmin ? 'TECHNO PANALY' : (tenant?.name || 'LIVE-IN PROPERTIES')}
                 </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground italic hidden xs:block truncate">
                   {isMainDomain && isSuperAdmin ? 'Powering Digital Transformation' : (tenant ? 'Staff Portal' : 'Genuine plots with ready title deeds')}

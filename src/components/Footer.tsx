@@ -1,6 +1,14 @@
 import { Heart } from 'lucide-react';
+import { useTenant } from '@/hooks/useTenant';
 
 const Footer = () => {
+  const { isMainDomain, isSuperAdmin } = useTenant();
+  
+  // Hide footer on super admin pages (main domain)
+  if (isMainDomain && isSuperAdmin) {
+    return null;
+  }
+
   return (
     <footer className="bg-secondary text-secondary-foreground py-4 sm:py-6 mt-auto">
       <div className="container mx-auto px-3 sm:px-4 text-center">
