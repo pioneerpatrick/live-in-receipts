@@ -1089,6 +1089,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_tenant_data: { Args: { _tenant_id: string }; Returns: boolean }
       cleanup_orphaned_plots: { Args: never; Returns: number }
       get_client_payment_history: {
         Args: { p_client_id: string }
