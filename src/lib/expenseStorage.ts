@@ -1,11 +1,33 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Expense } from '@/types/expense';
 
+// Helper to get current user's tenant_id
+const getCurrentTenantId = async (): Promise<string | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from('tenant_users')
+    .select('tenant_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  return data?.tenant_id || null;
+};
+
 export const getExpenses = async (): Promise<Expense[]> => {
-  const { data, error } = await supabase
+  const tenantId = await getCurrentTenantId();
+  
+  let query = supabase
     .from('expenses')
     .select('*')
     .order('expense_date', { ascending: false });
+  
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
+
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching expenses:', error);
@@ -17,12 +39,14 @@ export const getExpenses = async (): Promise<Expense[]> => {
 
 export const addExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'updated_at'>): Promise<Expense> => {
   const { data: { user } } = await supabase.auth.getUser();
+  const tenantId = await getCurrentTenantId();
   
   const { data, error } = await supabase
     .from('expenses')
     .insert({
       ...expense,
       created_by: user?.id,
+      tenant_id: tenantId,
     })
     .select()
     .single();
@@ -64,11 +88,19 @@ export const deleteExpense = async (id: string): Promise<void> => {
 };
 
 export const getExpensesByCategory = async (category: string): Promise<Expense[]> => {
-  const { data, error } = await supabase
+  const tenantId = await getCurrentTenantId();
+  
+  let query = supabase
     .from('expenses')
     .select('*')
     .eq('category', category)
     .order('expense_date', { ascending: false });
+  
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
+
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching expenses by category:', error);
@@ -79,11 +111,19 @@ export const getExpensesByCategory = async (category: string): Promise<Expense[]
 };
 
 export const getCommissionPayouts = async (): Promise<Expense[]> => {
-  const { data, error } = await supabase
+  const tenantId = await getCurrentTenantId();
+  
+  let query = supabase
     .from('expenses')
     .select('*')
     .eq('is_commission_payout', true)
     .order('expense_date', { ascending: false });
+  
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
+
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching commission payouts:', error);

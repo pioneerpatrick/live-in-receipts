@@ -1,12 +1,35 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Client, Payment } from '@/types/client';
 
+// Helper to get current user's tenant_id
+const getCurrentTenantId = async (): Promise<string | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from('tenant_users')
+    .select('tenant_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  return data?.tenant_id || null;
+};
+
 // Client operations
 export const getClients = async (): Promise<Client[]> => {
-  const { data, error } = await supabase
+  const tenantId = await getCurrentTenantId();
+  
+  let query = supabase
     .from('clients')
     .select('*')
     .order('created_at', { ascending: false });
+
+  // Filter by tenant if user belongs to one
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
+
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching clients:', error);
@@ -16,15 +39,16 @@ export const getClients = async (): Promise<Client[]> => {
   return data || [];
 };
 
-export const addClient = async (client: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid' | 'created_by'>): Promise<Client> => {
-  // Get current user to set created_by
+export const addClient = async (client: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid' | 'created_by' | 'tenant_id'>): Promise<Client> => {
   const { data: { user } } = await supabase.auth.getUser();
+  const tenantId = await getCurrentTenantId();
   
   const { data, error } = await supabase
     .from('clients')
     .insert({
       ...client,
       created_by: user?.id,
+      tenant_id: tenantId,
     })
     .select()
     .single();
@@ -66,7 +90,6 @@ export const deleteClient = async (id: string): Promise<void> => {
 
   if (plotError) {
     console.error('Error returning plot to stock:', plotError);
-    // Continue with client deletion even if plot update fails
   }
 
   // Delete related cancelled sales records
@@ -77,10 +100,9 @@ export const deleteClient = async (id: string): Promise<void> => {
 
   if (cancelledSalesError) {
     console.error('Error deleting cancelled sales:', cancelledSalesError);
-    // Continue with client deletion even if cancelled sales deletion fails
   }
 
-  // Delete related payments (should cascade automatically but explicit is safer)
+  // Delete related payments
   const { error: paymentsError } = await supabase
     .from('payments')
     .delete()
@@ -88,10 +110,9 @@ export const deleteClient = async (id: string): Promise<void> => {
 
   if (paymentsError) {
     console.error('Error deleting payments:', paymentsError);
-    // Continue with client deletion
   }
 
-  // Update expenses to unlink from client (don't delete, keep for accounting)
+  // Update expenses to unlink from client
   const { error: expensesError } = await supabase
     .from('expenses')
     .update({ client_id: null })
@@ -101,7 +122,7 @@ export const deleteClient = async (id: string): Promise<void> => {
     console.error('Error unlinking expenses:', expensesError);
   }
 
-  // Then delete the client
+  // Delete the client
   const { error } = await supabase
     .from('clients')
     .delete()
@@ -115,10 +136,18 @@ export const deleteClient = async (id: string): Promise<void> => {
 
 // Payment operations
 export const getPayments = async (): Promise<Payment[]> => {
-  const { data, error } = await supabase
+  const tenantId = await getCurrentTenantId();
+  
+  let query = supabase
     .from('payments')
     .select('*')
     .order('created_at', { ascending: false });
+
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId);
+  }
+
+  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching payments:', error);
@@ -128,15 +157,16 @@ export const getPayments = async (): Promise<Payment[]> => {
   return data || [];
 };
 
-export const addPayment = async (payment: Omit<Payment, 'id' | 'created_at' | 'created_by'>): Promise<Payment> => {
-  // Get current user to set created_by
+export const addPayment = async (payment: Omit<Payment, 'id' | 'created_at' | 'created_by' | 'tenant_id'>): Promise<Payment> => {
   const { data: { user } } = await supabase.auth.getUser();
+  const tenantId = await getCurrentTenantId();
   
   const { data, error } = await supabase
     .from('payments')
     .insert({
       ...payment,
       created_by: user?.id,
+      tenant_id: tenantId,
     })
     .select()
     .single();
@@ -176,7 +206,6 @@ export const deletePayment = async (id: string): Promise<void> => {
     throw error;
   }
   
-  // Check if deletion actually occurred (RLS might silently block it)
   if (count === 0) {
     throw new Error('Payment deletion failed - insufficient permissions or payment not found');
   }
@@ -197,7 +226,7 @@ export const getClientPayments = async (clientId: string): Promise<Payment[]> =>
   return data || [];
 };
 
-// Return plot to available status when client has no payments
+// Return plot to available status
 export const returnPlotToStock = async (clientId: string): Promise<void> => {
   const { error } = await supabase
     .from('plots')
@@ -225,12 +254,10 @@ export const generateReceiptNumber = async (): Promise<string> => {
   const secs = String(date.getSeconds()).padStart(2, '0');
   const ms = String(date.getMilliseconds()).padStart(3, '0');
   
-  // Use timestamp to ensure uniqueness: YYYYMMDD-HHmmssSSS
-  return `LIP-${year}${month}${day}-${hours}${mins}${secs}${ms}`;
+  return `RCT-${year}${month}${day}-${hours}${mins}${secs}${ms}`;
 };
 
 export const formatCurrency = (amount: number): string => {
-  // Validate the number to prevent displaying corrupted data
   const validAmount = typeof amount === 'number' && isFinite(amount) ? amount : 0;
   return new Intl.NumberFormat('en-KE', {
     style: 'currency',
@@ -240,19 +267,20 @@ export const formatCurrency = (amount: number): string => {
   }).format(validAmount);
 };
 
-// Bulk import clients (for Excel data) - percent_paid is calculated by DB trigger
-export const bulkImportClients = async (clients: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid' | 'created_by'>[]): Promise<Client[]> => {
-  // Get current user to set created_by
+// Bulk import clients
+export const bulkImportClients = async (clients: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid' | 'created_by' | 'tenant_id'>[]): Promise<Client[]> => {
   const { data: { user } } = await supabase.auth.getUser();
+  const tenantId = await getCurrentTenantId();
   
-  const clientsWithCreator = clients.map(client => ({
+  const clientsWithMetadata = clients.map(client => ({
     ...client,
     created_by: user?.id,
+    tenant_id: tenantId,
   }));
   
   const { data, error } = await supabase
     .from('clients')
-    .insert(clientsWithCreator)
+    .insert(clientsWithMetadata)
     .select();
   
   if (error) {

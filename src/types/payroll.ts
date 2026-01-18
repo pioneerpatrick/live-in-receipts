@@ -17,6 +17,7 @@ export interface Employee {
   hire_date: string | null;
   bank_name: string | null;
   bank_account: string | null;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -49,6 +50,7 @@ export interface PayrollRecord {
   is_locked: boolean;
   approved_by: string | null;
   approved_at: string | null;
+  tenant_id?: string;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -65,6 +67,7 @@ export interface EmployeeDeduction {
   start_date: string | null;
   end_date: string | null;
   is_active: boolean;
+  tenant_id?: string;
   created_at: string;
 }
 
@@ -78,6 +81,7 @@ export interface StatutoryRate {
   effective_from: string;
   effective_to: string | null;
   is_active: boolean;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
 }

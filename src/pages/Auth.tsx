@@ -4,13 +4,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Home, Loader2, Mail, Lock, User } from 'lucide-react';
+import { Home, Loader2, Mail, Lock, User, Shield } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().trim().email('Invalid email address'),
@@ -33,6 +34,7 @@ type SignUpForm = z.infer<typeof signUpSchema>;
 const Auth = () => {
   const navigate = useNavigate();
   const { user, loading, signIn, signUp } = useAuth();
+  const { tenant, isMainDomain, loading: tenantLoading } = useTenant();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -85,7 +87,7 @@ const Auth = () => {
     setIsSubmitting(false);
   };
 
-  if (loading) {
+  if (loading || tenantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -93,21 +95,33 @@ const Auth = () => {
     );
   }
 
+  // Get display info based on tenant or main domain
+  const displayName = tenant?.name || (isMainDomain ? 'Technopanaly' : 'LIVE-IN PROPERTIES');
+  const displayTagline = isMainDomain && !tenant ? 'Multi-Tenant Receipt System' : 'Genuine plots with ready title deeds';
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="gradient-header border-b border-border py-6">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
-              <Home className="w-7 h-7 text-primary-foreground" />
-            </div>
+            {tenant?.logo_url ? (
+              <img src={tenant.logo_url} alt={tenant.name} className="w-14 h-14 rounded-full object-cover shadow-md" />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
+                {isMainDomain && !tenant ? (
+                  <Shield className="w-7 h-7 text-primary-foreground" />
+                ) : (
+                  <Home className="w-7 h-7 text-primary-foreground" />
+                )}
+              </div>
+            )}
             <div className="text-center">
               <h1 className="font-heading text-xl md:text-2xl font-bold text-secondary">
-                LIVE-IN <span className="text-primary">PROPERTIES</span>
+                {displayName}
               </h1>
               <p className="text-sm text-muted-foreground italic">
-                Genuine plots with ready title deeds
+                {displayTagline}
               </p>
             </div>
           </div>
@@ -118,9 +132,11 @@ const Auth = () => {
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md card-shadow">
           <CardHeader className="text-center">
-            <CardTitle className="font-heading text-2xl">Staff Portal</CardTitle>
+            <CardTitle className="font-heading text-2xl">
+              {isMainDomain && !tenant ? 'Admin Portal' : 'Staff Portal'}
+            </CardTitle>
             <CardDescription>
-              Access the receipt management system
+              {isMainDomain && !tenant ? 'Access the multi-tenant management system' : 'Access the receipt management system'}
             </CardDescription>
           </CardHeader>
           <CardContent>
