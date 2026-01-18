@@ -32,12 +32,15 @@ import { LayoutDashboard, FileText, Users, Shield, Building2, Crown } from 'luci
 
 const Index = () => {
   const { role } = useAuth();
-  const { isSuperAdmin, isMainDomain, tenant } = useTenant();
+  const { isSuperAdmin, isMainDomain, tenant, loading: tenantLoading } = useTenant();
   const isAdmin = role === 'admin';
   
   // Use cached data hooks for instant loading
-  const { clients, payments, isLoading: loading, refetch: loadData } = useClientsAndPayments();
+  const { clients, payments, isLoading: dataLoading, refetch: loadData } = useClientsAndPayments();
   const { invalidateAll } = useInvalidateData();
+  
+  // Combined loading state
+  const loading = dataLoading;
   
   // Super admin on main domain should use Super Admin dashboard, not see tenant data
   const showSuperAdminRedirect = isSuperAdmin && isMainDomain && !tenant;
