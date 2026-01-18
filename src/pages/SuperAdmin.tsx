@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import TenantUserManagement from '@/components/superadmin/TenantUserManagement';
+import { DemoModeSection } from '@/components/superadmin/DemoModeSection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tenant } from '@/types/client';
 import { 
   Building2, Plus, Edit, Trash2, RefreshCw, Users, Globe, 
-  Palette, Check, X, Eye, Settings, Shield, Activity, ExternalLink, UserCog
+  Palette, Check, X, Eye, Settings, Shield, Activity, ExternalLink, UserCog, Play
 } from 'lucide-react';
 
 interface TenantWithStats extends Tenant {
@@ -322,6 +323,8 @@ const SuperAdmin = () => {
     );
   }
 
+  const [activeTab, setActiveTab] = useState<'tenants' | 'demo'>('tenants');
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -343,6 +346,14 @@ const SuperAdmin = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button 
+              onClick={() => setActiveTab('demo')} 
+              variant={activeTab === 'demo' ? 'default' : 'outline'}
+              className={activeTab === 'demo' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Demo Mode
+            </Button>
             <Button onClick={fetchTenants} variant="outline" disabled={loading}>
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -353,6 +364,35 @@ const SuperAdmin = () => {
             </Button>
           </div>
         </div>
+
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-6">
+          <Button 
+            variant={activeTab === 'tenants' ? 'default' : 'ghost'} 
+            onClick={() => setActiveTab('tenants')}
+            className="gap-2"
+          >
+            <Building2 className="w-4 h-4" />
+            Client Organizations
+          </Button>
+          <Button 
+            variant={activeTab === 'demo' ? 'default' : 'ghost'} 
+            onClick={() => setActiveTab('demo')}
+            className={`gap-2 ${activeTab === 'demo' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
+          >
+            <Play className="w-4 h-4" />
+            Demo for Pitching
+          </Button>
+        </div>
+
+        {/* Demo Mode Tab */}
+        {activeTab === 'demo' && (
+          <DemoModeSection />
+        )}
+
+        {/* Tenants Tab */}
+        {activeTab === 'tenants' && (
+          <>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -547,6 +587,8 @@ const SuperAdmin = () => {
               onClose={() => setUserManagementTenant(null)} 
             />
           </div>
+        )}
+        </>
         )}
       </main>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ClientTable from '@/components/ClientTable';
@@ -25,13 +26,19 @@ import {
 import { getProjects, getPlots, sellPlot, returnPlot } from '@/lib/projectStorage';
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
 import { logActivity } from '@/lib/activityLogger';
-import { LayoutDashboard, FileText, Users } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { LayoutDashboard, FileText, Users, Shield, Building2, ExternalLink, Crown } from 'lucide-react';
 
 const Index = () => {
   const { role } = useAuth();
+  const { isSuperAdmin, isMainDomain, tenant } = useTenant();
   const isAdmin = role === 'admin';
   
+  // Super admin on main domain should use Super Admin dashboard, not see tenant data
+  const showSuperAdminRedirect = isSuperAdmin && isMainDomain && !tenant;
   const [clients, setClients] = useState<Client[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [clientFormOpen, setClientFormOpen] = useState(false);
@@ -319,6 +326,61 @@ const Index = () => {
   const totalClients = activeClients.length;
   const totalReceivables = activeClients.reduce((sum, c) => sum + c.balance, 0);
   const totalCollected = activeClients.reduce((sum, c) => sum + c.total_paid, 0);
+
+  // Super Admin on main domain - redirect to Super Admin dashboard
+  if (showSuperAdminRedirect) {
+    return (
+      <div className="min-h-screen min-h-[100dvh] flex flex-col bg-background">
+        <Toaster position="top-right" />
+        <Header />
+        
+        <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-6 lg:py-8 overflow-x-hidden">
+          <div className="max-w-2xl mx-auto mt-12">
+            <Card className="border-2 border-amber-500/30">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <div className="p-4 rounded-full bg-amber-500/10">
+                    <Crown className="w-12 h-12 text-amber-500" />
+                  </div>
+                </div>
+                <CardTitle className="text-2xl">Super Admin Access</CardTitle>
+                <CardDescription className="text-base">
+                  You're viewing the main admin portal. Client data is only accessible through their individual domains.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary" />
+                    Data Isolation
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Each client's data is securely isolated. To view or manage a client's data, 
+                    access their system through their configured domain using the "Access" button 
+                    in the Super Admin dashboard.
+                  </p>
+                </div>
+                
+                <div className="flex flex-col gap-3">
+                  <Button asChild size="lg" className="w-full bg-amber-500 hover:bg-amber-600">
+                    <Link to="/super-admin">
+                      <Building2 className="w-5 h-5 mr-2" />
+                      Go to Super Admin Dashboard
+                    </Link>
+                  </Button>
+                  <p className="text-center text-sm text-muted-foreground">
+                    Manage clients, view demo mode, and access client systems from the Super Admin dashboard.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen min-h-[100dvh] flex flex-col bg-background">
