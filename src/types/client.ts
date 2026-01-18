@@ -25,6 +25,7 @@ export interface Client {
   commission: number | null;
   commission_received: number | null;
   commission_balance: number | null;
+  tenant_id?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;
@@ -43,6 +44,7 @@ export interface Payment {
   authorized_by?: string;
   notes?: string;
   reference_number?: string;
+  tenant_id?: string;
   created_by?: string;
   created_at: string;
 }
@@ -73,6 +75,7 @@ export interface UserProfile {
   id: string;
   user_id: string;
   full_name: string;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -81,4 +84,33 @@ export interface UserRole {
   id: string;
   user_id: string;
   role: 'admin' | 'staff';
+  tenant_id?: string;
+}
+
+// Tenant types
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  domain: string | null;
+  logo_url: string | null;
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  status: 'active' | 'suspended' | 'pending';
+  subscription_plan: string;
+  max_users: number;
+  contact_email: string | null;
+  contact_phone: string | null;
+  address: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantUser {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  is_tenant_admin: boolean;
+  created_at: string;
 }

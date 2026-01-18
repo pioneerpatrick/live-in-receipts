@@ -1,7 +1,8 @@
-import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, LayoutDashboard, Building, BarChart3, Calculator } from 'lucide-react';
+import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, LayoutDashboard, Building, BarChart3, Calculator, Crown } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,6 +17,7 @@ import { toast } from 'sonner';
 
 const Header = () => {
   const { user, role, signOut } = useAuth();
+  const { tenant, isSuperAdmin, isMainDomain } = useTenant();
   const location = useLocation();
   
   // Show "Back to Dashboard" button for admin on non-dashboard pages
@@ -40,16 +42,31 @@ const Header = () => {
               </div>
               <div className="min-w-0">
                 <h1 className="font-heading text-base sm:text-xl md:text-2xl font-bold text-secondary truncate">
-                  LIVE-IN <span className="text-primary">PROPERTIES</span>
+                  {tenant?.name || 'LIVE-IN'} <span className="text-primary">{!tenant ? 'PROPERTIES' : ''}</span>
                 </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground italic hidden xs:block truncate">
-                  Genuine plots with ready title deeds
+                  {isMainDomain && isSuperAdmin ? 'Technopanaly Admin Console' : 'Genuine plots with ready title deeds'}
                 </p>
               </div>
             </Link>
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            {/* Super Admin Link */}
+            {isSuperAdmin && (
+              <Button
+                asChild
+                variant={isActive('/super-admin') ? 'default' : 'ghost'}
+                size="sm"
+                className="gap-1.5 px-2.5 text-xs bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                <Link to="/super-admin">
+                  <Crown className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Super Admin</span>
+                </Link>
+              </Button>
+            )}
+
             {/* Admin Navigation Links */}
             {role === 'admin' && (
               <nav className="hidden lg:flex items-center gap-0.5">
