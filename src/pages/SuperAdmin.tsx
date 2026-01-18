@@ -301,25 +301,29 @@ const SuperAdmin = () => {
   }, []);
 
   const handleAccessClient = (tenant: Tenant) => {
-    if (!tenant.domain) {
-      toast.error('This client does not have a domain configured');
-      return;
+    // Get the current system domain (main app domain)
+    const systemDomain = window.location.origin;
+    
+    let accessUrl: string;
+    
+    if (tenant.domain) {
+      // If tenant has a custom domain configured, use it
+      const protocol = window.location.protocol;
+      accessUrl = `${protocol}//${tenant.domain}`;
+      console.log('Opening client custom domain:', accessUrl);
+    } else {
+      // No custom domain - use system domain with tenant slug parameter
+      accessUrl = `${systemDomain}/?tenant=${tenant.slug}`;
+      console.log('Opening client via system domain:', accessUrl);
     }
-    
-    // Open the client's actual domain directly
-    // The domain should be configured to point to this app
-    const protocol = window.location.protocol;
-    const accessUrl = `${protocol}//${tenant.domain}`;
-    
-    console.log('Opening client domain:', accessUrl);
     
     // Open in new tab
     const newWindow = window.open(accessUrl, '_blank');
     if (!newWindow) {
       // Fallback: show the URL for manual access
-      toast.info(`Open ${tenant.domain} in a new browser tab`);
+      toast.info(`Open this URL in a new browser tab: ${accessUrl}`);
     } else {
-      toast.success(`Opening ${tenant.name} at ${tenant.domain}`);
+      toast.success(`Opening ${tenant.name}`);
     }
   };
 
