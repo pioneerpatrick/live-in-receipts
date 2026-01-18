@@ -714,15 +714,15 @@ const Settings = () => {
                       <h3 className="text-lg font-semibold mb-4">Receipt Customization</h3>
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="production_url">Production URL (for QR Codes)</Label>
+                          <Label htmlFor="production_url">Production URL (for All System Links)</Label>
                           <Input
                             id="production_url"
-                            placeholder="https://your-app.lovable.app"
+                            placeholder="https://your-domain.com"
                             value={companySettings.production_url || ''}
                             onChange={(e) => updateSetting('production_url', e.target.value)}
                           />
                           <p className="text-xs text-muted-foreground">
-                            The URL clients will be directed to when scanning receipt QR codes
+                            This URL will be used for all system links including QR codes, WhatsApp payment links, and any shared URLs. Set this to your custom domain if hosting elsewhere.
                           </p>
                         </div>
                         <div className="space-y-2">

@@ -10,7 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PaymentRemindersProps {
   clients: Client[];
@@ -42,7 +43,9 @@ const formatTimeDifference = (days: number): string => {
   return days < 0 ? `${months} months, ${remainingDays}d overdue` : `In ${months} months, ${remainingDays}d`;
 };
 
-const generateWhatsAppMessage = (client: Client): string => {
+const generateWhatsAppMessage = (client: Client, productionUrl: string | null): string => {
+  const paymentLink = productionUrl ? `${productionUrl}/payments/${client.id}` : null;
+  
   const message = `Dear ${client.name},
 
 This is a friendly payment reminder from our team.
@@ -55,6 +58,7 @@ This is a friendly payment reminder from our team.
 • Amount Paid: ${formatCurrency(client.total_paid)}
 • *Outstanding Balance: ${formatCurrency(client.balance)}*
 ${client.next_payment_date ? `• Due Date: ${format(parseISO(client.next_payment_date), 'dd MMM yyyy')}` : ''}
+${paymentLink ? `\n🔗 *View Payment History:*\n${paymentLink}` : ''}
 
 We kindly request you to clear the outstanding balance at your earliest convenience.
 
@@ -94,6 +98,24 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
     open: false,
     client: null
   });
+  
+  const [productionUrl, setProductionUrl] = useState<string | null>(null);
+
+  // Fetch production URL from company settings
+  useEffect(() => {
+    const fetchProductionUrl = async () => {
+      const { data } = await supabase
+        .from('company_settings')
+        .select('production_url')
+        .maybeSingle();
+      
+      if (data?.production_url) {
+        setProductionUrl(data.production_url);
+      }
+    };
+    
+    fetchProductionUrl();
+  }, []);
 
   const handleWhatsAppClick = (client: Client, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -109,7 +131,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
   const copyMessage = async () => {
     if (!whatsappDialog.client) return;
     
-    const message = generateWhatsAppMessage(whatsappDialog.client);
+    const message = generateWhatsAppMessage(whatsappDialog.client, productionUrl);
     await navigator.clipboard.writeText(message);
     toast.success('Message copied to clipboard!');
   };
@@ -118,7 +140,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
     if (!whatsappDialog.client?.phone) return '';
     
     const phone = getFormattedPhone(whatsappDialog.client.phone);
-    const message = encodeURIComponent(generateWhatsAppMessage(whatsappDialog.client));
+    const message = encodeURIComponent(generateWhatsAppMessage(whatsappDialog.client, productionUrl));
     
     // wa.me works on mobile and desktop, web.whatsapp.com is desktop-only
     return useWebVersion 
@@ -355,7 +377,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
                 <p className="text-sm font-medium">Message Preview:</p>
                 <div className="p-3 bg-green-50 border border-green-200 rounded-lg max-h-40 overflow-y-auto">
                   <pre className="text-xs whitespace-pre-wrap font-sans text-green-800">
-                    {generateWhatsAppMessage(whatsappDialog.client)}
+                    {generateWhatsAppMessage(whatsappDialog.client, productionUrl)}
                   </pre>
                 </div>
               </div>
