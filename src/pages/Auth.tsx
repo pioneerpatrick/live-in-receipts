@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
-import { useTenant } from '@/hooks/useTenant';
+import { useTenant, isSuperAdminAccess } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,14 +34,22 @@ type SignUpForm = z.infer<typeof signUpSchema>;
 const Auth = () => {
   const navigate = useNavigate();
   const { user, loading, signIn, signUp } = useAuth();
-  const { tenant, isMainDomain, loading: tenantLoading } = useTenant();
+  const { tenant, isMainDomain, isSuperAdmin, loading: tenantLoading } = useTenant();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Check if super admin is accessing a client system
+  const superAdminAccessingClient = isSuperAdminAccess();
 
   useEffect(() => {
     if (!loading && user) {
+      // If super admin is accessing client, they're already logged in - navigate directly
+      if (superAdminAccessingClient && isSuperAdmin) {
+        navigate('/');
+        return;
+      }
       navigate('/');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, superAdminAccessingClient, isSuperAdmin]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
