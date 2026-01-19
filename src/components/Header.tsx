@@ -62,9 +62,9 @@ const Header = () => {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Admin Navigation Links */}
+            {/* Admin Navigation Links - visible on md screens and up */}
             {role === 'admin' && (
-              <nav className="hidden lg:flex items-center gap-0.5">
+              <nav className="hidden md:flex items-center gap-0.5">
                 <Button
                   asChild
                   variant={isActive('/') ? 'default' : 'ghost'}
@@ -128,7 +128,7 @@ const Header = () => {
               <Button asChild variant="outline" size="sm" className="gap-1 sm:gap-2 md:hidden">
                 <Link to="/">
                   <LayoutDashboard className="w-4 h-4" />
-                  <span className="hidden sm:inline">Dashboard</span>
+                  <span className="sr-only sm:not-sr-only">Dashboard</span>
                 </Link>
               </Button>
             )}
