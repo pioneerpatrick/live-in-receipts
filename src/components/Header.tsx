@@ -42,26 +42,24 @@ const Header = () => {
 
   return (
     <header className="gradient-header border-b border-border sticky top-0 z-50">
-      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-        <div className="flex items-center justify-between gap-2 sm:gap-4">
+      <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
+        <div className="flex items-center justify-between gap-2">
           {/* Logo and Company Name */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
-            <Link to="/" className="flex items-center gap-2 sm:gap-3">
-              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
-                <Home className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="font-heading text-base sm:text-xl md:text-2xl font-bold text-secondary truncate">
-                  LIVE-IN PROPERTIES
-                </h1>
-                <p className="text-xs sm:text-sm text-muted-foreground italic hidden xs:block truncate">
-                  Genuine plots with ready title deeds
-                </p>
-              </div>
-            </Link>
-          </div>
+          <Link to="/" className="flex items-center gap-2 min-w-0 flex-shrink">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
+              <Home className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary-foreground" />
+            </div>
+            <div className="min-w-0 hidden xs:block">
+              <h1 className="font-heading text-sm sm:text-base md:text-lg lg:text-xl font-bold text-secondary leading-tight">
+                LIVE-IN PROPERTIES
+              </h1>
+              <p className="text-[10px] sm:text-xs text-muted-foreground italic hidden sm:block">
+                Genuine plots with ready title deeds
+              </p>
+            </div>
+          </Link>
 
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
             {/* Admin Navigation Links - visible on md screens and up */}
             {role === 'admin' && (
               <nav className="hidden md:flex items-center gap-0.5">
