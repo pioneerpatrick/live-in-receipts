@@ -1,5 +1,4 @@
 import { Heart } from 'lucide-react';
-import { useTenant } from '@/hooks/useTenant';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -10,17 +9,13 @@ interface CompanySettings {
 }
 
 const Footer = () => {
-  const { isMainDomain, isSuperAdmin, tenantId } = useTenant();
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   
   useEffect(() => {
     const fetchSettings = async () => {
-      if (!tenantId) return;
-      
       const { data, error } = await supabase
         .from('company_settings')
         .select('company_name, receipt_footer_message, company_tagline')
-        .eq('tenant_id', tenantId)
         .maybeSingle();
       
       if (!error && data) {
@@ -29,12 +24,7 @@ const Footer = () => {
     };
     
     fetchSettings();
-  }, [tenantId]);
-  
-  // Hide footer on super admin pages (main domain)
-  if (isMainDomain && isSuperAdmin) {
-    return null;
-  }
+  }, []);
 
   const companyName = settings?.company_name || 'Live-IN Properties';
   const footerMessage = settings?.receipt_footer_message || settings?.company_tagline || 'We Secure your Future.';

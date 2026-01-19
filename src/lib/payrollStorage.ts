@@ -1,53 +1,49 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Employee, PayrollRecord, EmployeeDeduction, StatutoryRate } from "@/types/payroll";
 
-// Helper to get current user's tenant_id
-const getCurrentTenantId = async (): Promise<string | null> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data } = await supabase
-    .from('tenant_users')
-    .select('tenant_id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  return data?.tenant_id || null;
+// Generate employee ID
+export const generateEmployeeId = (): string => {
+  const date = new Date();
+  const year = date.getFullYear().toString().slice(-2);
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `EMP-${year}${random}`;
 };
 
-// Employee Operations
-export async function getEmployees(): Promise<Employee[]> {
-  const tenantId = await getCurrentTenantId();
-  
+// Get employee payroll records by year
+export async function getEmployeePayrollRecords(employeeId: string, year?: number): Promise<PayrollRecord[]> {
   let query = supabase
-    .from('employees')
+    .from('payroll_records')
     .select('*')
-    .order('full_name');
+    .eq('employee_id', employeeId)
+    .order('pay_period_year', { ascending: false })
+    .order('pay_period_month', { ascending: false });
 
-  if (tenantId) {
-    query = query.eq('tenant_id', tenantId);
+  if (year !== undefined) {
+    query = query.eq('pay_period_year', year);
   }
 
   const { data, error } = await query;
+  if (error) throw error;
+  return data as PayrollRecord[];
+}
+
+// Employee Operations
+export async function getEmployees(): Promise<Employee[]> {
+  const { data, error } = await supabase
+    .from('employees')
+    .select('*')
+    .order('full_name');
 
   if (error) throw error;
   return data as Employee[];
 }
 
 export async function getActiveEmployees(): Promise<Employee[]> {
-  const tenantId = await getCurrentTenantId();
-  
-  let query = supabase
+  const { data, error } = await supabase
     .from('employees')
     .select('*')
     .eq('is_active', true)
     .order('full_name');
-
-  if (tenantId) {
-    query = query.eq('tenant_id', tenantId);
-  }
-
-  const { data, error } = await query;
 
   if (error) throw error;
   return data as Employee[];
@@ -65,11 +61,9 @@ export async function getEmployee(id: string): Promise<Employee | null> {
 }
 
 export async function addEmployee(employee: Omit<Employee, 'id' | 'created_at' | 'updated_at'>): Promise<Employee> {
-  const tenantId = await getCurrentTenantId();
-  
   const { data, error } = await supabase
     .from('employees')
-    .insert({ ...employee, tenant_id: tenantId })
+    .insert({ ...employee })
     .select()
     .single();
 
@@ -99,52 +93,49 @@ export async function deleteEmployee(id: string): Promise<void> {
 }
 
 // Payroll Record Operations
-export async function getPayrollRecords(month?: number, year?: number): Promise<PayrollRecord[]> {
-  const tenantId = await getCurrentTenantId();
-  
+export async function getPayrollRecords(year?: number, month?: number): Promise<PayrollRecord[]> {
   let query = supabase
     .from('payroll_records')
-    .select('*, employee:employees(*)');
+    .select(`
+      *,
+      employee:employees(id, full_name, employee_id, job_title, kra_pin)
+    `)
+    .order('created_at', { ascending: false });
 
-  if (tenantId) {
-    query = query.eq('tenant_id', tenantId);
+  if (year !== undefined) {
+    query = query.eq('pay_period_year', year);
   }
   if (month !== undefined) {
     query = query.eq('pay_period_month', month);
   }
-  if (year !== undefined) {
-    query = query.eq('pay_period_year', year);
-  }
 
-  const { data, error } = await query.order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data as unknown as PayrollRecord[];
-}
-
-export async function getEmployeePayrollRecords(employeeId: string, year?: number): Promise<PayrollRecord[]> {
-  let query = supabase
-    .from('payroll_records')
-    .select('*')
-    .eq('employee_id', employeeId);
-
-  if (year !== undefined) {
-    query = query.eq('pay_period_year', year);
-  }
-
-  const { data, error } = await query.order('pay_period_month');
+  const { data, error } = await query;
 
   if (error) throw error;
   return data as PayrollRecord[];
 }
 
-export async function addPayrollRecord(record: Omit<PayrollRecord, 'id' | 'created_at' | 'updated_at' | 'employee'>): Promise<PayrollRecord> {
+export async function getPayrollRecordsByEmployee(employeeId: string): Promise<PayrollRecord[]> {
+  const { data, error } = await supabase
+    .from('payroll_records')
+    .select('*')
+    .eq('employee_id', employeeId)
+    .order('pay_period_year', { ascending: false })
+    .order('pay_period_month', { ascending: false });
+
+  if (error) throw error;
+  return data as PayrollRecord[];
+}
+
+export async function addPayrollRecord(record: Omit<PayrollRecord, 'id' | 'created_at' | 'updated_at'>): Promise<PayrollRecord> {
   const { data: { user } } = await supabase.auth.getUser();
-  const tenantId = await getCurrentTenantId();
   
   const { data, error } = await supabase
     .from('payroll_records')
-    .insert({ ...record, created_by: user?.id, tenant_id: tenantId })
+    .insert({
+      ...record,
+      created_by: user?.id
+    })
     .select()
     .single();
 
@@ -173,15 +164,15 @@ export async function deletePayrollRecord(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function lockPayrollRecord(id: string): Promise<PayrollRecord> {
+export async function approvePayrollRecord(id: string): Promise<PayrollRecord> {
   const { data: { user } } = await supabase.auth.getUser();
   
   const { data, error } = await supabase
     .from('payroll_records')
-    .update({ 
-      is_locked: true, 
-      approved_by: user?.id, 
-      approved_at: new Date().toISOString() 
+    .update({
+      is_locked: true,
+      approved_by: user?.id,
+      approved_at: new Date().toISOString()
     })
     .eq('id', id)
     .select()
@@ -191,25 +182,34 @@ export async function lockPayrollRecord(id: string): Promise<PayrollRecord> {
   return data as PayrollRecord;
 }
 
-// Employee Deductions Operations
+// Employee Deduction Operations
 export async function getEmployeeDeductions(employeeId: string): Promise<EmployeeDeduction[]> {
   const { data, error } = await supabase
     .from('employee_deductions')
     .select('*')
     .eq('employee_id', employeeId)
-    .eq('is_active', true)
-    .order('deduction_name');
+    .order('created_at', { ascending: false });
 
   if (error) throw error;
   return data as EmployeeDeduction[];
 }
 
-export async function addEmployeeDeduction(deduction: Omit<EmployeeDeduction, 'id' | 'created_at'>): Promise<EmployeeDeduction> {
-  const tenantId = await getCurrentTenantId();
-  
+export async function getActiveDeductions(employeeId: string): Promise<EmployeeDeduction[]> {
   const { data, error } = await supabase
     .from('employee_deductions')
-    .insert({ ...deduction, tenant_id: tenantId })
+    .select('*')
+    .eq('employee_id', employeeId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data as EmployeeDeduction[];
+}
+
+export async function addDeduction(deduction: Omit<EmployeeDeduction, 'id' | 'created_at'>): Promise<EmployeeDeduction> {
+  const { data, error } = await supabase
+    .from('employee_deductions')
+    .insert({ ...deduction })
     .select()
     .single();
 
@@ -217,7 +217,7 @@ export async function addEmployeeDeduction(deduction: Omit<EmployeeDeduction, 'i
   return data as EmployeeDeduction;
 }
 
-export async function updateEmployeeDeduction(id: string, updates: Partial<EmployeeDeduction>): Promise<EmployeeDeduction> {
+export async function updateDeduction(id: string, updates: Partial<EmployeeDeduction>): Promise<EmployeeDeduction> {
   const { data, error } = await supabase
     .from('employee_deductions')
     .update(updates)
@@ -229,7 +229,7 @@ export async function updateEmployeeDeduction(id: string, updates: Partial<Emplo
   return data as EmployeeDeduction;
 }
 
-export async function deleteEmployeeDeduction(id: string): Promise<void> {
+export async function deleteDeduction(id: string): Promise<void> {
   const { error } = await supabase
     .from('employee_deductions')
     .delete()
@@ -238,24 +238,40 @@ export async function deleteEmployeeDeduction(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// Statutory Rates Operations
+// Statutory Rate Operations
 export async function getStatutoryRates(): Promise<StatutoryRate[]> {
-  const tenantId = await getCurrentTenantId();
-  
-  let query = supabase
+  const { data, error } = await supabase
     .from('statutory_rates')
     .select('*')
     .eq('is_active', true)
-    .order('rate_type', { ascending: true });
-
-  if (tenantId) {
-    query = query.eq('tenant_id', tenantId);
-  }
-
-  const { data, error } = await query;
+    .order('rate_type')
+    .order('min_amount', { ascending: true, nullsFirst: true });
 
   if (error) throw error;
   return data as StatutoryRate[];
+}
+
+export async function getAllStatutoryRates(): Promise<StatutoryRate[]> {
+  const { data, error } = await supabase
+    .from('statutory_rates')
+    .select('*')
+    .order('rate_type')
+    .order('is_active', { ascending: false })
+    .order('min_amount', { ascending: true, nullsFirst: true });
+
+  if (error) throw error;
+  return data as StatutoryRate[];
+}
+
+export async function addStatutoryRate(rate: Omit<StatutoryRate, 'id' | 'created_at' | 'updated_at'>): Promise<StatutoryRate> {
+  const { data, error } = await supabase
+    .from('statutory_rates')
+    .insert({ ...rate })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as StatutoryRate;
 }
 
 export async function updateStatutoryRate(id: string, updates: Partial<StatutoryRate>): Promise<StatutoryRate> {
@@ -270,10 +286,11 @@ export async function updateStatutoryRate(id: string, updates: Partial<Statutory
   return data as StatutoryRate;
 }
 
-// Generate unique employee ID
-export function generateEmployeeId(): string {
-  const prefix = 'EMP';
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 5).toUpperCase();
-  return `${prefix}-${timestamp}${random}`;
+export async function deleteStatutoryRate(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('statutory_rates')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
 }

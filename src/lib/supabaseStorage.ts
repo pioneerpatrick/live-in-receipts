@@ -1,75 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Client, Payment } from '@/types/client';
 
-// Cache tenant ID in memory to avoid repeated lookups
-let cachedTenantId: string | null = null;
-let tenantIdPromise: Promise<string | null> | null = null;
-
-// Helper to get current user's tenant_id with caching
-const getCurrentTenantId = async (): Promise<string | null> => {
-  // Return cached value if available
-  if (cachedTenantId !== null) {
-    return cachedTenantId;
-  }
-
-  // If a fetch is already in progress, wait for it
-  if (tenantIdPromise) {
-    return tenantIdPromise;
-  }
-
-  // Start a new fetch
-  tenantIdPromise = (async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        cachedTenantId = null;
-        return null;
-      }
-
-      const { data } = await supabase
-        .from('tenant_users')
-        .select('tenant_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      cachedTenantId = data?.tenant_id || null;
-      return cachedTenantId;
-    } finally {
-      tenantIdPromise = null;
-    }
-  })();
-
-  return tenantIdPromise;
-};
-
-// Clear tenant cache (call on logout)
-export const clearTenantCache = () => {
-  cachedTenantId = null;
-  tenantIdPromise = null;
-};
-
-// Listen for auth state changes to clear cache on logout
-supabase.auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_OUT') {
-    clearTenantCache();
-  }
-});
-
 // Client operations
 export const getClients = async (): Promise<Client[]> => {
-  const tenantId = await getCurrentTenantId();
-  
-  let query = supabase
+  const { data, error } = await supabase
     .from('clients')
     .select('*')
     .order('created_at', { ascending: false });
-
-  // Filter by tenant if user belongs to one
-  if (tenantId) {
-    query = query.eq('tenant_id', tenantId);
-  }
-
-  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching clients:', error);
@@ -81,14 +18,12 @@ export const getClients = async (): Promise<Client[]> => {
 
 export const addClient = async (client: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid' | 'created_by' | 'tenant_id'>): Promise<Client> => {
   const { data: { user } } = await supabase.auth.getUser();
-  const tenantId = await getCurrentTenantId();
   
   const { data, error } = await supabase
     .from('clients')
     .insert({
       ...client,
       created_by: user?.id,
-      tenant_id: tenantId,
     })
     .select()
     .single();
@@ -176,18 +111,10 @@ export const deleteClient = async (id: string): Promise<void> => {
 
 // Payment operations
 export const getPayments = async (): Promise<Payment[]> => {
-  const tenantId = await getCurrentTenantId();
-  
-  let query = supabase
+  const { data, error } = await supabase
     .from('payments')
     .select('*')
     .order('created_at', { ascending: false });
-
-  if (tenantId) {
-    query = query.eq('tenant_id', tenantId);
-  }
-
-  const { data, error } = await query;
   
   if (error) {
     console.error('Error fetching payments:', error);
@@ -199,14 +126,12 @@ export const getPayments = async (): Promise<Payment[]> => {
 
 export const addPayment = async (payment: Omit<Payment, 'id' | 'created_at' | 'created_by' | 'tenant_id'>): Promise<Payment> => {
   const { data: { user } } = await supabase.auth.getUser();
-  const tenantId = await getCurrentTenantId();
   
   const { data, error } = await supabase
     .from('payments')
     .insert({
       ...payment,
       created_by: user?.id,
-      tenant_id: tenantId,
     })
     .select()
     .single();
@@ -310,12 +235,10 @@ export const formatCurrency = (amount: number): string => {
 // Bulk import clients
 export const bulkImportClients = async (clients: Omit<Client, 'id' | 'created_at' | 'updated_at' | 'percent_paid' | 'created_by' | 'tenant_id'>[]): Promise<Client[]> => {
   const { data: { user } } = await supabase.auth.getUser();
-  const tenantId = await getCurrentTenantId();
   
   const clientsWithMetadata = clients.map(client => ({
     ...client,
     created_by: user?.id,
-    tenant_id: tenantId,
   }));
   
   const { data, error } = await supabase

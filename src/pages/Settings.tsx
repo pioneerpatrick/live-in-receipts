@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useTenant } from '@/hooks/useTenant';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
@@ -21,7 +20,7 @@ import { logActivity, getActionLabel, ActivityAction } from '@/lib/activityLogge
 import { format } from 'date-fns';
 import { 
   Settings as SettingsIcon, Save, Loader2, Upload, X, Image, 
-  UserCog, Activity, Crown, UserMinus, Trash2, Search, Filter, RefreshCw, Building, Users, Calculator, KeyRound
+  UserCog, Activity, UserMinus, Trash2, Search, Filter, RefreshCw, Building, Users, Calculator, KeyRound
 } from 'lucide-react';
 import StatutoryRatesManager from '@/components/payroll/StatutoryRatesManager';
 
@@ -60,7 +59,6 @@ interface CompanySettings {
 
 const Settings = () => {
   const { role, user: currentUser } = useAuth();
-  const { tenantId, loading: tenantLoading } = useTenant();
   const [loading, setLoading] = useState(true);
   
   // Company settings state
@@ -91,10 +89,10 @@ const Settings = () => {
   const [actionFilter, setActionFilter] = useState<string>('all');
 
   useEffect(() => {
-    if (role === 'admin' && tenantId && !tenantLoading) {
+    if (role === 'admin') {
       loadAllData();
     }
-  }, [role, tenantId, tenantLoading]);
+  }, [role]);
 
   const loadAllData = async () => {
     setLoading(true);

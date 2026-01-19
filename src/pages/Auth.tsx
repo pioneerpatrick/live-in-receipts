@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
-import { useTenant, isSuperAdminAccess } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Home, Loader2, Mail, Lock, User } from 'lucide-react';
-import technopanalyLogo from '@/assets/technopanaly-logo.jpg';
 
 const loginSchema = z.object({
   email: z.string().trim().email('Invalid email address'),
@@ -35,19 +33,12 @@ type SignUpForm = z.infer<typeof signUpSchema>;
 const Auth = () => {
   const navigate = useNavigate();
   const { user, loading, signIn, signUp } = useAuth();
-  const { tenant, isMainDomain, isSuperAdmin, loading: tenantLoading } = useTenant();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Check if super admin is accessing a client system
-  const superAdminAccessingClient = isSuperAdminAccess();
 
   useEffect(() => {
     if (!loading && user) {
-      // If super admin is accessing client, they're already logged in - navigate directly
-      if (superAdminAccessingClient && isSuperAdmin) {
-        navigate('/');
-        return;
-      }
+      navigate('/');
+    }
       navigate('/');
     }
   }, [user, loading, navigate, superAdminAccessingClient, isSuperAdmin]);

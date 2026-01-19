@@ -1,8 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useTenant, isSuperAdminAccess } from '@/hooks/useTenant';
 import { Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,25 +9,8 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const { user, loading, role } = useAuth();
-  const { isSuperAdmin, loading: tenantLoading, tenant } = useTenant();
-  
-  // Check if super admin is accessing client system
-  const superAdminAccessingClient = isSuperAdminAccess();
 
-  // Debug logging
-  useEffect(() => {
-    console.log('ProtectedRoute state:', { 
-      loading, 
-      tenantLoading, 
-      user: !!user, 
-      isSuperAdmin, 
-      superAdminAccessingClient,
-      tenant: tenant?.name 
-    });
-  }, [loading, tenantLoading, user, isSuperAdmin, superAdminAccessingClient, tenant]);
-
-  // Show loading for max 5 seconds, then allow through
-  if (loading || tenantLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -40,11 +21,6 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
-  }
-
-  // Super admin accessing client system bypasses role checks
-  if (superAdminAccessingClient && isSuperAdmin) {
-    return <>{children}</>;
   }
 
   // If a specific role is required, check for it

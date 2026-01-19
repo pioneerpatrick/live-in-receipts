@@ -24,26 +24,18 @@ import { useClientsAndPayments, useInvalidateData } from '@/hooks/useDataCache';
 import { getProjects, getPlots, sellPlot, returnPlot } from '@/lib/projectStorage';
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
-import { useTenant } from '@/hooks/useTenant';
 import { logActivity } from '@/lib/activityLogger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, FileText, Users, Shield, Building2, Crown } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Shield, Building2 } from 'lucide-react';
 
 const Index = () => {
   const { role } = useAuth();
-  const { isSuperAdmin, isMainDomain, tenant, loading: tenantLoading } = useTenant();
   const isAdmin = role === 'admin';
   
   // Use cached data hooks for instant loading
   const { clients, payments, isLoading: dataLoading, refetch: loadData } = useClientsAndPayments();
   const { invalidateAll } = useInvalidateData();
-  
-  // Combined loading state
-  const loading = dataLoading;
-  
-  // Super admin on main domain should use Super Admin dashboard, not see tenant data
-  const showSuperAdminRedirect = isSuperAdmin && isMainDomain && !tenant;
   const [clientFormOpen, setClientFormOpen] = useState(false);
   const [paymentFormOpen, setPaymentFormOpen] = useState(false);
   const [paymentHistoryOpen, setPaymentHistoryOpen] = useState(false);

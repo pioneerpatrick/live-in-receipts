@@ -1,9 +1,8 @@
 import { useEffect } from 'react';
-import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, LayoutDashboard, Building, BarChart3, Calculator, Crown } from 'lucide-react';
+import { Mail, Phone, Globe, Home, LogOut, User, Shield, Settings, LayoutDashboard, Building, BarChart3, Calculator } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useTenant } from '@/hooks/useTenant';
 import { usePrefetchData } from '@/hooks/useDataCache';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,11 +15,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import technopanalyLogo from '@/assets/technopanaly-logo.jpg';
 
 const Header = () => {
   const { user, role, signOut } = useAuth();
-  const { tenant, isSuperAdmin, isMainDomain } = useTenant();
   const location = useLocation();
   const { prefetchClients, prefetchPayments } = usePrefetchData();
   
@@ -50,40 +47,21 @@ const Header = () => {
           {/* Logo and Company Name */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
             <Link to="/" className="flex items-center gap-2 sm:gap-3">
-              {isMainDomain && isSuperAdmin ? (
-                <img src={technopanalyLogo} alt="Techno Panaly" className="w-10 h-10 sm:w-14 sm:h-14 rounded-full object-cover shadow-md flex-shrink-0" />
-              ) : (
-                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
-                  <Home className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
-                </div>
-              )}
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
+                <Home className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
+              </div>
               <div className="min-w-0">
                 <h1 className="font-heading text-base sm:text-xl md:text-2xl font-bold text-secondary truncate">
-                  {isMainDomain && isSuperAdmin ? 'TECHNO PANALY' : (tenant?.name || 'LIVE-IN PROPERTIES')}
+                  LIVE-IN PROPERTIES
                 </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground italic hidden xs:block truncate">
-                  {isMainDomain && isSuperAdmin ? 'Powering Digital Transformation' : (tenant ? 'Staff Portal' : 'Genuine plots with ready title deeds')}
+                  Genuine plots with ready title deeds
                 </p>
               </div>
             </Link>
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Super Admin Link - Only visible on main domain for super admins */}
-            {isSuperAdmin && isMainDomain && (
-              <Button
-                asChild
-                variant={isActive('/super-admin') ? 'default' : 'ghost'}
-                size="sm"
-                className="gap-1.5 px-2.5 text-xs bg-amber-500 hover:bg-amber-600 text-white"
-              >
-                <Link to="/super-admin">
-                  <Crown className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Super Admin</span>
-                </Link>
-              </Button>
-            )}
-
             {/* Admin Navigation Links */}
             {role === 'admin' && (
               <nav className="hidden lg:flex items-center gap-0.5">
