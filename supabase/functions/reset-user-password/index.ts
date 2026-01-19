@@ -5,6 +5,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Sanitize error messages to prevent information leakage
+function sanitizeError(error: any): string {
+  console.error('Detailed error:', {
+    message: error?.message,
+    code: error?.code,
+    details: error?.details,
+    hint: error?.hint,
+    timestamp: new Date().toISOString()
+  });
+  
+  return 'An error occurred while processing your request. Please try again or contact support.';
+}
+
+// Validate password strength (NIST SP 800-63B recommends minimum 8 characters)
+function validatePassword(password: string): { valid: boolean; error?: string } {
+  if (!password || password.length < 8) {
+    return { valid: false, error: 'Password must be at least 8 characters' };
+  }
+  
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  
+  if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+    return { valid: false, error: 'Password must contain uppercase, lowercase, and numbers' };
+  }
+  
+  return { valid: true };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -78,8 +108,10 @@ Deno.serve(async (req) => {
       })
     }
 
-    if (!newPassword || newPassword.length < 6) {
-      return new Response(JSON.stringify({ error: 'Password must be at least 6 characters' }), {
+    // Validate password strength
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+      return new Response(JSON.stringify({ error: passwordValidation.error }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -114,8 +146,8 @@ Deno.serve(async (req) => {
     })
 
     if (error) {
-      console.error('Error resetting password:', error)
-      return new Response(JSON.stringify({ error: error.message }), {
+      const clientMessage = sanitizeError(error);
+      return new Response(JSON.stringify({ error: clientMessage }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -126,8 +158,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {
-    console.error('Error:', error)
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    const clientMessage = sanitizeError(error);
+    return new Response(JSON.stringify({ error: clientMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

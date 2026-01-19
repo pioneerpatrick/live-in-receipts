@@ -479,8 +479,18 @@ const Settings = () => {
   const handlePasswordReset = async () => {
     if (!selectedUser) return;
     
-    if (!newPassword || newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    // Validate password strength (NIST SP 800-63B recommends minimum 8 characters)
+    if (!newPassword || newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasLowerCase = /[a-z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+      toast.error('Password must contain uppercase, lowercase, and numbers');
       return;
     }
 
