@@ -20,7 +20,7 @@ import { logActivity, getActionLabel, ActivityAction } from '@/lib/activityLogge
 import { format } from 'date-fns';
 import { 
   Settings as SettingsIcon, Save, Loader2, Upload, X, Image, 
-  UserCog, Activity, UserMinus, Trash2, Search, Filter, RefreshCw, Building, Users, Calculator, KeyRound
+  UserCog, Activity, UserMinus, Trash2, Search, Filter, RefreshCw, Building, Users, Calculator, KeyRound, Crown
 } from 'lucide-react';
 import StatutoryRatesManager from '@/components/payroll/StatutoryRatesManager';
 
@@ -106,13 +106,10 @@ const Settings = () => {
   };
 
   const fetchCompanySettings = async () => {
-    if (!tenantId) return;
-    
     try {
       const { data, error } = await supabase
         .from('company_settings')
         .select('*')
-        .eq('tenant_id', tenantId)
         .maybeSingle();
 
       if (error) throw error;
@@ -125,20 +122,16 @@ const Settings = () => {
   };
 
   const fetchUsers = async () => {
-    if (!tenantId) return;
-    
     try {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('tenant_id', tenantId);
+        .select('*');
       
       if (profilesError) throw profilesError;
       
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('*')
-        .eq('tenant_id', tenantId);
+        .select('*');
       
       if (rolesError) throw rolesError;
       
@@ -158,13 +151,10 @@ const Settings = () => {
   };
 
   const fetchActivityLogs = async () => {
-    if (!tenantId) return;
-    
     try {
       const { data, error } = await supabase
         .from('activity_logs')
         .select('*')
-        .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -176,17 +166,13 @@ const Settings = () => {
   };
 
   const fetchUserStats = async () => {
-    if (!tenantId) return;
-    
     try {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('tenant_id', tenantId);
+        .select('id');
       const { data: roles } = await supabase
         .from('user_roles')
-        .select('role')
-        .eq('tenant_id', tenantId);
+        .select('role');
 
       const admins = roles?.filter(r => r.role === 'admin').length || 0;
       const staff = roles?.filter(r => r.role === 'staff').length || 0;
@@ -237,7 +223,7 @@ const Settings = () => {
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !companySettings || !tenantId) return;
+    if (!file || !companySettings) return;
 
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
@@ -252,7 +238,7 @@ const Settings = () => {
     setUploadingLogo(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${tenantId}/logo-${Date.now()}.${fileExt}`;
+      const fileName = `company/logo-${Date.now()}.${fileExt}`;
 
       if (companySettings.logo_url) {
         const urlParts = companySettings.logo_url.split('/company-logos/');
@@ -277,8 +263,7 @@ const Settings = () => {
       const { error: updateError } = await supabase
         .from('company_settings')
         .update({ logo_url: newLogoUrl })
-        .eq('id', companySettings.id)
-        .eq('tenant_id', tenantId);
+        .eq('id', companySettings.id);
 
       if (updateError) throw updateError;
 
@@ -296,7 +281,7 @@ const Settings = () => {
   };
 
   const handleRemoveLogo = async () => {
-    if (!companySettings?.logo_url || !tenantId) return;
+    if (!companySettings?.logo_url) return;
 
     try {
       const urlParts = companySettings.logo_url.split('/company-logos/');
@@ -308,8 +293,7 @@ const Settings = () => {
       const { error } = await supabase
         .from('company_settings')
         .update({ logo_url: null })
-        .eq('id', companySettings.id)
-        .eq('tenant_id', tenantId);
+        .eq('id', companySettings.id);
 
       if (error) throw error;
 
@@ -323,7 +307,7 @@ const Settings = () => {
 
   const handleSignatureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !companySettings || !tenantId) return;
+    if (!file || !companySettings) return;
 
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
@@ -338,7 +322,7 @@ const Settings = () => {
     setUploadingSignature(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${tenantId}/signature-${Date.now()}.${fileExt}`;
+      const fileName = `company/signature-${Date.now()}.${fileExt}`;
 
       if (companySettings.signature_url) {
         const urlParts = companySettings.signature_url.split('/company-logos/');
@@ -363,8 +347,7 @@ const Settings = () => {
       const { error: updateError } = await supabase
         .from('company_settings')
         .update({ signature_url: newSignatureUrl })
-        .eq('id', companySettings.id)
-        .eq('tenant_id', tenantId);
+        .eq('id', companySettings.id);
 
       if (updateError) throw updateError;
 
@@ -382,7 +365,7 @@ const Settings = () => {
   };
 
   const handleRemoveSignature = async () => {
-    if (!companySettings?.signature_url || !tenantId) return;
+    if (!companySettings?.signature_url) return;
 
     try {
       const urlParts = companySettings.signature_url.split('/company-logos/');
@@ -394,8 +377,7 @@ const Settings = () => {
       const { error } = await supabase
         .from('company_settings')
         .update({ signature_url: null })
-        .eq('id', companySettings.id)
-        .eq('tenant_id', tenantId);
+        .eq('id', companySettings.id);
 
       if (error) throw error;
 

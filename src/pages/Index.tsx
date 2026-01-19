@@ -34,7 +34,7 @@ const Index = () => {
   const isAdmin = role === 'admin';
   
   // Use cached data hooks for instant loading
-  const { clients, payments, isLoading: dataLoading, refetch: loadData } = useClientsAndPayments();
+  const { clients, payments, isLoading: loading, refetch: loadData } = useClientsAndPayments();
   const { invalidateAll } = useInvalidateData();
   const [clientFormOpen, setClientFormOpen] = useState(false);
   const [paymentFormOpen, setPaymentFormOpen] = useState(false);
@@ -300,60 +300,7 @@ const Index = () => {
   const totalReceivables = activeClients.reduce((sum, c) => sum + c.balance, 0);
   const totalCollected = activeClients.reduce((sum, c) => sum + c.total_paid, 0);
 
-  // Super Admin on main domain - redirect to Super Admin dashboard
-  if (showSuperAdminRedirect) {
-    return (
-      <div className="min-h-screen min-h-[100dvh] flex flex-col bg-background">
-        <Toaster position="top-right" />
-        <Header />
-        
-        <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-6 lg:py-8 overflow-x-hidden">
-          <div className="max-w-2xl mx-auto mt-12">
-            <Card className="border-2 border-amber-500/30">
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="p-4 rounded-full bg-amber-500/10">
-                    <Crown className="w-12 h-12 text-amber-500" />
-                  </div>
-                </div>
-                <CardTitle className="text-2xl">Super Admin Access</CardTitle>
-                <CardDescription className="text-base">
-                  You're viewing the main admin portal. Client data is only accessible through their individual domains.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <h3 className="font-medium mb-2 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-primary" />
-                    Data Isolation
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Each client's data is securely isolated. To view or manage a client's data, 
-                    access their system through their configured domain using the "Access" button 
-                    in the Super Admin dashboard.
-                  </p>
-                </div>
-                
-                <div className="flex flex-col gap-3">
-                  <Button asChild size="lg" className="w-full bg-amber-500 hover:bg-amber-600">
-                    <Link to="/super-admin">
-                      <Building2 className="w-5 h-5 mr-2" />
-                      Go to Super Admin Dashboard
-                    </Link>
-                  </Button>
-                  <p className="text-center text-sm text-muted-foreground">
-                    Manage clients, view demo mode, and access client systems from the Super Admin dashboard.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-
-        <Footer />
-      </div>
-    );
-  }
+  // Calculate stats
 
   return (
     <div className="min-h-screen min-h-[100dvh] flex flex-col bg-background">
