@@ -46,14 +46,14 @@ const Header = () => {
         <div className="flex items-center justify-between gap-2">
           {/* Logo and Company Name */}
           <Link to="/" className="flex items-center gap-2 min-w-0 flex-shrink">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
-              <Home className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-primary-foreground" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md flex-shrink-0">
+              <Home className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-primary-foreground" />
             </div>
-            <div className="min-w-0 hidden xs:block">
-              <h1 className="font-heading text-sm sm:text-base md:text-lg lg:text-xl font-bold text-secondary leading-tight">
+            <div className="min-w-0 hidden md:block">
+              <h1 className="font-heading text-sm lg:text-base font-bold text-secondary leading-tight whitespace-nowrap">
                 LIVE-IN PROPERTIES
               </h1>
-              <p className="text-[10px] sm:text-xs text-muted-foreground italic hidden sm:block">
+              <p className="text-[9px] lg:text-[10px] text-muted-foreground italic">
                 Genuine plots with ready title deeds
               </p>
             </div>
