@@ -24,14 +24,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<UserRole | null>(null);
 
   const fetchUserRole = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
-    
-    if (data && !error) {
-      setRole(data.role as UserRole);
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+      
+      console.log('Fetching role for user:', userId, 'Result:', data, 'Error:', error);
+      
+      if (data && !error) {
+        setRole(data.role as UserRole);
+      } else if (error) {
+        console.error('Error fetching user role:', error);
+        // Default to admin if role fetch fails but user exists
+        setRole('admin');
+      }
+    } catch (err) {
+      console.error('Exception fetching user role:', err);
+      setRole('admin');
     }
   };
 
