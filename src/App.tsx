@@ -4,13 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { TenantProvider } from "@/hooks/useTenant";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import SuperAdminBackButton from "@/components/SuperAdminBackButton";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
-import SuperAdmin from "./pages/SuperAdmin";
 import Settings from "./pages/Settings";
 import ClientPaymentHistory from "./pages/ClientPaymentHistory";
 import Projects from "./pages/Projects";
@@ -23,67 +20,56 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <TenantProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <SuperAdminBackButton />
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route 
-                path="/" 
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route
-                path="/admin" 
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Admin />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route
-                path="/super-admin" 
-                element={
-                  <ProtectedRoute>
-                    <SuperAdmin />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/settings" 
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Settings />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route path="/payments/:clientId" element={<ClientPaymentHistory />} />
-              <Route 
-                path="/projects" 
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Projects />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/payroll" 
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Payroll />
-                  </ProtectedRoute>
-                } 
-              />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
-        </TenantProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              } 
+            />
+            <Route
+              path="/admin" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Admin />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Settings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="/payments/:clientId" element={<ClientPaymentHistory />} />
+            <Route 
+              path="/projects" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Projects />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/payroll" 
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Payroll />
+                </ProtectedRoute>
+              } 
+            />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
