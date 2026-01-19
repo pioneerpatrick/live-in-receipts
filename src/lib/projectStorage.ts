@@ -255,9 +255,13 @@ export const getAllInventoryStats = async () => {
     id: p.id,
     name: p.name,
     location: p.location,
-    totalPlots: p.total_plots,
-    availablePlots: p.available_plots,
-    soldPlots: p.sold_plots,
+    capacity: p.capacity,
+    stats: {
+      total: p.total_plots,
+      available: p.available_plots,
+      sold: p.sold_plots,
+      reserved: 0, // Not tracked separately in this system
+    },
   }));
 
   const overallStats = {
@@ -265,6 +269,8 @@ export const getAllInventoryStats = async () => {
     totalPlots: projects.reduce((sum, p) => sum + p.total_plots, 0),
     availablePlots: projects.reduce((sum, p) => sum + p.available_plots, 0),
     soldPlots: projects.reduce((sum, p) => sum + p.sold_plots, 0),
+    reservedPlots: 0,
+    fullySoldProjects: projects.filter(p => p.available_plots === 0 && p.total_plots > 0).length,
   };
 
   return { projectStats, overallStats };

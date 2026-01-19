@@ -39,9 +39,7 @@ const Auth = () => {
     if (!loading && user) {
       navigate('/');
     }
-      navigate('/');
-    }
-  }, [user, loading, navigate, superAdminAccessingClient, isSuperAdmin]);
+  }, [user, loading, navigate]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -87,7 +85,7 @@ const Auth = () => {
     setIsSubmitting(false);
   };
 
-  if (loading || tenantLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -95,31 +93,21 @@ const Auth = () => {
     );
   }
 
-  // Get display info based on tenant or main domain
-  const displayName = tenant?.name || (isMainDomain ? 'TECHNO PANALY' : 'LIVE-IN PROPERTIES');
-  const displayTagline = isMainDomain && !tenant ? 'Powering Digital Transformation' : (tenant ? 'Staff Portal' : 'Genuine plots with ready title deeds');
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="gradient-header border-b border-border py-6">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center gap-3">
-            {isMainDomain && !tenant ? (
-              <img src={technopanalyLogo} alt="Techno Panaly" className="w-16 h-16 rounded-full object-cover shadow-md" />
-            ) : tenant?.logo_url ? (
-              <img src={tenant.logo_url} alt={tenant.name} className="w-14 h-14 rounded-full object-cover shadow-md" />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
-                <Home className="w-7 h-7 text-primary-foreground" />
-              </div>
-            )}
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
+              <Home className="w-7 h-7 text-primary-foreground" />
+            </div>
             <div className="text-center">
               <h1 className="font-heading text-xl md:text-2xl font-bold text-secondary">
-                {displayName}
+                LIVE-IN PROPERTIES
               </h1>
               <p className="text-sm text-muted-foreground italic">
-                {displayTagline}
+                Genuine plots with ready title deeds
               </p>
             </div>
           </div>
@@ -130,11 +118,9 @@ const Auth = () => {
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md card-shadow">
           <CardHeader className="text-center">
-            <CardTitle className="font-heading text-2xl">
-              {isMainDomain && !tenant ? 'Admin Portal' : 'Staff Portal'}
-            </CardTitle>
+            <CardTitle className="font-heading text-2xl">Staff Portal</CardTitle>
             <CardDescription>
-              {isMainDomain && !tenant ? 'Access the multi-tenant management system' : 'Access the receipt management system'}
+              Access the receipt management system
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -280,12 +266,10 @@ const Auth = () => {
         </Card>
       </main>
 
-      {/* Footer - Hide on main domain (super admin) */}
-      {!isMainDomain && (
-        <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border">
-          <p>Thank you for choosing Live-IN Properties. We Secure your Future.</p>
-        </footer>
-      )}
+      {/* Footer */}
+      <footer className="py-4 text-center text-sm text-muted-foreground border-t border-border">
+        <p>Thank you for choosing Live-IN Properties. We Secure your Future.</p>
+      </footer>
     </div>
   );
 };
