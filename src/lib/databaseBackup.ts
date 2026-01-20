@@ -27,6 +27,8 @@ export interface BackupSettings {
   last_backup_at: string | null;
   next_backup_at: string | null;
   retention_days: number;
+  notification_email: string | null;
+  email_notifications_enabled: boolean;
 }
 
 export interface BackupHistoryItem {
