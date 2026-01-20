@@ -13,9 +13,10 @@ export type ActivityAction =
   | 'user_role_changed'
   | 'user_deleted'
   | 'password_reset'
-  | 'excel_import';
+  | 'excel_import'
+  | 'database_backup';
 
-export type EntityType = 'client' | 'payment' | 'user' | 'receipt';
+export type EntityType = 'client' | 'payment' | 'user' | 'receipt' | 'system';
 
 interface LogActivityParams {
   action: ActivityAction;
@@ -79,6 +80,7 @@ export const getActionLabel = (action: ActivityAction): string => {
     user_deleted: 'Deleted user',
     password_reset: 'Reset password',
     excel_import: 'Imported from Excel',
+    database_backup: 'Created database backup',
   };
   return labels[action] || action;
 };
