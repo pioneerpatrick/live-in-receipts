@@ -1,6 +1,6 @@
 import { Client } from '@/types/client';
 import { formatCurrency } from '@/lib/supabaseStorage';
-import { Bell, AlertTriangle, Clock, Calendar, MessageCircle, Copy, ExternalLink, Mail } from 'lucide-react';
+import { Bell, AlertTriangle, Clock, Calendar, MessageCircle, Copy, ExternalLink, Mail, Send, Loader2 } from 'lucide-react';
 import { format, differenceInDays, differenceInMonths, parseISO, isValid } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { sendPaymentReminderEmail } from '@/lib/emailService';
 
 interface PaymentRemindersProps {
   clients: Client[];
@@ -146,6 +147,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
   });
   
   const [productionUrl, setProductionUrl] = useState<string | null>(null);
+  const [sendingReminders, setSendingReminders] = useState(false);
 
   // Fetch production URL from company settings
   useEffect(() => {
@@ -162,6 +164,82 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
     
     fetchProductionUrl();
   }, []);
+
+  // Function to send email reminders to all overdue clients with email addresses
+  const handleSendAllReminders = async () => {
+    const clientsWithEmail = getReminders().filter(c => c.phone?.includes('@'));
+    
+    if (clientsWithEmail.length === 0) {
+      toast.info('No clients with email addresses found in reminders');
+      return;
+    }
+    
+    setSendingReminders(true);
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const client of clientsWithEmail) {
+      try {
+        const monthlyContribution = client.installment_months && client.installment_months > 0 && client.balance > 0
+          ? Math.ceil(client.balance / client.installment_months)
+          : undefined;
+        
+        await sendPaymentReminderEmail(client.phone!, {
+          clientName: client.name,
+          projectName: client.project_name,
+          plotNumber: client.plot_number,
+          balance: client.balance,
+          dueDate: client.next_payment_date ? format(parseISO(client.next_payment_date), 'dd MMM yyyy') : undefined,
+          monthlyContribution,
+          isOverdue: client.status === 'overdue',
+        });
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to send reminder to ${client.name}:`, err);
+        failCount++;
+      }
+    }
+    
+    setSendingReminders(false);
+    
+    if (successCount > 0) {
+      toast.success(`Sent ${successCount} email reminder${successCount > 1 ? 's' : ''}`);
+    }
+    if (failCount > 0) {
+      toast.error(`Failed to send ${failCount} reminder${failCount > 1 ? 's' : ''}`);
+    }
+  };
+
+  // Send individual email reminder
+  const handleSendEmailReminder = async (client: ReminderClient, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!client.phone?.includes('@')) {
+      toast.error('No email address available for this client');
+      return;
+    }
+    
+    try {
+      const monthlyContribution = client.installment_months && client.installment_months > 0 && client.balance > 0
+        ? Math.ceil(client.balance / client.installment_months)
+        : undefined;
+      
+      await sendPaymentReminderEmail(client.phone, {
+        clientName: client.name,
+        projectName: client.project_name,
+        plotNumber: client.plot_number,
+        balance: client.balance,
+        dueDate: client.next_payment_date ? format(parseISO(client.next_payment_date), 'dd MMM yyyy') : undefined,
+        monthlyContribution,
+        isOverdue: client.status === 'overdue',
+      });
+      
+      toast.success(`Email reminder sent to ${client.name}`);
+    } catch (err) {
+      console.error('Failed to send email reminder:', err);
+      toast.error('Failed to send email reminder');
+    }
+  };
 
   const handleWhatsAppClick = (client: Client, e: React.MouseEvent) => {
     e.stopPropagation();

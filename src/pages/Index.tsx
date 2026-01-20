@@ -25,9 +25,11 @@ import { getProjects, getPlots, sellPlot, returnPlot } from '@/lib/projectStorag
 import { generatePDFReceipt } from '@/lib/pdfGenerator';
 import { useAuth } from '@/hooks/useAuth';
 import { logActivity } from '@/lib/activityLogger';
+import { sendPaymentAddedEmail, sendClientUpdateEmail } from '@/lib/emailService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, FileText, Users, Shield, Building2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const { role } = useAuth();
@@ -93,6 +95,18 @@ const Index = () => {
           entityId: selectedClient.id,
           details: { name: data.name },
         });
+
+        // Send update notification email to client if email available
+        const clientEmail = data.phone?.includes('@') ? data.phone : undefined;
+        if (clientEmail) {
+          sendClientUpdateEmail(
+            clientEmail,
+            data.name,
+            data.projectName,
+            data.selectedPlots.join(', '),
+            'Your account details have been updated'
+          ).catch(err => console.error('Failed to send client update email:', err));
+        }
         
         toast.success('Client updated successfully!');
       } else {
@@ -224,6 +238,24 @@ const Index = () => {
           receipt: receiptData.receiptNumber,
         },
       });
+
+      // Get client email from phone (if email-like) or try to find it
+      // For now, we'll check if phone contains @ (some clients store email in phone)
+      const clientEmail = selectedClient.phone?.includes('@') ? selectedClient.phone : undefined;
+      
+      // Send payment confirmation email to client (if email available)
+      if (clientEmail) {
+        sendPaymentAddedEmail(clientEmail, {
+          clientName: selectedClient.name,
+          projectName: selectedClient.project_name,
+          plotNumber: selectedClient.plot_number,
+          amount: paymentAmount,
+          receiptNumber: receiptData.receiptNumber,
+          newBalance: newBalance,
+          totalPaid: newTotalPaid,
+          paymentMethod: data.paymentMethod,
+        }).catch(err => console.error('Failed to send payment email:', err));
+      }
 
       toast.success('Payment recorded successfully!');
       await loadData();

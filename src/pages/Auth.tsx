@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Home, Loader2, Mail, Lock, User } from 'lucide-react';
+import { sendStaffWelcomeEmail } from '@/lib/emailService';
 
 const loginSchema = z.object({
   email: z.string().trim().email('Invalid email address'),
@@ -83,7 +84,12 @@ const Auth = () => {
         toast.error(error.message);
       }
     } else {
-      toast.success('Account created successfully! Please login.');
+      // Send welcome email with credentials
+      const loginUrl = `${window.location.origin}/auth`;
+      sendStaffWelcomeEmail(data.email, data.fullName, data.password, loginUrl)
+        .catch(err => console.error('Failed to send welcome email:', err));
+      
+      toast.success('Account created successfully! Check your email for login details.');
       signUpForm.reset();
     }
     setIsSubmitting(false);

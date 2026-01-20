@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { sendActivityAlertEmail } from '@/lib/emailService';
 
 export type ActivityAction = 
   | 'login'
@@ -23,6 +24,7 @@ interface LogActivityParams {
   entityType?: EntityType;
   entityId?: string;
   details?: Record<string, any>;
+  sendEmailAlert?: boolean;
 }
 
 export const logActivity = async ({
@@ -30,6 +32,7 @@ export const logActivity = async ({
   entityType,
   entityId,
   details,
+  sendEmailAlert = true,
 }: LogActivityParams): Promise<void> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -46,11 +49,13 @@ export const logActivity = async ({
       .eq('user_id', user.id)
       .maybeSingle();
 
+    const userName = profile?.full_name || user.email || 'Unknown User';
+
     const { error } = await supabase
       .from('activity_logs')
       .insert({
         user_id: user.id,
-        user_name: profile?.full_name || user.email,
+        user_name: userName,
         action,
         entity_type: entityType,
         entity_id: entityId,
@@ -59,6 +64,14 @@ export const logActivity = async ({
 
     if (error) {
       console.error('Failed to log activity:', error);
+    }
+
+    // Send email alert for significant activities (not login/logout to avoid spam)
+    if (sendEmailAlert && !['login', 'logout'].includes(action)) {
+      const detailsString = details ? JSON.stringify(details) : undefined;
+      sendActivityAlertEmail(action, userName, entityType, detailsString).catch(err => {
+        console.error('Failed to send activity alert email:', err);
+      });
     }
   } catch (error) {
     console.error('Error logging activity:', error);
