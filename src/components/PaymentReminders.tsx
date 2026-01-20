@@ -167,7 +167,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
 
   // Function to send email reminders to all overdue clients with email addresses
   const handleSendAllReminders = async () => {
-    const clientsWithEmail = getReminders().filter(c => c.phone?.includes('@'));
+    const clientsWithEmail = getReminders().filter(c => c.email);
     
     if (clientsWithEmail.length === 0) {
       toast.info('No clients with email addresses found in reminders');
@@ -184,7 +184,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
           ? Math.ceil(client.balance / client.installment_months)
           : undefined;
         
-        await sendPaymentReminderEmail(client.phone!, {
+        await sendPaymentReminderEmail(client.email!, {
           clientName: client.name,
           projectName: client.project_name,
           plotNumber: client.plot_number,
@@ -214,7 +214,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
   const handleSendEmailReminder = async (client: ReminderClient, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (!client.phone?.includes('@')) {
+    if (!client.email) {
       toast.error('No email address available for this client');
       return;
     }
@@ -224,7 +224,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
         ? Math.ceil(client.balance / client.installment_months)
         : undefined;
       
-      await sendPaymentReminderEmail(client.phone, {
+      await sendPaymentReminderEmail(client.email, {
         clientName: client.name,
         projectName: client.project_name,
         plotNumber: client.plot_number,
@@ -454,7 +454,7 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
             <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             Payment Reminders
           </h3>
-          <div className="flex flex-wrap gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
             {overdueCount > 0 && (
               <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-destructive/10 text-destructive rounded-full font-medium">
                 {overdueCount} overdue
@@ -470,6 +470,21 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
                 {upcomingCount} upcoming
               </span>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSendAllReminders}
+              disabled={sendingReminders}
+              className="h-7 px-2 sm:px-3 text-xs gap-1"
+              title="Send email reminders to all clients with email addresses"
+            >
+              {sendingReminders ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Send className="w-3 h-3" />
+              )}
+              <span className="hidden sm:inline">Send All</span>
+            </Button>
           </div>
         </div>
 
