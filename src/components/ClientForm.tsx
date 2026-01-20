@@ -17,6 +17,7 @@ import { formatCurrency } from '@/lib/supabaseStorage';
 const clientSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   phone: z.string().min(10, 'Phone must be at least 10 characters'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
   projectName: z.string().min(1, 'Project name is required'),
   selectedPlots: z.array(z.string()).min(1, 'At least one plot must be selected'),
   totalPrice: z.coerce.number().min(1, 'Total price must be greater than 0'),
@@ -50,6 +51,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
     defaultValues: {
       name: '',
       phone: '',
+      email: '',
       projectName: '',
       selectedPlots: [],
       totalPrice: 0,
@@ -117,6 +119,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
       form.reset({
         name: client.name,
         phone: client.phone,
+        email: client.email || '',
         projectName: client.project_name,
         selectedPlots: plotNumbers,
         totalPrice: client.total_price,
@@ -132,6 +135,7 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
       form.reset({
         name: '',
         phone: '',
+        email: '',
         projectName: '',
         selectedPlots: [],
         totalPrice: 0,
@@ -207,6 +211,20 @@ const ClientForm = ({ open, onClose, onSubmit, client }: ClientFormProps) => {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address (Optional - for reminders)</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="client@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

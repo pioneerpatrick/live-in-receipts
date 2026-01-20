@@ -121,6 +121,7 @@ const Index = () => {
         const newClient = await addClient({
           name: data.name,
           phone: data.phone,
+          email: data.email || null,
           project_name: data.projectName,
           plot_number: plotNumbersString,
           unit_price: unitPrice,
