@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload, CalendarIcon, X, Filter, CreditCard, Clock, AlertTriangle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, Edit2, Trash2, Receipt, UserPlus, Download, Printer, History, Upload, CalendarIcon, X, Filter, CreditCard, Clock, AlertTriangle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail } from 'lucide-react';
 
 interface ClientTableProps {
   clients: Client[];
@@ -616,6 +616,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
               <TableHead className="font-semibold w-8 text-xs px-2">#</TableHead>
               <TableHead className="font-semibold text-xs px-2">Client</TableHead>
               <TableHead className="font-semibold text-xs px-2 hidden lg:table-cell">Phone</TableHead>
+              <TableHead className="font-semibold text-xs px-2 hidden xl:table-cell">Email</TableHead>
               <TableHead className="font-semibold text-xs px-2">Project</TableHead>
               <TableHead className="font-semibold text-xs px-2">Plot</TableHead>
               <TableHead className="font-semibold text-right text-xs px-2 hidden xl:table-cell">Price</TableHead>
@@ -630,7 +631,7 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
           <TableBody>
             {paginatedClients.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={13} className="text-center py-12 text-muted-foreground">
                   {searchTerm || hasActiveFilters ? 'No clients found matching your filters.' : 'No clients yet. Add your first client to get started.'}
                 </TableCell>
               </TableRow>
@@ -673,6 +674,16 @@ const ClientTable = ({ clients, onEdit, onDelete, onAddPayment, onViewHistory, o
                     </div>
                   </TableCell>
                   <TableCell className={cn("text-xs px-2 hidden lg:table-cell truncate", isCancelled && "text-red-600")}>{client.phone}</TableCell>
+                  <TableCell className="text-xs px-2 hidden xl:table-cell">
+                    {client.email ? (
+                      <span className="flex items-center gap-1 text-primary" title={client.email}>
+                        <Mail className="w-3 h-3" />
+                        <span className="truncate max-w-[100px]">{client.email}</span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground text-[10px]">-</span>
+                    )}
+                  </TableCell>
                   <TableCell className={cn("text-xs px-2 truncate", isCancelled && "text-red-600")}>{client.project_name}</TableCell>
                   <TableCell className={cn("text-xs px-2", isCancelled && "text-red-600")}>{client.plot_number}</TableCell>
                   <TableCell className={cn("text-right text-xs px-2 hidden xl:table-cell", isCancelled && "text-red-600")}>{formatCurrency(client.total_price)}</TableCell>
