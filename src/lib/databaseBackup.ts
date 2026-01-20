@@ -20,6 +20,27 @@ export interface BackupData {
   activity_logs: any[];
 }
 
+export interface BackupSettings {
+  id: string;
+  auto_backup_enabled: boolean;
+  backup_frequency: 'daily' | 'weekly' | 'monthly';
+  last_backup_at: string | null;
+  next_backup_at: string | null;
+  retention_days: number;
+}
+
+export interface BackupHistoryItem {
+  id: string;
+  filename: string;
+  file_path: string;
+  file_size: number | null;
+  backup_type: 'manual' | 'scheduled';
+  status: 'completed' | 'failed';
+  record_count: number | null;
+  created_by: string | null;
+  created_at: string;
+}
+
 export async function generateDatabaseBackup(): Promise<BackupData> {
   const tables = [
     'clients',
@@ -124,4 +145,230 @@ export function getBackupStats(backup: BackupData) {
       return acc;
     }, 0),
   };
+}
+
+export function validateBackupFile(data: unknown): data is BackupData {
+  if (!data || typeof data !== 'object') return false;
+  
+  const backup = data as Record<string, unknown>;
+  
+  // Check metadata exists
+  if (!backup.metadata || typeof backup.metadata !== 'object') return false;
+  
+  // Check required arrays exist
+  const requiredTables = ['clients', 'payments', 'projects', 'plots'];
+  for (const table of requiredTables) {
+    if (!Array.isArray(backup[table])) return false;
+  }
+  
+  return true;
+}
+
+export async function restoreFromBackup(
+  backup: BackupData,
+  options: { 
+    replaceExisting: boolean;
+    tables?: string[];
+  }
+): Promise<{ success: boolean; restored: Record<string, number>; errors: string[] }> {
+  const errors: string[] = [];
+  const restored: Record<string, number> = {};
+  
+  const tablesToRestore = options.tables || [
+    'projects',
+    'plots', 
+    'clients',
+    'payments',
+    'expenses',
+    'cancelled_sales',
+    'employees',
+    'payroll_records',
+    'employee_deductions',
+    'statutory_rates',
+    'company_settings',
+  ];
+
+  // Order matters for foreign key constraints
+  const orderedTables = [
+    'company_settings',
+    'statutory_rates',
+    'projects',
+    'employees',
+    'clients',
+    'plots',
+    'payments',
+    'expenses',
+    'cancelled_sales',
+    'payroll_records',
+    'employee_deductions',
+  ].filter(t => tablesToRestore.includes(t));
+
+  for (const table of orderedTables) {
+    const tableData = backup[table as keyof BackupData];
+    if (!Array.isArray(tableData) || tableData.length === 0) continue;
+
+    try {
+      if (options.replaceExisting) {
+        // Delete existing data first - use type assertion for dynamic table access
+        const { error: deleteError } = await (supabase.from(table as any).delete() as any).neq('id', '00000000-0000-0000-0000-000000000000');
+        if (deleteError) {
+          errors.push(`Failed to clear ${table}: ${deleteError.message}`);
+          continue;
+        }
+      }
+
+      // Insert data in batches of 100
+      const batchSize = 100;
+      let insertedCount = 0;
+      
+      for (let i = 0; i < tableData.length; i += batchSize) {
+        const batch = tableData.slice(i, i + batchSize);
+        
+        // Remove auto-generated fields that might cause conflicts
+        const cleanedBatch = batch.map((item: Record<string, unknown>) => {
+          const cleaned = { ...item };
+          // Keep ID for reference integrity
+          return cleaned;
+        });
+
+        // Use type assertion for dynamic table access
+        const { error: insertError } = await (supabase.from(table as any) as any)
+          .upsert(cleanedBatch, { onConflict: 'id' });
+
+        if (insertError) {
+          errors.push(`Failed to restore ${table} batch: ${insertError.message}`);
+        } else {
+          insertedCount += batch.length;
+        }
+      }
+
+      restored[table] = insertedCount;
+    } catch (error) {
+      errors.push(`Error restoring ${table}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  return {
+    success: errors.length === 0,
+    restored,
+    errors,
+  };
+}
+
+export async function saveBackupToCloud(backup: BackupData): Promise<{ success: boolean; filename: string; error?: string }> {
+  try {
+    const now = new Date();
+    const filename = `backup-${now.toISOString().split('T')[0]}-${now.getTime()}.json`;
+    const filePath = `manual/${filename}`;
+
+    const jsonBlob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+
+    const { error: uploadError } = await supabase.storage
+      .from('database-backups')
+      .upload(filePath, jsonBlob, { contentType: 'application/json' });
+
+    if (uploadError) {
+      return { success: false, filename: '', error: uploadError.message };
+    }
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Record in history
+    const stats = getBackupStats(backup);
+    await supabase.from('backup_history').insert({
+      filename,
+      file_path: filePath,
+      file_size: jsonBlob.size,
+      backup_type: 'manual',
+      status: 'completed',
+      record_count: stats.total,
+      created_by: user?.id,
+    });
+
+    return { success: true, filename };
+  } catch (error) {
+    return { success: false, filename: '', error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function getBackupSettings(): Promise<BackupSettings | null> {
+  const { data, error } = await supabase
+    .from('backup_settings')
+    .select('*')
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data as BackupSettings;
+}
+
+export async function updateBackupSettings(settings: Partial<BackupSettings>): Promise<boolean> {
+  const { data: existing } = await supabase
+    .from('backup_settings')
+    .select('id')
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from('backup_settings')
+      .update(settings)
+      .eq('id', existing.id);
+    return !error;
+  } else {
+    const { error } = await supabase
+      .from('backup_settings')
+      .insert(settings as BackupSettings);
+    return !error;
+  }
+}
+
+export async function getBackupHistory(): Promise<BackupHistoryItem[]> {
+  const { data, error } = await supabase
+    .from('backup_history')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) return [];
+  return (data || []) as BackupHistoryItem[];
+}
+
+export async function deleteBackupFromCloud(item: BackupHistoryItem): Promise<boolean> {
+  // Delete from storage
+  const { error: storageError } = await supabase.storage
+    .from('database-backups')
+    .remove([item.file_path]);
+
+  if (storageError) {
+    console.error('Failed to delete backup file:', storageError);
+  }
+
+  // Delete from history
+  const { error: historyError } = await supabase
+    .from('backup_history')
+    .delete()
+    .eq('id', item.id);
+
+  return !historyError;
+}
+
+export async function downloadBackupFromCloud(item: BackupHistoryItem): Promise<void> {
+  const { data, error } = await supabase.storage
+    .from('database-backups')
+    .download(item.file_path);
+
+  if (error || !data) {
+    throw new Error('Failed to download backup');
+  }
+
+  const url = URL.createObjectURL(data);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = item.filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
