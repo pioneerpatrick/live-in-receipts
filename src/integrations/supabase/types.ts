@@ -50,6 +50,75 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_history: {
+        Row: {
+          backup_type: string | null
+          created_at: string
+          created_by: string | null
+          file_path: string
+          file_size: number | null
+          filename: string
+          id: string
+          record_count: number | null
+          status: string | null
+        }
+        Insert: {
+          backup_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_path: string
+          file_size?: number | null
+          filename: string
+          id?: string
+          record_count?: number | null
+          status?: string | null
+        }
+        Update: {
+          backup_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_path?: string
+          file_size?: number | null
+          filename?: string
+          id?: string
+          record_count?: number | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      backup_settings: {
+        Row: {
+          auto_backup_enabled: boolean | null
+          backup_frequency: string | null
+          created_at: string
+          id: string
+          last_backup_at: string | null
+          next_backup_at: string | null
+          retention_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          auto_backup_enabled?: boolean | null
+          backup_frequency?: string | null
+          created_at?: string
+          id?: string
+          last_backup_at?: string | null
+          next_backup_at?: string | null
+          retention_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          auto_backup_enabled?: boolean | null
+          backup_frequency?: string | null
+          created_at?: string
+          id?: string
+          last_backup_at?: string | null
+          next_backup_at?: string | null
+          retention_days?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cancelled_sales: {
         Row: {
           audit_notes: string | null
