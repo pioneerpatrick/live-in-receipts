@@ -20,9 +20,10 @@ import { logActivity, getActionLabel, ActivityAction } from '@/lib/activityLogge
 import { format } from 'date-fns';
 import { 
   Settings as SettingsIcon, Save, Loader2, Upload, X, Image, 
-  UserCog, Activity, UserMinus, Trash2, Search, Filter, RefreshCw, Building, Users, Calculator, KeyRound, Crown
+  UserCog, Activity, UserMinus, Trash2, Search, Filter, RefreshCw, Building, Users, Calculator, KeyRound, Crown, HardDrive
 } from 'lucide-react';
 import StatutoryRatesManager from '@/components/payroll/StatutoryRatesManager';
+import DatabaseBackup from '@/components/settings/DatabaseBackup';
 
 interface UserWithRole extends UserProfile {
   role?: 'admin' | 'staff';
@@ -645,6 +646,10 @@ const Settings = () => {
               <Activity className="w-4 h-4" />
               <span className="hidden sm:inline">Activity</span>
             </TabsTrigger>
+            <TabsTrigger value="backup" className="flex items-center gap-2">
+              <HardDrive className="w-4 h-4" />
+              <span className="hidden sm:inline">Backup</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Company Settings Tab */}
@@ -1212,6 +1217,11 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Backup Tab */}
+          <TabsContent value="backup">
+            <DatabaseBackup />
           </TabsContent>
         </Tabs>
       </main>
