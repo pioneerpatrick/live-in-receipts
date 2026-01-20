@@ -91,9 +91,11 @@ export type Database = {
           auto_backup_enabled: boolean | null
           backup_frequency: string | null
           created_at: string
+          email_notifications_enabled: boolean | null
           id: string
           last_backup_at: string | null
           next_backup_at: string | null
+          notification_email: string | null
           retention_days: number | null
           updated_at: string
         }
@@ -101,9 +103,11 @@ export type Database = {
           auto_backup_enabled?: boolean | null
           backup_frequency?: string | null
           created_at?: string
+          email_notifications_enabled?: boolean | null
           id?: string
           last_backup_at?: string | null
           next_backup_at?: string | null
+          notification_email?: string | null
           retention_days?: number | null
           updated_at?: string
         }
@@ -111,9 +115,11 @@ export type Database = {
           auto_backup_enabled?: boolean | null
           backup_frequency?: string | null
           created_at?: string
+          email_notifications_enabled?: boolean | null
           id?: string
           last_backup_at?: string | null
           next_backup_at?: string | null
+          notification_email?: string | null
           retention_days?: number | null
           updated_at?: string
         }

@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Download, Loader2, Database, HardDrive, CheckCircle2, Upload, Cloud, Clock, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Download, Loader2, Database, HardDrive, CheckCircle2, Upload, Cloud, Clock, Trash2, RefreshCw, AlertTriangle, Mail } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { 
   generateDatabaseBackup, 
   downloadBackup, 
@@ -503,6 +504,43 @@ export default function DatabaseBackup() {
                     <p className="text-sm text-muted-foreground">
                       Older backups will be automatically deleted
                     </p>
+                  </div>
+
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="font-medium flex items-center gap-2 mb-4">
+                      <Mail className="w-4 h-4" />
+                      Email Notifications
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Enable Email Notifications</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Receive email alerts when backups complete or fail
+                          </p>
+                        </div>
+                        <Switch
+                          checked={settings.email_notifications_enabled}
+                          onCheckedChange={(checked) => handleSettingChange('email_notifications_enabled', checked)}
+                          disabled={savingSettings}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Notification Email</Label>
+                        <Input
+                          type="email"
+                          placeholder="admin@example.com"
+                          value={settings.notification_email || ''}
+                          onChange={(e) => handleSettingChange('notification_email', e.target.value)}
+                          disabled={savingSettings || !settings.email_notifications_enabled}
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          Email address to receive backup notifications
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   {settings.last_backup_at && (
