@@ -243,6 +243,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           discount: number
+          email: string | null
           id: string
           initial_payment_method: string | null
           installment_months: number | null
@@ -273,6 +274,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           discount?: number
+          email?: string | null
           id?: string
           initial_payment_method?: string | null
           installment_months?: number | null
@@ -303,6 +305,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           discount?: number
+          email?: string | null
           id?: string
           initial_payment_method?: string | null
           installment_months?: number | null

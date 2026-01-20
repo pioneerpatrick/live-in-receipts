@@ -96,6 +96,7 @@ const ClientPaymentHistory = () => {
           id: firstRow.client_id,
           name: firstRow.client_name,
           phone: firstRow.client_phone || '',
+          email: null,
           project_name: firstRow.project_name,
           plot_number: firstRow.plot_number,
           total_price: firstRow.total_price,

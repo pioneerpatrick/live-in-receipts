@@ -3,6 +3,7 @@ export interface Client {
   id: string;
   name: string;
   phone: string;
+  email: string | null;
   project_name: string;
   plot_number: string;
   unit_price: number;

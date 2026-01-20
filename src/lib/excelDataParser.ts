@@ -248,6 +248,7 @@ export const parseExcelData = (rows: any[][]): ParsedClientData[] => {
         client: {
           name,
           phone,
+          email: null,
           project_name: projectName,
           plot_number: plotsInfo.numbers || plotInfo,
           unit_price: totalPrice / (plotsInfo.count || 1),

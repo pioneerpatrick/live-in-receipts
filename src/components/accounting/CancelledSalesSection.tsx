@@ -198,6 +198,7 @@ export const CancelledSalesSection = () => {
           const newClient = await addClient({
             name: editingSale.client_name,
             phone: editingSale.client_phone || '',
+            email: null,
             project_name: selectedProject.name,
             plot_number: selectedPlot.plot_number,
             unit_price: selectedPlot.price,
