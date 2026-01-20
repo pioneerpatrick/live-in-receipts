@@ -11,6 +11,8 @@ import { getClientPayments, formatCurrency, updatePayment, deletePayment, update
 import { generatePDFReceipt, generatePaymentHistoryPDF } from '@/lib/pdfGenerator';
 import { EditPaymentDialog } from '@/components/EditPaymentDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { logActivity } from '@/lib/activityLogger';
+import { sendPaymentUpdateEmail } from '@/lib/emailService';
 import { FileText, Loader2, Printer, Pencil, Trash2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -118,6 +120,33 @@ export const PaymentHistory = ({ open, onClose, client, onClientUpdated }: Payme
           total_paid: newTotalPaid,
           balance: newBalance,
         });
+        
+        // Log activity
+        await logActivity({
+          action: 'payment_updated',
+          entityType: 'payment',
+          entityId: paymentId,
+          details: {
+            client_name: client.name,
+            old_amount: originalAmount,
+            new_amount: updates.amount,
+          },
+        });
+
+        // Send email notification to client if email available
+        const clientEmail = client.phone?.includes('@') ? client.phone : undefined;
+        const payment = payments.find(p => p.id === paymentId);
+        if (clientEmail && payment) {
+          sendPaymentUpdateEmail(clientEmail, {
+            clientName: client.name,
+            projectName: client.project_name,
+            plotNumber: client.plot_number,
+            receiptNumber: payment.receipt_number,
+            oldAmount: originalAmount,
+            newAmount: updates.amount || originalAmount,
+            newBalance: newBalance,
+          }).catch(err => console.error('Failed to send payment update email:', err));
+        }
       }
       
       onClientUpdated?.();
