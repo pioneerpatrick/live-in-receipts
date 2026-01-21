@@ -18,6 +18,55 @@ function sanitizeError(error: any): string {
   return 'An error occurred while processing your request. Please try again or contact support.';
 }
 
+async function sendDeletionNotificationEmail(
+  supabaseAdmin: any,
+  deletedUserEmail: string,
+  deletedUserName: string,
+  deletedByName: string
+) {
+  const deletedAt = new Date().toLocaleString('en-KE', { 
+    dateStyle: 'full', 
+    timeStyle: 'short',
+    timeZone: 'Africa/Nairobi'
+  });
+
+  try {
+    // Send email to the deleted user
+    await supabaseAdmin.functions.invoke('send-email', {
+      body: {
+        type: 'user_deleted',
+        recipient: deletedUserEmail,
+        data: {
+          deletedUserName,
+          deletedUserEmail,
+          deletedByName,
+          deletedAt,
+          isAdminNotification: false
+        }
+      }
+    });
+    console.log('Deletion notification sent to user:', deletedUserEmail);
+
+    // Send admin notification
+    await supabaseAdmin.functions.invoke('send-email', {
+      body: {
+        type: 'user_deleted',
+        data: {
+          deletedUserName,
+          deletedUserEmail,
+          deletedByName,
+          deletedAt,
+          isAdminNotification: true
+        }
+      }
+    });
+    console.log('Admin notification sent for user deletion');
+  } catch (emailError) {
+    console.error('Error sending deletion notification emails:', emailError);
+    // Don't throw - deletion was successful, email is supplementary
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -102,6 +151,25 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Get the target user's info before deletion for email notification
+    const { data: targetUserAuth } = await supabaseAdmin.auth.admin.getUserById(userId)
+    const { data: targetProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('user_id', userId)
+      .maybeSingle()
+    
+    // Get requesting user's profile name
+    const { data: requestingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('user_id', requestingUser.id)
+      .maybeSingle()
+
+    const deletedUserEmail = targetUserAuth?.user?.email || 'unknown';
+    const deletedUserName = targetProfile?.full_name || targetUserAuth?.user?.email || 'Unknown User';
+    const deletedByName = requestingProfile?.full_name || requestingUser.email || 'Admin';
+
     // First delete the user's role from user_roles table
     const { error: roleDeleteError } = await supabaseAdmin
       .from('user_roles')
@@ -137,6 +205,14 @@ Deno.serve(async (req) => {
     }
 
     console.log('User deleted successfully:', userId);
+
+    // Send deletion notification emails (non-blocking)
+    await sendDeletionNotificationEmail(
+      supabaseAdmin,
+      deletedUserEmail,
+      deletedUserName,
+      deletedByName
+    );
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

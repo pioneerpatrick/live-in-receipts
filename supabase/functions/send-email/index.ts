@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
-  type: 'client_update' | 'payment_update' | 'payment_reminder' | 'activity_alert' | 'staff_welcome' | 'payment_added';
+  type: 'client_update' | 'payment_update' | 'payment_reminder' | 'activity_alert' | 'staff_welcome' | 'payment_added' | 'user_deleted';
   recipient?: string;
   data: Record<string, unknown>;
 }
@@ -346,6 +346,69 @@ function generateStaffWelcomeEmail(data: Record<string, unknown>): { subject: st
   };
 }
 
+function generateUserDeletedEmail(data: Record<string, unknown>): { subject: string; html: string } {
+  const deletedUserName = data.deletedUserName as string;
+  const deletedUserEmail = data.deletedUserEmail as string;
+  const deletedByName = data.deletedByName as string;
+  const deletedAt = data.deletedAt as string;
+  const isAdminNotification = data.isAdminNotification as boolean;
+  
+  if (isAdminNotification) {
+    return {
+      subject: `🔔 User Account Deleted - ${deletedUserName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #ef4444;">🗑️ User Account Deleted</h2>
+          <p>A user account has been permanently deleted from the system.</p>
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 12px; border: 1px solid #e5e7eb;"><strong>Deleted User</strong></td>
+              <td style="padding: 12px; border: 1px solid #e5e7eb;">${deletedUserName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px; border: 1px solid #e5e7eb;"><strong>Email</strong></td>
+              <td style="padding: 12px; border: 1px solid #e5e7eb;">${deletedUserEmail}</td>
+            </tr>
+            <tr style="background-color: #f3f4f6;">
+              <td style="padding: 12px; border: 1px solid #e5e7eb;"><strong>Deleted By</strong></td>
+              <td style="padding: 12px; border: 1px solid #e5e7eb;">${deletedByName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px; border: 1px solid #e5e7eb;"><strong>Date & Time</strong></td>
+              <td style="padding: 12px; border: 1px solid #e5e7eb;">${deletedAt}</td>
+            </tr>
+          </table>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+            This is an automated notification from Live-IN Properties Receipt System.
+          </p>
+        </div>
+      `,
+    };
+  }
+  
+  // Email to the deleted user
+  return {
+    subject: `Your Live-IN Properties Account Has Been Removed`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #6b7280;">Account Removal Notification</h2>
+        <p>Dear ${deletedUserName},</p>
+        <p>This email confirms that your account with Live-IN Properties has been removed from our system.</p>
+        <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 5px 0;"><strong>Account Email:</strong> ${deletedUserEmail}</p>
+          <p style="margin: 5px 0;"><strong>Removal Date:</strong> ${deletedAt}</p>
+        </div>
+        <p>If you believe this was done in error or have any questions, please contact the system administrator.</p>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+          Best regards,<br/>
+          <strong>Live-IN Properties</strong><br/>
+          Genuine plots with ready title deeds
+        </p>
+      </div>
+    `,
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -408,6 +471,15 @@ serve(async (req) => {
       case 'staff_welcome':
         emailContent = generateStaffWelcomeEmail(data);
         if (recipient) recipients.push(recipient);
+        break;
+
+      case 'user_deleted':
+        emailContent = generateUserDeletedEmail(data);
+        if (recipient) recipients.push(recipient);
+        // Also send admin notification to company email
+        if (data.isAdminNotification && companyEmail) {
+          recipients.push(companyEmail);
+        }
         break;
 
       default:
