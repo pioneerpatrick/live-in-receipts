@@ -570,80 +570,86 @@ export const CancelledSalesSection = () => {
                   </div>
 
                   {/* Desktop Table View */}
-                  <div className="hidden md:block px-4 sm:px-0">
-                    <Table>
+                  <div className="hidden md:block px-4 sm:px-0 overflow-x-auto">
+                    <Table className="text-xs">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Client</TableHead>
-                          <TableHead>Project/Plot</TableHead>
-                          <TableHead>Cancel Date</TableHead>
-                          <TableHead>Refund Date</TableHead>
-                          <TableHead className="text-right">Was Collected</TableHead>
-                          <TableHead className="text-right">Net Refund</TableHead>
-                          <TableHead className="text-right">Retained</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Outcome</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead className="whitespace-nowrap">Client</TableHead>
+                          <TableHead className="whitespace-nowrap">Project/Plot</TableHead>
+                          <TableHead className="whitespace-nowrap text-center">Dates</TableHead>
+                          <TableHead className="text-right whitespace-nowrap">Collected</TableHead>
+                          <TableHead className="text-right whitespace-nowrap">Refund</TableHead>
+                          <TableHead className="text-right whitespace-nowrap">Retained</TableHead>
+                          <TableHead className="text-center whitespace-nowrap">Status</TableHead>
+                          <TableHead className="text-center whitespace-nowrap w-24">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredCancelledSales.map((sale) => (
                           <TableRow key={sale.id}>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{sale.client_name}</p>
-                                <p className="text-xs text-muted-foreground">{sale.client_phone}</p>
+                            <TableCell className="py-2">
+                              <div className="max-w-[120px]">
+                                <p className="font-medium truncate">{sale.client_name}</p>
+                                <p className="text-[10px] text-muted-foreground truncate">{sale.client_phone}</p>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{sale.project_name}</p>
-                                <p className="text-xs text-muted-foreground">{sale.plot_number}</p>
+                            <TableCell className="py-2">
+                              <div className="max-w-[100px]">
+                                <p className="font-medium truncate">{sale.project_name}</p>
+                                <p className="text-[10px] text-muted-foreground">{sale.plot_number}</p>
                               </div>
                             </TableCell>
-                            <TableCell className="text-sm">
-                              {format(new Date(sale.cancellation_date), 'dd/MM/yyyy')}
+                            <TableCell className="py-2 text-center">
+                              <div>
+                                <p className="text-[10px]">{format(new Date(sale.cancellation_date), 'dd/MM/yy')}</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {sale.processed_date ? format(new Date(sale.processed_date), 'dd/MM/yy') : '-'}
+                                </p>
+                              </div>
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                              {sale.processed_date ? format(new Date(sale.processed_date), 'dd/MM/yyyy') : '-'}
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
+                            <TableCell className="text-right font-medium py-2">
                               {formatCurrency(sale.total_paid)}
                             </TableCell>
-                            <TableCell className="text-right text-orange-600">
+                            <TableCell className="text-right text-orange-600 py-2">
                               {formatCurrency(sale.net_refund)}
                             </TableCell>
-                            <TableCell className="text-right font-semibold text-green-600">
+                            <TableCell className="text-right font-semibold text-green-600 py-2">
                               {formatCurrency(sale.total_paid - sale.net_refund)}
                             </TableCell>
-                            <TableCell>{getStatusBadge(sale.refund_status)}</TableCell>
-                            <TableCell>{getOutcomeBadge(sale.outcome_type || 'pending')}</TableCell>
-                            <TableCell>
-                              <div className="flex gap-1">
+                            <TableCell className="py-2">
+                              <div className="flex flex-col items-center gap-0.5">
+                                {getStatusBadge(sale.refund_status)}
+                                {getOutcomeBadge(sale.outcome_type || 'pending')}
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-2">
+                              <div className="flex gap-0">
                                 <Button
                                   variant="ghost"
-                                  size="sm"
+                                  size="icon"
+                                  className="h-7 w-7"
                                   onClick={() => openPaymentHistoryForSale(sale)}
                                   title="View payment history"
                                 >
-                                  <History className="w-4 h-4" />
+                                  <History className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button
                                   variant="ghost"
-                                  size="sm"
+                                  size="icon"
+                                  className="h-7 w-7"
                                   onClick={() => openEditDialog(sale)}
                                   title="Edit refund status"
                                 >
-                                  <Edit2 className="w-4 h-4" />
+                                  <Edit2 className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button
                                   variant="ghost"
-                                  size="sm"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
                                   onClick={() => setDeletingSaleId(sale.id)}
                                   title="Delete cancelled sale record"
-                                  className="text-destructive hover:text-destructive"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
                               </div>
                             </TableCell>
