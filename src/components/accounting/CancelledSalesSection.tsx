@@ -37,13 +37,14 @@ import { getCancelledSales, updateCancelledSale, deleteCancelledSale } from '@/l
 import { formatCurrency, addClient } from '@/lib/supabaseStorage';
 import { addExpense, generateExpenseReference, getExpenses } from '@/lib/expenseStorage';
 import { getProjects, getPlots, sellPlot } from '@/lib/projectStorage';
-import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2, FileText, ArrowRight, Trash2, Loader2, Search as SearchIcon, History } from 'lucide-react';
+import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2, FileText, ArrowRight, Trash2, Loader2, Search as SearchIcon, History, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { CancelledSalesAuditReport } from './CancelledSalesAuditReport';
 import { supabase } from '@/integrations/supabase/client';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PaymentHistory } from '@/components/PaymentHistory';
+import * as XLSX from 'xlsx';
 
 export const CancelledSalesSection = () => {
   const [cancelledSales, setCancelledSales] = useState<CancelledSale[]>([]);
@@ -403,6 +404,51 @@ export const CancelledSalesSection = () => {
     setShowPaymentHistory(true);
   };
 
+  const handleExportToExcel = () => {
+    if (cancelledSales.length === 0) {
+      toast.error('No cancelled sales data to export');
+      return;
+    }
+
+    const exportData = cancelledSales.map((sale, index) => ({
+      '#': index + 1,
+      'Client Name': sale.client_name,
+      'Phone': sale.client_phone || '',
+      'Project': sale.project_name,
+      'Plot Number': sale.plot_number,
+      'Original Sale Date': sale.original_sale_date ? format(new Date(sale.original_sale_date), 'dd/MM/yyyy') : '-',
+      'Cancellation Date': format(new Date(sale.cancellation_date), 'dd/MM/yyyy'),
+      'Refund Date': sale.processed_date ? format(new Date(sale.processed_date), 'dd/MM/yyyy') : '-',
+      'Original Value': sale.total_price,
+      'Amount Collected': sale.total_paid,
+      'Refund Amount': sale.refund_amount,
+      'Cancellation Fee': sale.cancellation_fee,
+      'Net Refund': sale.net_refund,
+      'Amount Retained': sale.total_paid - sale.net_refund,
+      'Refund Status': sale.refund_status,
+      'Outcome': sale.outcome_type || 'pending',
+      'Transferred To Project': sale.transferred_to_project || '-',
+      'Transferred To Plot': sale.transferred_to_plot || '-',
+      'Cancellation Reason': sale.cancellation_reason || '',
+      'Notes': sale.notes || '',
+      'Audit Notes': sale.audit_notes || '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Cancelled Sales');
+
+    // Auto-size columns
+    const colWidths = Object.keys(exportData[0] || {}).map(key => ({
+      wch: Math.max(key.length, 15)
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const fileName = `Cancelled_Sales_${format(new Date(), 'dd_MMM_yyyy')}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    toast.success(`Exported ${cancelledSales.length} cancelled sales to Excel`);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -490,14 +536,25 @@ export const CancelledSalesSection = () => {
                   <XCircle className="w-5 h-5 text-red-500" />
                   Cancelled Sales Details
                 </CardTitle>
-                <div className="relative w-full sm:w-64">
-                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name, phone, project..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-64">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name, phone, project..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleExportToExcel}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Export Excel
+                  </Button>
                 </div>
               </div>
             </CardHeader>
