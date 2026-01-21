@@ -32,16 +32,18 @@ import {
 import { CancelledSale, CancelledSaleOutcome } from '@/types/cancelledSale';
 import { Expense } from '@/types/expense';
 import { Project, Plot } from '@/types/project';
+import { Client } from '@/types/client';
 import { getCancelledSales, updateCancelledSale, deleteCancelledSale } from '@/lib/cancelledSalesStorage';
 import { formatCurrency, addClient } from '@/lib/supabaseStorage';
 import { addExpense, generateExpenseReference, getExpenses } from '@/lib/expenseStorage';
 import { getProjects, getPlots, sellPlot } from '@/lib/projectStorage';
-import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2, FileText, ArrowRight, Trash2, Loader2, Search as SearchIcon } from 'lucide-react';
+import { XCircle, DollarSign, AlertTriangle, RefreshCw, Edit2, Ban, CheckCircle2, FileText, ArrowRight, Trash2, Loader2, Search as SearchIcon, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { CancelledSalesAuditReport } from './CancelledSalesAuditReport';
 import { supabase } from '@/integrations/supabase/client';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { PaymentHistory } from '@/components/PaymentHistory';
 
 export const CancelledSalesSection = () => {
   const [cancelledSales, setCancelledSales] = useState<CancelledSale[]>([]);
@@ -67,6 +69,8 @@ export const CancelledSalesSection = () => {
   const [refundDate, setRefundDate] = useState('');
   const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClientForHistory, setSelectedClientForHistory] = useState<Client | null>(null);
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -359,6 +363,46 @@ export const CancelledSalesSection = () => {
     }
   };
 
+  // Helper to convert cancelled sale to Client-like object for PaymentHistory
+  const openPaymentHistoryForSale = (sale: CancelledSale) => {
+    if (!sale.client_id) {
+      toast.error('No client record linked to this cancelled sale');
+      return;
+    }
+    const clientLike: Client = {
+      id: sale.client_id,
+      name: sale.client_name,
+      phone: sale.client_phone || '',
+      email: null,
+      project_name: sale.project_name,
+      plot_number: sale.plot_number,
+      unit_price: 0,
+      number_of_plots: 1,
+      total_price: sale.total_price,
+      discount: 0,
+      total_paid: sale.total_paid,
+      balance: 0,
+      percent_paid: sale.total_price > 0 ? (sale.total_paid / sale.total_price) * 100 : 0,
+      sales_agent: '',
+      payment_type: 'installments',
+      payment_period: '',
+      installment_months: null,
+      initial_payment_method: 'Cash',
+      completion_date: null,
+      next_payment_date: null,
+      notes: '',
+      status: 'cancelled',
+      sale_date: sale.original_sale_date || null,
+      commission: null,
+      commission_received: null,
+      commission_balance: null,
+      created_at: sale.created_at,
+      updated_at: sale.updated_at,
+    };
+    setSelectedClientForHistory(clientLike);
+    setShowPaymentHistory(true);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -501,6 +545,14 @@ export const CancelledSalesSection = () => {
                           </div>
                         </div>
                         <div className="flex justify-end gap-1 pt-2 border-t border-border/50">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openPaymentHistoryForSale(sale)}
+                            title="View payment history"
+                          >
+                            <History className="w-4 h-4" />
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => openEditDialog(sale)}>
                             <Edit2 className="w-4 h-4" />
                           </Button>
@@ -568,6 +620,14 @@ export const CancelledSalesSection = () => {
                             <TableCell>{getOutcomeBadge(sale.outcome_type || 'pending')}</TableCell>
                             <TableCell>
                               <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openPaymentHistoryForSale(sale)}
+                                  title="View payment history"
+                                >
+                                  <History className="w-4 h-4" />
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -865,6 +925,16 @@ export const CancelledSalesSection = () => {
         title="Delete Cancelled Sale Record"
         description="Are you sure you want to permanently delete this cancelled sale record? This will remove all associated data from the system. This action cannot be undone."
         confirmText="Delete"
+      />
+
+      {/* Payment History Dialog */}
+      <PaymentHistory
+        open={showPaymentHistory}
+        onClose={() => {
+          setShowPaymentHistory(false);
+          setSelectedClientForHistory(null);
+        }}
+        client={selectedClientForHistory}
       />
     </div>
   );
