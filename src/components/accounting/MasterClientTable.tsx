@@ -8,9 +8,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Client } from '@/types/client';
 import { formatCurrency } from '@/lib/supabaseStorage';
-import { Printer, Search, Users, Filter } from 'lucide-react';
+import { Printer, Search, Users, Filter, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { PaymentHistory } from '@/components/PaymentHistory';
 
 interface MasterClientTableProps {
   clients: Client[];
@@ -19,6 +20,8 @@ interface MasterClientTableProps {
 export const MasterClientTable = ({ clients }: MasterClientTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
 
   const filteredClients = useMemo(() => {
     return clients.filter(client => {
@@ -253,6 +256,18 @@ export const MasterClientTable = ({ clients }: MasterClientTableProps) => {
                             {formatCurrency(client.balance)}
                           </p>
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedClient(client);
+                            setShowPaymentHistory(true);
+                          }}
+                          className="w-full mt-2 text-xs"
+                        >
+                          <History className="h-3 w-3 mr-1" />
+                          View Payment History
+                        </Button>
                       </div>
                     </div>
                   );
@@ -274,12 +289,13 @@ export const MasterClientTable = ({ clients }: MasterClientTableProps) => {
                     <TableHead className="text-right">% Paid</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="hidden lg:table-cell">Agent</TableHead>
+                    <TableHead className="w-16">History</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredClients.length === 0 ? (
+                {filteredClients.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                         No clients found matching your criteria
                       </TableCell>
                     </TableRow>
@@ -324,6 +340,20 @@ export const MasterClientTable = ({ clients }: MasterClientTableProps) => {
                         <TableCell className={cn("hidden lg:table-cell text-xs text-muted-foreground", isCancelled && "text-red-500")}>
                           {client.sales_agent || '-'}
                         </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setShowPaymentHistory(true);
+                            }}
+                            className="h-7 w-7 p-0"
+                            title="View payment history"
+                          >
+                            <History className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                       );
                     })
@@ -338,6 +368,16 @@ export const MasterClientTable = ({ clients }: MasterClientTableProps) => {
           Showing {filteredClients.length} of {clients.length} clients
         </div>
       </CardContent>
+
+      {/* Payment History Dialog */}
+      <PaymentHistory
+        open={showPaymentHistory}
+        onClose={() => {
+          setShowPaymentHistory(false);
+          setSelectedClient(null);
+        }}
+        client={selectedClient}
+      />
     </Card>
   );
 };
