@@ -25,7 +25,7 @@ async function sendEmail(
       "Authorization": `Bearer ${resendApiKey}`,
     },
     body: JSON.stringify({
-      from: "Live-IN Properties <onboarding@resend.dev>",
+      from: "Live-IN Properties <noreply@live-inproperties.co.ke>",
       to,
       subject,
       html,
