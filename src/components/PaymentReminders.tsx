@@ -378,16 +378,39 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
             }
           }
         } else {
-          // No payment date set - show as needing attention (treat as upcoming)
-          daysUntilDue = 0;
-          status = 'due-today';
+          // No payment date set - check database status
+          if (client.status === 'overdue') {
+            // Client is marked overdue in DB - estimate lateness from sale_date or created_at
+            const referenceDate = client.sale_date ? parseISO(client.sale_date) : parseISO(client.created_at);
+            if (isValid(referenceDate)) {
+              // Estimate: first payment was due ~30 days after sale/creation
+              const estimatedDueDate = new Date(referenceDate);
+              estimatedDueDate.setDate(estimatedDueDate.getDate() + 30);
+              daysUntilDue = differenceInDays(estimatedDueDate, today);
+              // Ensure it shows as overdue (negative days)
+              if (daysUntilDue >= 0) daysUntilDue = -1;
+            } else {
+              daysUntilDue = -1;
+            }
+            status = 'overdue';
+          } else {
+            // Not marked overdue, no due date - show as needing a date to be set
+            daysUntilDue = 0;
+            status = 'due-today';
+          }
         }
         
+        const timeDisplay = !client.next_payment_date && client.status === 'overdue'
+          ? (daysUntilDue < -1 ? formatTimeDifference(daysUntilDue) : 'Overdue (no due date)')
+          : !client.next_payment_date && client.status !== 'overdue'
+            ? 'No due date set'
+            : formatTimeDifference(daysUntilDue);
+
         return {
           ...client,
           daysUntilDue,
           status,
-          timeDisplay: formatTimeDifference(daysUntilDue)
+          timeDisplay,
         } as ReminderClient;
       })
       .filter((client): client is ReminderClient => client !== null)
