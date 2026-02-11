@@ -394,16 +394,24 @@ export const PaymentReminders = ({ clients, onSelectClient }: PaymentRemindersPr
             }
             status = 'overdue';
           } else {
-            // Not marked overdue, no due date - show as needing a date to be set
-            daysUntilDue = 0;
-            status = 'due-today';
+            // No due date set - treat as overdue since they have a balance
+            const referenceDate = client.sale_date ? parseISO(client.sale_date) : parseISO(client.created_at);
+            if (isValid(referenceDate)) {
+              const estimatedDueDate = new Date(referenceDate);
+              estimatedDueDate.setDate(estimatedDueDate.getDate() + 30);
+              daysUntilDue = differenceInDays(estimatedDueDate, today);
+              if (daysUntilDue >= 0) daysUntilDue = -1;
+            } else {
+              daysUntilDue = -1;
+            }
+            status = 'overdue';
           }
         }
         
-        const timeDisplay = !client.next_payment_date && client.status === 'overdue'
+        const timeDisplay = !client.next_payment_date
           ? (daysUntilDue < -1 ? formatTimeDifference(daysUntilDue) : 'Overdue (no due date)')
-          : !client.next_payment_date && client.status !== 'overdue'
-            ? 'No due date set'
+          : !client.next_payment_date
+            ? 'Overdue (no due date)'
             : formatTimeDifference(daysUntilDue);
 
         return {
